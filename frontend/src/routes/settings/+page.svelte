@@ -103,7 +103,7 @@
 				<Card.Description>Koneksikan printer struk kasir via Bluetooth.</Card.Description>
 			</Card.Header>
 			<Card.Content>
-				<div class="bg-blue-50 text-blue-800 p-3 rounded-md text-xs border border-blue-100 mb-6 flex gap-2">
+				<div class="bg-info-soft text-info p-3 rounded-md text-xs border border-info mb-6 flex gap-2">
 					<div class="mt-0.5"><Bluetooth class="w-4 h-4" /></div>
 					<p>Fitur pencetakan ini memerlukan perangkat dengan dukungan Web Bluetooth (Chrome/Edge di Desktop atau Android).</p>
 				</div>
@@ -111,14 +111,15 @@
 				<div class="flex justify-between items-center mb-6 border-b pb-4">
 					<span class="text-sm font-medium">Status Koneksi</span>
 					{#if printerStatus === 'Terhubung'}
-						<Badge class="bg-green-600 hover:bg-green-700">Terhubung</Badge>
+						<Badge class="bg-primary hover:bg-primary-dark text-white">Terhubung</Badge>
 					{:else}
-						<Badge variant="outline" class="text-amber-600 border-amber-200 bg-amber-50">Terputus</Badge>
+						<Badge variant="outline" class="text-warning border-warning bg-warning-soft">Terputus</Badge>
 					{/if}
 				</div>
 
 				<div class="space-y-3">
 					<Button
+						variant="cta"
 						onclick={handleConnectPrinter}
 						disabled={connecting}
 						class="w-full font-bold"

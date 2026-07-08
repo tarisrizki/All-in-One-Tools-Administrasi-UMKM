@@ -57,7 +57,7 @@
 			</Button>
 			<h1 class="text-lg font-bold">Pelanggan</h1>
 		</div>
-		<Button href="/customers/new" size="sm">
+		<Button variant="cta" href="/customers/new" size="sm">
 			+ Tambah
 		</Button>
 	</header>
@@ -84,7 +84,7 @@
 					<div class="text-4xl mb-3">👥</div>
 					<p class="font-bold mb-1">Belum Ada Pelanggan</p>
 					<p class="text-muted-foreground text-sm mb-4">Tambahkan data pelanggan pertama Anda.</p>
-					<Button href="/customers/new">
+					<Button variant="cta" href="/customers/new">
 						Tambah Pelanggan Baru
 					</Button>
 				</Card.Content>
@@ -115,7 +115,7 @@
 										href="https://wa.me/{customer.phone.replace(/[^0-9]/g, '')}"
 										target="_blank"
 										rel="noopener noreferrer"
-										class="text-green-600 text-xs font-bold flex items-center gap-1 hover:underline"
+										class="text-primary text-xs font-bold flex items-center gap-1 hover:underline"
 									>
 										Hubungi WA
 									</a>

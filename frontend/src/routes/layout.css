@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap');
+
 /* =============================================================
    All-in-One Tools Administrasi UMKM — Design System
    Diterjemahkan dari DESIGN.MD ke Tailwind CSS v4 theme
@@ -8,9 +10,6 @@
 
 @import 'tailwindcss';
 
-/* --- Google Fonts: Plus Jakarta Sans (DESIGN.MD §5) --- */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap');
-
 /* =============================================================
    §4 — Color Tokens
    ============================================================= */
@@ -20,10 +19,14 @@
 	--color-primary-dark: #0b7a54;
 	--color-primary-soft: #e3f7ef;
 
-	/* Accent — HANYA UNTUK SATU CTA TERPENTING PER LAYAR */
-	--color-accent: #ff6b4a;
-	--color-accent-dark: #e85535;
-	--color-accent-soft: #ffe9e2;
+	/* CTA brand — HANYA UNTUK SATU CTA TERPENTING PER LAYAR.
+	   Diberi nama --color-cta (bukan --color-accent) supaya tidak
+	   bentrok dengan token semantik "accent" milik shadcn-svelte
+	   (dipakai shadcn untuk hover/highlight halus di Select, dsb —
+	   lihat shadcn.css). Dua konsep berbeda, dua nama berbeda. */
+	--color-cta: #ff6b4a;
+	--color-cta-dark: #e85535;
+	--color-cta-soft: #ffe9e2;
 
 	/* Semantic */
 	--color-warning: #f5a623;
@@ -170,7 +173,7 @@ body {
 	gap: var(--spacing-2);
 	min-height: 48px;
 	padding: var(--spacing-3) var(--spacing-6);
-	background-color: var(--color-accent);
+	background-color: var(--color-cta);
 	color: white;
 	font-size: var(--text-button);
 	font-weight: 700;
@@ -183,11 +186,11 @@ body {
 }
 
 .btn-primary:hover {
-	background-color: var(--color-accent-dark);
+	background-color: var(--color-cta-dark);
 }
 
 .btn-primary:active {
-	background-color: var(--color-accent-dark);
+	background-color: var(--color-cta-dark);
 	transform: scale(0.98);
 }
 

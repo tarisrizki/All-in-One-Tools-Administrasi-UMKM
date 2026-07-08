@@ -130,6 +130,7 @@
 				</div>
 				<div class="flex items-end">
 					<Button
+						variant="cta"
 						onclick={fetchReport}
 						class="w-full sm:w-auto"
 					>
@@ -150,7 +151,7 @@
 					<p class="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
 						Laba / Rugi Bersih
 					</p>
-					<p class="text-3xl font-bold {report.netProfit >= 0 ? 'text-green-600' : 'text-destructive'}">
+					<p class="text-3xl font-bold {report.netProfit >= 0 ? 'text-primary' : 'text-destructive'}">
 						{formatRupiah(report.netProfit)}
 					</p>
 					<p class="text-xs text-muted-foreground mt-3">Periode: {startDate} s/d {endDate}</p>
@@ -180,7 +181,7 @@
 					<div class="pt-4 border-t">
 						<div class="flex justify-between items-center text-sm mb-1">
 							<span>Pemasukan Tambahan (Buku Kas)</span>
-							<span class="font-medium text-green-600">+{formatRupiah(report.totalCashIncome)}</span>
+							<span class="font-medium text-primary">+{formatRupiah(report.totalCashIncome)}</span>
 						</div>
 						<div class="flex justify-between items-center text-sm mb-1">
 							<span>Pengeluaran Operasional (Buku Kas)</span>
@@ -196,7 +197,7 @@
 					<p class="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
 						Arus Kas Bersih (Net Cash Flow)
 					</p>
-					<p class="text-3xl font-bold {cashFlow.netCashFlow >= 0 ? 'text-green-600' : 'text-destructive'}">
+					<p class="text-3xl font-bold {cashFlow.netCashFlow >= 0 ? 'text-primary' : 'text-destructive'}">
 						{cashFlow.netCashFlow >= 0 ? '+' : ''}{formatRupiah(cashFlow.netCashFlow)}
 					</p>
 					<p class="text-xs text-muted-foreground mt-3">Uang yang benar-benar ada di tangan saat ini</p>
@@ -207,10 +208,10 @@
 			<Card.Root class="overflow-hidden">
 				<!-- CASH IN -->
 				<div class="p-4 bg-muted/50 border-b flex justify-between items-center">
-					<h2 class="text-sm font-bold text-green-600 uppercase tracking-wider">
+					<h2 class="text-sm font-bold text-primary uppercase tracking-wider">
 						Uang Masuk (Cash In)
 					</h2>
-					<span class="font-bold text-green-600">{formatRupiah(cashFlow.cashIn.total)}</span>
+					<span class="font-bold text-primary">{formatRupiah(cashFlow.cashIn.total)}</span>
 				</div>
 				<Card.Content class="p-4 space-y-2">
 					<div class="flex justify-between items-center text-sm">

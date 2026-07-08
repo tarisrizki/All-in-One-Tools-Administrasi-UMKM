@@ -114,7 +114,7 @@
 						/>
 					</div>
 
-					<Button type="submit" class="w-full mt-2">
+					<Button variant="cta" type="submit" class="w-full mt-2">
 						Lanjut Setup Toko
 					</Button>
 				</form>
@@ -131,7 +131,7 @@
 						/>
 					</div>
 
-					<Button type="submit" disabled={loading} class="w-full mt-2">
+					<Button variant="cta" type="submit" disabled={loading} class="w-full mt-2">
 						{loading ? 'Menyimpan...' : 'Selesai & Buka Kasir'}
 					</Button>
 				</form>

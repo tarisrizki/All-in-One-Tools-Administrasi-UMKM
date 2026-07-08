@@ -257,6 +257,7 @@
 						<span class="text-2xl font-bold text-primary">{formatRupiah(cartTotal)}</span>
 					</div>
 					<Button
+						variant="cta"
 						size="lg"
 						class="w-full font-bold text-lg h-14"
 						onclick={() => (isPaying = true)}

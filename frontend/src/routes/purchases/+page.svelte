@@ -139,7 +139,7 @@
 			<h1 class="text-2xl font-bold">Pembelian (PO)</h1>
 			<p class="text-muted-foreground text-sm mt-1">Kelola pesanan pembelian barang ke supplier.</p>
 		</div>
-		<Button href="/purchases/new">
+		<Button variant="cta" href="/purchases/new">
 			<Plus class="w-4 h-4 mr-2" />
 			Buat PO Baru
 		</Button>
@@ -179,7 +179,7 @@
 					<p class="text-muted-foreground text-sm mb-6 max-w-sm">
 						Buat Purchase Order (PO) untuk merekam transaksi pembelian barang dari supplier Anda.
 					</p>
-					<Button href="/purchases/new">
+					<Button variant="cta" href="/purchases/new">
 						<Plus class="w-4 h-4 mr-2" />
 						Buat PO Baru
 					</Button>
@@ -215,9 +215,9 @@
 									{#if po.status === 'draft'}
 										<Badge variant="secondary">DRAFT</Badge>
 									{:else if po.status === 'ordered'}
-										<Badge variant="outline" class="text-blue-500 border-blue-200 bg-blue-50">DIPESAN</Badge>
+										<Badge variant="outline" class="text-info border-info bg-info-soft">DIPESAN</Badge>
 									{:else if po.status === 'received'}
-										<Badge class="bg-green-600 hover:bg-green-700 text-white">DITERIMA</Badge>
+										<Badge class="bg-primary hover:bg-primary-dark text-white">DITERIMA</Badge>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="text-right">
@@ -290,7 +290,7 @@
 				<div>
 					<div class="font-bold text-sm">Diterima (Received)</div>
 					<div class="text-xs text-muted-foreground mt-1">
-						Barang sudah diterima, <strong class="text-amber-500">Stok gudang akan bertambah otomatis!</strong>
+						Barang sudah diterima, <strong class="text-warning">Stok gudang akan bertambah otomatis!</strong>
 					</div>
 				</div>
 			</label>

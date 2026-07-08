@@ -110,6 +110,7 @@
 				</div>
 
 				<Button
+					variant="cta"
 					onclick={handleSave}
 					disabled={loading}
 					class="w-full mt-2"

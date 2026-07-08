@@ -136,7 +136,7 @@
 
 							<div class="flex justify-between text-sm pt-2 border-t border-primary/10">
 								<span class="text-muted-foreground">Laba Bersih per item</span>
-								<span class="font-bold text-green-600">+{formatRupiah(profitPerItem())}</span>
+								<span class="font-bold text-primary">+{formatRupiah(profitPerItem())}</span>
 							</div>
 						</div>
 					</div>
@@ -256,7 +256,7 @@
 							class="bg-muted p-4 rounded-md border flex flex-col items-center text-center"
 						>
 							<p class="text-xs text-muted-foreground font-medium mb-1">PERSENTASE BALIK MODAL</p>
-							<p class="text-4xl font-bold {roi() >= 100 ? 'text-green-600' : 'text-primary'} mb-2">
+							<p class="text-4xl font-bold {roi() >= 100 ? 'text-primary' : 'text-primary'} mb-2">
 								{roi().toFixed(2)} %
 							</p>
 							<p class="text-sm text-muted-foreground">

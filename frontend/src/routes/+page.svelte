@@ -153,14 +153,14 @@
 			<h3 class="text-sm font-bold mb-3 uppercase tracking-wider text-muted-foreground px-1">Menu Cepat</h3>
 			<div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
 				<Button
-					variant="outline"
+					variant="cta"
 					class="h-auto py-4 flex-col gap-3"
 					href="/pos"
 				>
-					<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-						<ShoppingCart class="w-6 h-6 text-primary group-hover:text-primary-foreground" />
+					<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center transition-colors">
+						<ShoppingCart class="w-6 h-6 text-white" />
 					</div>
-					<span class="font-bold text-sm">Buka Kasir</span>
+					<span class="font-bold text-sm text-white">Buka Kasir</span>
 				</Button>
 
 				<Button

@@ -91,7 +91,7 @@
 			</Button>
 			<h1 class="text-lg font-bold">Karyawan & Akses</h1>
 		</div>
-		<Button href="/employees/new" size="sm">
+		<Button variant="cta" href="/employees/new" size="sm">
 			+ Tambah
 		</Button>
 	</header>

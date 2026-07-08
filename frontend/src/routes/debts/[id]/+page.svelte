@@ -169,9 +169,9 @@
 					{#if debt.status === 'unpaid'}
 						<Badge variant="destructive">BELUM LUNAS</Badge>
 					{:else if debt.status === 'partial'}
-						<Badge variant="outline" class="bg-amber-100 text-amber-700 hover:bg-amber-100 border-transparent">CICILAN</Badge>
+						<Badge variant="outline" class="bg-warning-soft text-warning hover:bg-warning-soft border-transparent">CICILAN</Badge>
 					{:else if debt.status === 'paid'}
-						<Badge class="bg-green-100 text-green-700 hover:bg-green-100">LUNAS</Badge>
+						<Badge variant="outline" class="bg-primary-soft text-primary hover:bg-primary-soft border-transparent">LUNAS</Badge>
 					{/if}
 				</div>
 			</div>
@@ -183,7 +183,7 @@
 				</div>
 				<div>
 					<div class="text-xs text-muted-foreground mb-1 uppercase font-mono">Sisa Tagihan</div>
-					<div class="text-2xl font-black {debt.status === 'paid' ? 'text-green-600' : 'text-destructive'}">
+					<div class="text-2xl font-black {debt.status === 'paid' ? 'text-primary' : 'text-destructive'}">
 						{formatRupiah(debt.remaining_amount)}
 					</div>
 				</div>
@@ -211,7 +211,7 @@
 					disabled={debt.status === 'paid' || !debt.entity_phone || isReminding}
 					class="flex items-center gap-2"
 				>
-					<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+					<svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
 						<path d="M12.031 0C5.389 0 0 5.39 0 12.031c0 2.115.55 4.184 1.597 6.002L.15 23.473l5.59-1.465A11.966 11.966 0 0012.03 24c6.643 0 12.032-5.39 12.032-12.032S18.674 0 12.03 0h.001zm0 22c-1.782 0-3.526-.479-5.056-1.385l-.36-.214-3.766.988.995-3.67-.235-.373A9.972 9.972 0 012.03 12.031C2.03 6.505 6.505 2 12.03 2s10 4.505 10 10-4.495 10-10 10zm5.498-7.513c-.3-.151-1.78-.88-2.056-.98-.277-.101-.478-.152-.68.151-.202.304-.78 1.002-.956 1.203-.176.202-.352.227-.654.076a8.214 8.214 0 01-2.417-1.495 9.07 9.07 0 01-1.676-2.078c-.176-.303-.019-.467.13-.618.136-.135.303-.353.455-.53.151-.176.202-.303.303-.504.101-.202.05-.38-.025-.531-.076-.151-.68-1.643-.933-2.25-.246-.593-.496-.512-.68-.52-.176-.008-.377-.01-.578-.01a1.11 1.11 0 00-.804.38c-.277.303-1.056 1.032-1.056 2.518 0 1.486 1.08 2.921 1.232 3.123.151.202 2.128 3.25 5.155 4.556 2.455 1.063 3.124.975 3.684.82 1.353-.377 2.383-.976 2.723-1.92.34-.945.34-1.753.24-1.92-.102-.168-.378-.269-.68-.42z"/>
 					</svg>
 					{#if isReminding}
@@ -268,9 +268,9 @@
 
 		{#if debt}
 			<div class="space-y-4 py-4">
-				<div class="p-3 bg-amber-100 rounded-md border border-amber-200 mb-4">
-					<div class="text-xs text-amber-800 uppercase font-bold mb-1">Sisa Tagihan Maksimal</div>
-					<div class="text-lg font-black text-amber-900">{formatRupiah(debt.remaining_amount)}</div>
+				<div class="p-3 bg-warning-soft rounded-md border border-warning mb-4">
+					<div class="text-xs text-warning uppercase font-bold mb-1">Sisa Tagihan Maksimal</div>
+					<div class="text-lg font-black text-warning">{formatRupiah(debt.remaining_amount)}</div>
 				</div>
 
 				<div class="space-y-2">

@@ -165,6 +165,7 @@
 
 			<div class="pt-4 border-t flex justify-end">
 				<Button
+					variant="cta"
 					onclick={submitDebt}
 					disabled={isSubmitting || !debt.entity_name || !debt.amount}
 					class="w-full sm:w-auto px-8"

@@ -76,7 +76,7 @@
 				<p class="text-muted-foreground text-sm mt-1">Catat hutang ke supplier dan piutang dari pelanggan.</p>
 			</div>
 		</div>
-		<Button href="/debts/new">
+		<Button variant="cta" href="/debts/new">
 			+ Catat Baru
 		</Button>
 	</div>
@@ -123,7 +123,7 @@
 						? 'piutang dari pelanggan'
 						: 'hutang ke supplier'}.
 				</p>
-				<Button href="/debts/new">
+				<Button variant="cta" href="/debts/new" size="sm">
 					+ Catat Sekarang
 				</Button>
 			</Card.Content>
@@ -146,9 +146,9 @@
 								{#if debt.status === 'unpaid'}
 									<Badge variant="destructive" class="whitespace-nowrap">BELUM LUNAS</Badge>
 								{:else if debt.status === 'partial'}
-									<Badge variant="outline" class="bg-amber-100 text-amber-700 hover:bg-amber-100 border-transparent whitespace-nowrap">CICILAN</Badge>
+									<Badge variant="outline" class="bg-warning-soft text-warning hover:bg-warning-soft border-transparent whitespace-nowrap">CICILAN</Badge>
 								{:else if debt.status === 'paid'}
-									<Badge class="bg-green-100 text-green-700 hover:bg-green-100 whitespace-nowrap">LUNAS</Badge>
+									<Badge variant="outline" class="bg-primary-soft text-primary hover:bg-primary-soft border-transparent whitespace-nowrap">LUNAS</Badge>
 								{/if}
 							</div>
 
@@ -159,7 +159,7 @@
 								</div>
 								<div class="flex justify-between items-center text-sm">
 									<span class="text-muted-foreground font-bold">Sisa Tagihan:</span>
-									<span class="font-bold {debt.status === 'paid' ? 'text-green-600' : 'text-destructive'}">
+									<span class="font-bold {debt.status === 'paid' ? 'text-primary' : 'text-destructive'}">
 										{formatRupiah(debt.remaining_amount)}
 									</span>
 								</div>

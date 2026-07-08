@@ -190,7 +190,7 @@
 								{/each}
 							</select>
 							{#if suppliers.length === 0}
-								<p class="text-xs text-amber-500 mt-1">
+								<p class="text-xs text-warning mt-1">
 									Belum ada supplier. <a href="/suppliers" class="text-primary underline"
 										>Tambah di sini</a
 									>.
@@ -338,6 +338,7 @@
 			<div class="max-w-6xl mx-auto flex justify-between items-center px-4">
 				<Button variant="ghost" href="/purchases">Batal</Button>
 				<Button
+					variant="cta"
 					onclick={submitPo}
 					disabled={isSubmitting || po.items.length === 0 || !po.supplier_id}
 					size="lg"

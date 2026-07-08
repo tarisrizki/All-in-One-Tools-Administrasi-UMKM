@@ -201,6 +201,7 @@
 					</div>
 
 					<Button
+						variant="cta"
 						type="submit"
 						disabled={loading}
 						class="w-full mt-6"

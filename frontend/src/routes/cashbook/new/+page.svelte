@@ -72,7 +72,7 @@
 							</div>
 							<div class="flex items-center space-x-2">
 								<RadioGroup.Item value="in" id="in" />
-								<Label for="in" class="text-green-600 font-medium cursor-pointer">Pemasukan</Label>
+								<Label for="in" class="text-primary font-medium cursor-pointer">Pemasukan</Label>
 							</div>
 						</RadioGroup.Root>
 					</div>
@@ -106,6 +106,7 @@
 				<Card.Footer>
 					<Button
 						type="submit"
+						variant="cta"
 						disabled={loading}
 						class="w-full font-bold"
 						size="lg"

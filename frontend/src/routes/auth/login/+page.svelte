@@ -80,7 +80,7 @@
 					/>
 				</div>
 
-				<Button type="submit" class="w-full mt-2" disabled={loading}>
+				<Button variant="cta" type="submit" class="w-full mt-2" disabled={loading}>
 					{loading ? 'Memproses...' : 'Masuk'}
 				</Button>
 			</form>

@@ -98,7 +98,7 @@
 				<p class="text-muted-foreground text-sm mt-1">Kelola data pemasok barang toko Anda.</p>
 			</div>
 		</div>
-		<Button onclick={() => (showAddModal = true)}>
+		<Button variant="cta" onclick={() => (showAddModal = true)}>
 			+ Tambah Pemasok
 		</Button>
 	</div>
@@ -123,7 +123,7 @@
 				<p class="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
 					Tambahkan data supplier pertama Anda untuk memudahkan proses pembelian barang.
 				</p>
-				<Button onclick={() => (showAddModal = true)}>
+				<Button variant="cta" onclick={() => (showAddModal = true)}>
 					+ Tambah Pemasok
 				</Button>
 			</Card.Content>

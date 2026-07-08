@@ -50,7 +50,7 @@
 			</Button>
 			<h1 class="text-lg font-bold">Buku Kas</h1>
 		</div>
-		<Button href="/cashbook/new" size="sm">
+		<Button variant="cta" href="/cashbook/new" size="sm">
 			<Plus class="w-4 h-4 mr-2" />
 			Transaksi
 		</Button>
@@ -63,7 +63,7 @@
 			{:else if entries.length === 0}
 				<div class="p-8 text-center text-muted-foreground flex flex-col items-center">
 					<p class="mb-4">Belum ada catatan kas.</p>
-					<Button variant="outline" href="/cashbook/new">Catat Transaksi Pertama</Button>
+					<Button variant="cta" href="/cashbook/new">Catat Transaksi Pertama</Button>
 				</div>
 			{:else}
 				<div class="overflow-x-auto">
@@ -82,7 +82,7 @@
 										{formatDate(entry.created_at)}
 									</Table.Cell>
 									<Table.Cell class="font-medium">{entry.description}</Table.Cell>
-									<Table.Cell class="text-right font-bold {entry.type === 'in' ? 'text-green-600' : 'text-destructive'}">
+									<Table.Cell class="text-right font-bold {entry.type === 'in' ? 'text-primary' : 'text-destructive'}">
 										{entry.type === 'in' ? '+' : '-'}{formatRupiah(entry.amount)}
 									</Table.Cell>
 								</Table.Row>

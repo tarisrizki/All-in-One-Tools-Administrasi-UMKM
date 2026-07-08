@@ -167,6 +167,7 @@
 				</div>
 
 				<Button
+					variant="cta"
 					onclick={handleSave}
 					disabled={loading || roles.length === 0}
 					class="w-full mt-4"

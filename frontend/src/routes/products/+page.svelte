@@ -52,7 +52,7 @@
 				placeholder="Cari barang..."
 				class="max-w-xs"
 			/>
-			<Button href="/products/new" size="sm">
+			<Button variant="cta" href="/products/new" size="sm">
 				+ Tambah
 			</Button>
 		</div>
