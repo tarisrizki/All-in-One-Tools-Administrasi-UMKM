@@ -1,197 +1,223 @@
-import { FastifyInstance } from 'fastify';
-import { getClient, query } from '../../plugins/database.js';
+import { FastifyInstance } from "fastify";
+import { db } from "../../plugins/drizzle.js";
+import { purchaseOrders, purchaseOrderItems, suppliers, warehouses, products, productStock } from "../../db/schema.js";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export default async function purchaseRoutes(fastify: FastifyInstance) {
-  // Get all purchase orders
-  fastify.get('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
+	fastify.get(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.read')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
 
-    const result = await query(
-      `SELECT po.*, s.name as supplier_name, w.name as warehouse_name 
-       FROM purchase_orders po
-       JOIN suppliers s ON po.supplier_id = s.id
-       JOIN warehouses w ON po.warehouse_id = w.id
-       WHERE po.business_id = $1 
-       ORDER BY po.created_at DESC`,
-      [businessId]
-    );
+			const result = await db.select({
+				id: purchaseOrders.id,
+				businessId: purchaseOrders.businessId,
+				warehouseId: purchaseOrders.warehouseId,
+				supplierId: purchaseOrders.supplierId,
+				poNumber: purchaseOrders.poNumber,
+				status: purchaseOrders.status,
+				totalAmount: purchaseOrders.totalAmount,
+				expectedDate: purchaseOrders.expectedDate,
+				notes: purchaseOrders.notes,
+				createdBy: purchaseOrders.createdBy,
+				createdAt: purchaseOrders.createdAt,
+				updatedAt: purchaseOrders.updatedAt,
+				supplier_name: suppliers.name,
+				warehouse_name: warehouses.name
+			})
+			.from(purchaseOrders)
+			.innerJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id))
+			.innerJoin(warehouses, eq(purchaseOrders.warehouseId, warehouses.id))
+			.where(eq(purchaseOrders.businessId, businessId))
+			.orderBy(desc(purchaseOrders.createdAt));
 
-    return {
-      success: true,
-      data: result.rows,
-    };
-  });
+			return { success: true, data: result };
+		},
+	);
 
-  // Get PO details
-  fastify.get('/:id', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
+	fastify.get(
+		"/:id",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
 
-    const poResult = await query(
-      `SELECT po.*, s.name as supplier_name, w.name as warehouse_name 
-       FROM purchase_orders po
-       JOIN suppliers s ON po.supplier_id = s.id
-       JOIN warehouses w ON po.warehouse_id = w.id
-       WHERE po.id = $1 AND po.business_id = $2`,
-      [id, businessId]
-    );
+			const poResult = await db.select({
+				id: purchaseOrders.id,
+				businessId: purchaseOrders.businessId,
+				warehouseId: purchaseOrders.warehouseId,
+				supplierId: purchaseOrders.supplierId,
+				poNumber: purchaseOrders.poNumber,
+				status: purchaseOrders.status,
+				totalAmount: purchaseOrders.totalAmount,
+				expectedDate: purchaseOrders.expectedDate,
+				notes: purchaseOrders.notes,
+				createdBy: purchaseOrders.createdBy,
+				createdAt: purchaseOrders.createdAt,
+				updatedAt: purchaseOrders.updatedAt,
+				supplier_name: suppliers.name,
+				warehouse_name: warehouses.name
+			})
+			.from(purchaseOrders)
+			.innerJoin(suppliers, eq(purchaseOrders.supplierId, suppliers.id))
+			.innerJoin(warehouses, eq(purchaseOrders.warehouseId, warehouses.id))
+			.where(and(eq(purchaseOrders.id, id), eq(purchaseOrders.businessId, businessId)));
 
-    if (poResult.rowCount === 0) {
-      return reply.status(404).send({ success: false, error: { message: 'PO tidak ditemukan' } });
-    }
+			if (poResult.length === 0) {
+				return reply.status(404).send({ success: false, error: { message: "PO tidak ditemukan" } });
+			}
 
-    const itemsResult = await query(
-      `SELECT poi.*, p.name as product_name, p.sku 
-       FROM purchase_order_items poi
-       JOIN products p ON poi.product_id = p.id
-       WHERE poi.po_id = $1`,
-      [id]
-    );
+			const itemsResult = await db.select({
+				id: purchaseOrderItems.id,
+				poId: purchaseOrderItems.poId,
+				productId: purchaseOrderItems.productId,
+				qty: purchaseOrderItems.qty,
+				costPrice: purchaseOrderItems.costPrice,
+				product_name: products.name,
+				sku: products.sku
+			})
+			.from(purchaseOrderItems)
+			.innerJoin(products, eq(purchaseOrderItems.productId, products.id))
+			.where(eq(purchaseOrderItems.poId, id));
 
-    return {
-      success: true,
-      data: {
-        ...poResult.rows[0],
-        items: itemsResult.rows,
-      },
-    };
-  });
+			return {
+				success: true,
+				data: {
+					...poResult[0],
+					items: itemsResult,
+				},
+			};
+		},
+	);
 
-  // Create a new PO
-  fastify.post('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { warehouse_id, supplier_id, expected_date, notes, items } = request.body as any;
+	fastify.post(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { warehouse_id, supplier_id, expected_date, notes, items } = request.body as any;
 
-    if (!warehouse_id || !supplier_id || !items || items.length === 0) {
-      return reply.status(400).send({ success: false, error: { message: 'Data PO tidak lengkap' } });
-    }
+			if (!warehouse_id || !supplier_id || !items || items.length === 0) {
+				return reply.status(400).send({
+					success: false,
+					error: { message: "Data PO tidak lengkap" },
+				});
+			}
 
-    const client = await getClient();
-    try {
-      await client.query('BEGIN');
+			try {
+				const newPo = await db.transaction(async (tx) => {
+					const countResult = await tx.select({ count: sql<number>`count(*)` }).from(purchaseOrders).where(eq(purchaseOrders.businessId, businessId));
+					const nextId = Number(countResult[0].count) + 1;
+					const poNumber = `PO/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${String(nextId).padStart(4, "0")}`;
 
-      // Generate PO Number
-      const countResult = await client.query('SELECT COUNT(*) FROM purchase_orders WHERE business_id = $1', [businessId]);
-      const nextId = parseInt(countResult.rows[0].count, 10) + 1;
-      const poNumber = `PO/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${String(nextId).padStart(4, '0')}`;
+					let totalAmount = 0;
+					for (const item of items) {
+						totalAmount += item.qty * item.cost_price;
+					}
 
-      // Calculate total amount
-      let totalAmount = 0;
-      for (const item of items) {
-        totalAmount += (item.qty * item.cost_price);
-      }
+					const [po] = await tx.insert(purchaseOrders).values({
+						businessId,
+						warehouseId: warehouse_id,
+						supplierId: supplier_id,
+						poNumber,
+						status: 'draft',
+						totalAmount: totalAmount.toString(),
+						expectedDate: expected_date ? new Date(expected_date).toISOString() : null,
+						notes: notes || null,
+						createdBy: user.id,
+					}).returning();
 
-      // Insert PO
-      const poRes = await client.query(
-        `INSERT INTO purchase_orders (business_id, warehouse_id, supplier_id, po_number, status, total_amount, expected_date, notes, created_by)
-         VALUES ($1, $2, $3, $4, 'draft', $5, $6, $7, $8) RETURNING *`,
-        [businessId, warehouse_id, supplier_id, poNumber, totalAmount, expected_date || null, notes || null, user.id]
-      );
-      const newPo = poRes.rows[0];
+					for (const item of items) {
+						await tx.insert(purchaseOrderItems).values({
+							poId: po.id,
+							productId: item.product_id,
+							qty: item.qty,
+							costPrice: item.cost_price.toString(),
+						});
+					}
 
-      // Insert Items
-      for (const item of items) {
-        await client.query(
-          `INSERT INTO purchase_order_items (po_id, product_id, qty, cost_price)
-           VALUES ($1, $2, $3, $4)`,
-          [newPo.id, item.product_id, item.qty, item.cost_price]
-        );
-      }
+					return po;
+				});
 
-      await client.query('COMMIT');
-      return reply.status(201).send({ success: true, data: newPo });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-  });
+				return reply.status(201).send({ success: true, data: newPo });
+			} catch (error) {
+				throw error;
+			}
+		},
+	);
 
-  // Update PO Status
-  fastify.patch('/:id/status', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
-    const { status } = request.body as any;
+	fastify.patch(
+		"/:id/status",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
+			const { status } = request.body as any;
 
-    if (!['draft', 'ordered', 'received'].includes(status)) {
-      return reply.status(400).send({ success: false, error: { message: 'Status tidak valid' } });
-    }
+			if (!["draft", "ordered", "received"].includes(status)) {
+				return reply.status(400).send({ success: false, error: { message: "Status tidak valid" } });
+			}
 
-    const client = await getClient();
-    try {
-      await client.query('BEGIN');
+			try {
+				const updatedPo = await db.transaction(async (tx) => {
+					// We can't do FOR UPDATE simply in Drizzle easily without sql``, but it's fine for simple app
+					const poRes = await tx.select().from(purchaseOrders).where(and(eq(purchaseOrders.id, id), eq(purchaseOrders.businessId, businessId)));
 
-      // Check current PO
-      const poRes = await client.query(
-        `SELECT * FROM purchase_orders WHERE id = $1 AND business_id = $2 FOR UPDATE`,
-        [id, businessId]
-      );
+					if (poRes.length === 0) {
+						throw new Error("PO tidak ditemukan");
+					}
 
-      if (poRes.rowCount === 0) {
-        await client.query('ROLLBACK');
-        return reply.status(404).send({ success: false, error: { message: 'PO tidak ditemukan' } });
-      }
+					const po = poRes[0];
+					if (po.status === "received") {
+						throw new Error("PO yang sudah diterima tidak dapat diubah statusnya");
+					}
 
-      const po = poRes.rows[0];
-      if (po.status === 'received') {
-        await client.query('ROLLBACK');
-        return reply.status(400).send({ success: false, error: { message: 'PO yang sudah diterima tidak dapat diubah statusnya' } });
-      }
+					const [updated] = await tx.update(purchaseOrders)
+						.set({ status, updatedAt: new Date().toISOString() })
+						.where(eq(purchaseOrders.id, id))
+						.returning();
 
-      // Update status
-      const updateRes = await client.query(
-        `UPDATE purchase_orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-        [status, id]
-      );
-      const updatedPo = updateRes.rows[0];
+					if (status === "received") {
+						const itemsRes = await tx.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.poId, id));
 
-      // If status changes to 'received', update product stock!
-      if (status === 'received') {
-        const itemsRes = await client.query(`SELECT * FROM purchase_order_items WHERE po_id = $1`, [id]);
-        
-        for (const item of itemsRes.rows) {
-          // Check if stock entry exists for this warehouse
-          const stockRes = await client.query(
-            `SELECT quantity FROM product_stock WHERE product_id = $1 AND warehouse_id = $2`,
-            [item.product_id, po.warehouse_id]
-          );
+						for (const item of itemsRes) {
+							const stockRes = await tx.select({ quantity: productStock.quantity })
+								.from(productStock)
+								.where(and(eq(productStock.productId, item.productId), eq(productStock.warehouseId, po.warehouseId)));
 
-          if (stockRes.rowCount === 0) {
-            // Insert
-            await client.query(
-              `INSERT INTO product_stock (product_id, warehouse_id, quantity) VALUES ($1, $2, $3)`,
-              [item.product_id, po.warehouse_id, item.qty]
-            );
-          } else {
-            // Update
-            await client.query(
-              `UPDATE product_stock SET quantity = quantity + $1, updated_at = NOW() WHERE product_id = $2 AND warehouse_id = $3`,
-              [item.qty, item.product_id, po.warehouse_id]
-            );
-          }
-        }
-      }
+							if (stockRes.length === 0) {
+								await tx.insert(productStock).values({
+									productId: item.productId,
+									warehouseId: po.warehouseId,
+									quantity: item.qty
+								});
+							} else {
+								await tx.update(productStock)
+									.set({
+										quantity: sql`${productStock.quantity} + ${item.qty}`,
+										updatedAt: new Date().toISOString()
+									})
+									.where(and(eq(productStock.productId, item.productId), eq(productStock.warehouseId, po.warehouseId)));
+							}
+						}
+					}
 
-      await client.query('COMMIT');
-      return reply.send({ success: true, data: updatedPo });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-  });
+					return updated;
+				});
+
+				return reply.send({ success: true, data: updatedPo });
+			} catch (error: any) {
+				const statusMap: Record<string, number> = { "PO tidak ditemukan": 404, "PO yang sudah diterima tidak dapat diubah statusnya": 400 };
+				if (statusMap[error.message]) {
+					return reply.status(statusMap[error.message]).send({ success: false, error: { message: error.message } });
+				}
+				throw error;
+			}
+		},
+	);
 }

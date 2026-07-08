@@ -1,78 +1,83 @@
-import { FastifyInstance } from 'fastify';
-import { query } from '../../plugins/database.js';
+import { FastifyInstance } from "fastify";
+import { db } from "../../plugins/drizzle.js";
+import { suppliers } from "../../db/schema.js";
+import { eq, and, asc } from "drizzle-orm";
 
 export default async function supplierRoutes(fastify: FastifyInstance) {
-  // Get all suppliers
-  fastify.get('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
+	fastify.get(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.read')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
 
-    const result = await query(
-      `SELECT * FROM suppliers WHERE business_id = $1 ORDER BY name ASC`,
-      [businessId]
-    );
+			const result = await db.select()
+				.from(suppliers)
+				.where(eq(suppliers.businessId, businessId))
+				.orderBy(asc(suppliers.name));
 
-    return {
-      success: true,
-      data: result.rows,
-    };
-  });
+			return { success: true, data: result };
+		},
+	);
 
-  // Create a new supplier
-  fastify.post('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { name, contact_name, phone, address, email } = request.body as any;
+	fastify.post(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { name, contact_name, phone, address, email } = request.body as any;
 
-    if (!name) {
-      return reply.status(400).send({ success: false, error: { message: 'Nama supplier wajib diisi' } });
-    }
+			if (!name) {
+				return reply.status(400).send({
+					success: false,
+					error: { message: "Nama supplier wajib diisi" },
+				});
+			}
 
-    const result = await query(
-      `INSERT INTO suppliers (business_id, name, contact_name, phone, address, email)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [businessId, name, contact_name, phone, address, email]
-    );
+			const result = await db.insert(suppliers).values({
+				businessId,
+				name,
+				contactName: contact_name,
+				phone,
+				address,
+				email
+			}).returning();
 
-    return reply.status(201).send({
-      success: true,
-      data: result.rows[0],
-    });
-  });
+			return reply.status(201).send({ success: true, data: result[0] });
+		},
+	);
 
-  // Update supplier
-  fastify.put('/:id', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
-    const { name, contact_name, phone, address, email, is_active } = request.body as any;
+	fastify.put(
+		"/:id",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('purchases.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
+			const { name, contact_name, phone, address, email, is_active } = request.body as any;
 
-    const result = await query(
-      `UPDATE suppliers 
-       SET name = COALESCE($1, name), 
-           contact_name = COALESCE($2, contact_name),
-           phone = COALESCE($3, phone),
-           address = COALESCE($4, address),
-           email = COALESCE($5, email),
-           is_active = COALESCE($6, is_active),
-           updated_at = NOW()
-       WHERE id = $7 AND business_id = $8 RETURNING *`,
-      [name, contact_name, phone, address, email, is_active, id, businessId]
-    );
+			const updateData: any = { updatedAt: new Date().toISOString() };
+			if (name !== undefined) updateData.name = name;
+			if (contact_name !== undefined) updateData.contactName = contact_name;
+			if (phone !== undefined) updateData.phone = phone;
+			if (address !== undefined) updateData.address = address;
+			if (email !== undefined) updateData.email = email;
+			if (is_active !== undefined) updateData.isActive = is_active;
 
-    if (result.rowCount === 0) {
-      return reply.status(404).send({ success: false, error: { message: 'Supplier tidak ditemukan' } });
-    }
+			const result = await db.update(suppliers)
+				.set(updateData)
+				.where(and(eq(suppliers.id, id), eq(suppliers.businessId, businessId)))
+				.returning();
 
-    return {
-      success: true,
-      data: result.rows[0],
-    };
-  });
+			if (result.length === 0) {
+				return reply.status(404).send({
+					success: false,
+					error: { message: "Supplier tidak ditemukan" },
+				});
+			}
+
+			return { success: true, data: result[0] };
+		},
+	);
 }

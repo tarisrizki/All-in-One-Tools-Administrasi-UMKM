@@ -1,214 +1,328 @@
-import type { FastifyInstance } from 'fastify';
-import { query } from '../../plugins/database.js';
+import type { FastifyInstance } from "fastify";
+import { db } from "../../plugins/drizzle.js";
+import { sales, saleItems, products, cashbookEntries, debtPayments, debts, purchaseOrders, productStock } from "../../db/schema.js";
+import { eq, and, sql, gte, lte, ne } from "drizzle-orm";
 
 export default async function reportRoutes(app: FastifyInstance) {
-  app.addHook('preValidation', app.authenticate);
+	app.addHook("preValidation", app.authenticate);
 
-  app.get('/profit-loss', async (request, reply) => {
-    try {
-      const { businessId } = request.user;
-      const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
-      
-      let dateFilterSales = '';
-      const params: unknown[] = [businessId];
-      
-      if (startDate && endDate) {
-         dateFilterSales = ` AND s.created_at >= $2 AND s.created_at <= $3`;
-         // sales query doesn't use alias for the first query, let's fix it
-         // cashbook uses entry_date which is DATE, created_at is TIMESTAMPTZ
-         params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
-      }
+	app.get("/profit-loss", { preHandler: [app.requirePermission('reports.read')] }, async (request, reply) => {
+		try {
+			const { businessId } = request.user;
+			const { startDate, endDate } = request.query as {
+				startDate?: string;
+				endDate?: string;
+			};
 
-      // Calculate Total Revenue from POS Sales
-      const salesRes = await query(
-        `SELECT COALESCE(SUM(s.grand_total), 0) as total_revenue
-         FROM sales s
-         WHERE s.business_id = $1 AND s.status != 'void'${dateFilterSales}`,
-        params
-      );
-      const totalRevenue = parseFloat(salesRes.rows[0]?.total_revenue || 0);
+			let dateFilterSales = sql`1=1`;
+			let dateFilterCashbook = sql`1=1`;
 
-      // Calculate Total COGS (Cost of Goods Sold)
-      const cogsRes = await query(
-        `SELECT COALESCE(SUM(si.qty * p.cost_price), 0) as total_cogs
-         FROM sale_items si
-         JOIN sales s ON si.sale_id = s.id
-         JOIN products p ON si.product_id = p.id
-         WHERE s.business_id = $1 AND s.status != 'void'${dateFilterSales}`,
-        params
-      );
-      const totalCogs = parseFloat(cogsRes.rows[0]?.total_cogs || 0);
+			if (startDate && endDate) {
+				dateFilterSales = and(gte(sales.createdAt, `${startDate} 00:00:00`), lte(sales.createdAt, `${endDate} 23:59:59`)) as any;
+				dateFilterCashbook = and(gte(cashbookEntries.entryDate, startDate), lte(cashbookEntries.entryDate, endDate)) as any;
+			}
 
-      // Calculate Cashbook Income and Expense
-      let dateFilterCashbook = '';
-      const paramsCash = [businessId];
-      if (startDate && endDate) {
-          dateFilterCashbook = ` AND entry_date >= $2 AND entry_date <= $3`;
-          paramsCash.push(startDate, endDate);
-      }
+			// Total Revenue
+			const salesRes = await db.select({
+				total_revenue: sql`COALESCE(SUM(CAST(${sales.grandTotal} AS NUMERIC)), 0)`
+			}).from(sales).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+			const totalRevenue = parseFloat(salesRes[0]?.total_revenue as any || 0);
 
-      const cashbookRes = await query(
-        `SELECT type, COALESCE(SUM(amount), 0) as total
-         FROM cashbook_entries 
-         WHERE business_id = $1${dateFilterCashbook}
-         GROUP BY type`,
-        paramsCash
-      );
+			// Total COGS
+			const cogsRes = await db.select({
+				total_cogs: sql`COALESCE(SUM(${saleItems.qty} * CAST(${products.costPrice} AS NUMERIC)), 0)`
+			}).from(saleItems)
+			  .innerJoin(sales, eq(saleItems.saleId, sales.id))
+			  .innerJoin(products, eq(saleItems.productId, products.id))
+			  .where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+			const totalCogs = parseFloat(cogsRes[0]?.total_cogs as any || 0);
 
-      let totalCashIncome = 0;
-      let totalCashExpense = 0;
+			// Cashbook
+			const cashbookRes = await db.select({
+				type: cashbookEntries.type,
+				total: sql`COALESCE(SUM(CAST(${cashbookEntries.amount} AS NUMERIC)), 0)`
+			}).from(cashbookEntries).where(and(eq(cashbookEntries.businessId, businessId), dateFilterCashbook)).groupBy(cashbookEntries.type);
 
-      for (const row of cashbookRes.rows) {
-        if (row.type === 'in') {
-          totalCashIncome = parseFloat(row.total);
-        } else if (row.type === 'out') {
-          totalCashExpense = parseFloat(row.total);
-        }
-      }
+			let totalCashIncome = 0;
+			let totalCashExpense = 0;
+			for (const row of cashbookRes) {
+				if (row.type === "in") totalCashIncome = parseFloat(row.total as any);
+				else if (row.type === "out") totalCashExpense = parseFloat(row.total as any);
+			}
 
-      const grossProfit = totalRevenue - totalCogs;
-      const netProfit = (grossProfit + totalCashIncome) - totalCashExpense;
+			const grossProfit = totalRevenue - totalCogs;
+			const netProfit = grossProfit + totalCashIncome - totalCashExpense;
 
-      return reply.send({ 
-        success: true, 
-        data: {
-          totalRevenue,
-          totalCogs,
-          grossProfit,
-          totalCashIncome,
-          totalCashExpense,
-          netProfit
-        }
-      });
-    } catch (err: unknown) {
-      app.log.error(err);
-      return reply.status(500).send({ success: false, error: { message: 'Gagal menghitung laporan laba rugi' } });
-    }
-  });
+			return reply.send({
+				success: true,
+				data: { totalRevenue, totalCogs, grossProfit, totalCashIncome, totalCashExpense, netProfit },
+			});
+		} catch (err: unknown) {
+			app.log.error(err);
+			return reply.status(500).send({ success: false, error: { message: "Gagal menghitung laporan laba rugi" } });
+		}
+	});
 
-  // Cash Flow Report
-  app.get('/cash-flow', async (request, reply) => {
-    try {
-      const { businessId } = request.user as any;
-      const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
-      
-      const params: unknown[] = [businessId];
-      let dateFilterSales = '';
-      let dateFilterCashbook = '';
-      let dateFilterDebt = '';
-      let dateFilterPurchase = '';
+	app.get("/cash-flow", { preHandler: [app.requirePermission('reports.read')] }, async (request, reply) => {
+		try {
+			const { businessId } = request.user as any;
+			const { startDate, endDate } = request.query as {
+				startDate?: string;
+				endDate?: string;
+			};
 
-      if (startDate && endDate) {
-         dateFilterSales = ` AND created_at >= $2 AND created_at <= $3`;
-         dateFilterCashbook = ` AND entry_date >= $2 AND entry_date <= $3`;
-         dateFilterDebt = ` AND payment_date >= $2 AND payment_date <= $3`;
-         dateFilterPurchase = ` AND created_at >= $2 AND created_at <= $3`;
-         params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
-      }
+			let dateFilterSales = sql`1=1`;
+			let dateFilterCashbook = sql`1=1`;
+			let dateFilterDebt = sql`1=1`;
+			let dateFilterPurchase = sql`1=1`;
 
-      // Cash In: POS Sales
-      const salesRes = await query(`SELECT COALESCE(SUM(grand_total), 0) as total FROM sales WHERE business_id = $1 AND status != 'void'${dateFilterSales}`, params);
-      const totalSalesIn = parseFloat(salesRes.rows[0]?.total || 0);
+			if (startDate && endDate) {
+				dateFilterSales = and(gte(sales.createdAt, `${startDate} 00:00:00`), lte(sales.createdAt, `${endDate} 23:59:59`)) as any;
+				dateFilterCashbook = and(gte(cashbookEntries.entryDate, startDate), lte(cashbookEntries.entryDate, endDate)) as any;
+				dateFilterDebt = and(gte(debtPayments.paymentDate, startDate), lte(debtPayments.paymentDate, endDate)) as any;
+				dateFilterPurchase = and(gte(purchaseOrders.createdAt, `${startDate} 00:00:00`), lte(purchaseOrders.createdAt, `${endDate} 23:59:59`)) as any;
+			}
 
-      // Cash In: Cashbook In
-      const cashbookInRes = await query(`SELECT COALESCE(SUM(amount), 0) as total FROM cashbook_entries WHERE business_id = $1 AND type = 'in'${dateFilterCashbook}`, params);
-      const totalCashbookIn = parseFloat(cashbookInRes.rows[0]?.total || 0);
+			const salesRes = await db.select({ total: sql`COALESCE(SUM(CAST(${sales.grandTotal} AS NUMERIC)), 0)` }).from(sales).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+			const totalSalesIn = parseFloat(salesRes[0]?.total as any || 0);
 
-      // Cash In: Piutang Pelanggan (Receivable) dibayar
-      const receivableRes = await query(`
-        SELECT COALESCE(SUM(dp.amount), 0) as total 
-        FROM debt_payments dp 
-        JOIN debts d ON dp.debt_id = d.id 
-        WHERE d.business_id = $1 AND d.type = 'receivable'${dateFilterDebt.replace(/payment_date/g, 'dp.payment_date')}
-      `, params);
-      const totalReceivableIn = parseFloat(receivableRes.rows[0]?.total || 0);
+			const cashbookInRes = await db.select({ total: sql`COALESCE(SUM(CAST(${cashbookEntries.amount} AS NUMERIC)), 0)` }).from(cashbookEntries).where(and(eq(cashbookEntries.businessId, businessId), eq(cashbookEntries.type, 'in'), dateFilterCashbook));
+			const totalCashbookIn = parseFloat(cashbookInRes[0]?.total as any || 0);
 
-      // Cash Out: Purchases (Beli ke supplier)
-      const purchaseRes = await query(`SELECT COALESCE(SUM(total_amount), 0) as total FROM purchases WHERE business_id = $1${dateFilterPurchase}`, params);
-      const totalPurchaseOut = parseFloat(purchaseRes.rows[0]?.total || 0);
+			const receivableRes = await db.select({ total: sql`COALESCE(SUM(CAST(${debtPayments.amount} AS NUMERIC)), 0)` }).from(debtPayments).innerJoin(debts, eq(debtPayments.debtId, debts.id)).where(and(eq(debts.businessId, businessId), eq(debts.type, 'receivable'), dateFilterDebt));
+			const totalReceivableIn = parseFloat(receivableRes[0]?.total as any || 0);
 
-      // Cash Out: Cashbook Out
-      const cashbookOutRes = await query(`SELECT COALESCE(SUM(amount), 0) as total FROM cashbook_entries WHERE business_id = $1 AND type = 'out'${dateFilterCashbook}`, params);
-      const totalCashbookOut = parseFloat(cashbookOutRes.rows[0]?.total || 0);
+			const purchaseRes = await db.select({ total: sql`COALESCE(SUM(CAST(${purchaseOrders.totalAmount} AS NUMERIC)), 0)` }).from(purchaseOrders).where(and(eq(purchaseOrders.businessId, businessId), dateFilterPurchase));
+			const totalPurchaseOut = parseFloat(purchaseRes[0]?.total as any || 0);
 
-      // Cash Out: Hutang (Payable) dibayar
-      const payableRes = await query(`
-        SELECT COALESCE(SUM(dp.amount), 0) as total 
-        FROM debt_payments dp 
-        JOIN debts d ON dp.debt_id = d.id 
-        WHERE d.business_id = $1 AND d.type = 'payable'${dateFilterDebt.replace(/payment_date/g, 'dp.payment_date')}
-      `, params);
-      const totalPayableOut = parseFloat(payableRes.rows[0]?.total || 0);
+			const cashbookOutRes = await db.select({ total: sql`COALESCE(SUM(CAST(${cashbookEntries.amount} AS NUMERIC)), 0)` }).from(cashbookEntries).where(and(eq(cashbookEntries.businessId, businessId), eq(cashbookEntries.type, 'out'), dateFilterCashbook));
+			const totalCashbookOut = parseFloat(cashbookOutRes[0]?.total as any || 0);
 
-      const totalCashIn = totalSalesIn + totalCashbookIn + totalReceivableIn;
-      const totalCashOut = totalPurchaseOut + totalCashbookOut + totalPayableOut;
-      const netCashFlow = totalCashIn - totalCashOut;
+			const payableRes = await db.select({ total: sql`COALESCE(SUM(CAST(${debtPayments.amount} AS NUMERIC)), 0)` }).from(debtPayments).innerJoin(debts, eq(debtPayments.debtId, debts.id)).where(and(eq(debts.businessId, businessId), eq(debts.type, 'payable'), dateFilterDebt));
+			const totalPayableOut = parseFloat(payableRes[0]?.total as any || 0);
 
-      return reply.send({ 
-        success: true, 
-        data: {
-          cashIn: {
-             sales: totalSalesIn,
-             cashbook: totalCashbookIn,
-             receivable: totalReceivableIn,
-             total: totalCashIn
-          },
-          cashOut: {
-             purchases: totalPurchaseOut,
-             cashbook: totalCashbookOut,
-             payable: totalPayableOut,
-             total: totalCashOut
-          },
-          netCashFlow
-        }
-      });
-    } catch (err: unknown) {
-      app.log.error(err);
-      return reply.status(500).send({ success: false, error: { message: 'Gagal menghitung laporan arus kas' } });
-    }
-  });
+			const totalCashIn = totalSalesIn + totalCashbookIn + totalReceivableIn;
+			const totalCashOut = totalPurchaseOut + totalCashbookOut + totalPayableOut;
+			const netCashFlow = totalCashIn - totalCashOut;
 
-  // Dashboard Metrics
-  app.get('/dashboard', async (request, reply) => {
-    try {
-      const { businessId } = request.user as any;
-      const tzOffset = '+07:00'; // Defaulting to WIB for today's calculation or use simple db dates
-      
-      // Today metrics
-      const todayRes = await query(`
-        SELECT COALESCE(SUM(grand_total), 0) as today_sales, COUNT(id) as today_transactions
-        FROM sales 
-        WHERE business_id = $1 AND status != 'void' AND DATE(created_at AT TIME ZONE 'Asia/Jakarta') = CURRENT_DATE
-      `, [businessId]);
-      
-      const todaySales = parseFloat(todayRes.rows[0]?.today_sales || 0);
-      const todayTransactions = parseInt(todayRes.rows[0]?.today_transactions || 0);
+			return reply.send({ success: true, data: { cashIn: { sales: totalSalesIn, cashbook: totalCashbookIn, receivable: totalReceivableIn, total: totalCashIn }, cashOut: { purchases: totalPurchaseOut, cashbook: totalCashbookOut, payable: totalPayableOut, total: totalCashOut }, netCashFlow } });
+		} catch (err: unknown) {
+			return reply.status(500).send({ success: false, error: { message: "Gagal menghitung laporan arus kas" } });
+		}
+	});
 
-      // Last 7 days metrics
-      const weeklyRes = await query(`
-        SELECT DATE(created_at AT TIME ZONE 'Asia/Jakarta') as sale_date, COALESCE(SUM(grand_total), 0) as daily_total
-        FROM sales
-        WHERE business_id = $1 AND status != 'void' AND created_at >= NOW() - INTERVAL '7 days'
-        GROUP BY DATE(created_at AT TIME ZONE 'Asia/Jakarta')
-        ORDER BY sale_date ASC
-      `, [businessId]);
+	app.get("/sales", { preHandler: [app.requirePermission('reports.read')] }, async (request, reply) => {
+		try {
+			const { businessId } = request.user;
+			const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
 
-      const weeklyData = weeklyRes.rows.map(r => ({
-          date: r.sale_date,
-          total: parseFloat(r.daily_total)
-      }));
+			let dateFilterSales = sql`1=1`;
+			if (startDate && endDate) {
+				dateFilterSales = and(gte(sales.createdAt, `${startDate} 00:00:00`), lte(sales.createdAt, `${endDate} 23:59:59`)) as any;
+			}
 
-      return reply.send({ 
-        success: true, 
-        data: {
-           todaySales,
-           todayTransactions,
-           weeklyData
-        }
-      });
-    } catch (err: unknown) {
-      app.log.error(err);
-      return reply.status(500).send({ success: false, error: { message: 'Gagal mengambil data dashboard' } });
-    }
-  });
+			const salesRes = await db.select({
+				totalRevenue: sql`COALESCE(SUM(CAST(${sales.grandTotal} AS NUMERIC)), 0)`,
+				totalTransactions: sql`COUNT(${sales.id})`,
+			}).from(sales).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+			
+			const totalRevenue = parseFloat(salesRes[0]?.totalRevenue as any || 0);
+			const totalTransactions = parseInt(salesRes[0]?.totalTransactions as any || 0);
+
+			const topProducts = await db.select({
+				name: products.name,
+				qty: sql`SUM(${saleItems.qty})`.mapWith(Number),
+				revenue: sql`SUM(${saleItems.qty} * CAST(${saleItems.price} AS NUMERIC))`.mapWith(Number)
+			}).from(saleItems)
+			.innerJoin(sales, eq(saleItems.saleId, sales.id))
+			.innerJoin(products, eq(saleItems.productId, products.id))
+			.where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales))
+			.groupBy(products.id)
+			.orderBy(sql`SUM(${saleItems.qty}) DESC`)
+			.limit(10);
+
+			return reply.send({ success: true, data: { totalRevenue, totalTransactions, topProducts } });
+		} catch (err: unknown) {
+			return reply.status(500).send({ success: false, error: { message: "Gagal menghitung laporan penjualan" } });
+		}
+	});
+
+	app.get("/inventory", { preHandler: [app.requirePermission('reports.read')] }, async (request, reply) => {
+		try {
+			const { businessId } = request.user;
+			
+			const valueRes = await db.select({
+				totalValue: sql`COALESCE(SUM(${productStock.quantity} * CAST(${products.costPrice} AS NUMERIC)), 0)`
+			}).from(productStock)
+			.innerJoin(products, eq(productStock.productId, products.id))
+			.where(eq(products.businessId, businessId));
+
+			const totalStockValue = parseFloat(valueRes[0]?.totalValue as any || 0);
+
+			const lowStock = await db.select({
+				name: products.name,
+				stock: productStock.quantity,
+				minStock: products.minStock
+			}).from(productStock)
+			.innerJoin(products, eq(productStock.productId, products.id))
+			.where(and(eq(products.businessId, businessId), lte(productStock.quantity, products.minStock)))
+			.orderBy(productStock.quantity);
+
+			return reply.send({ success: true, data: { totalStockValue, lowStock } });
+		} catch (err: unknown) {
+			return reply.status(500).send({ success: false, error: { message: "Gagal menghitung laporan inventori" } });
+		}
+	});
+
+	app.get("/dashboard", async (request, reply) => {
+		try {
+			const { businessId } = request.user as any;
+
+			const todayRes = await db.execute(sql`
+				SELECT COALESCE(SUM(CAST(grand_total AS NUMERIC)), 0) as today_sales, COUNT(id) as today_transactions
+				FROM sales 
+				WHERE business_id = ${businessId} AND status != 'void' AND DATE(created_at AT TIME ZONE 'Asia/Jakarta') = CURRENT_DATE
+			`);
+
+			const todaySales = parseFloat(todayRes.rows[0]?.today_sales as any || 0);
+			const todayTransactions = parseInt(todayRes.rows[0]?.today_transactions as any || 0);
+
+			const weeklyRes = await db.execute(sql`
+				SELECT DATE(created_at AT TIME ZONE 'Asia/Jakarta') as sale_date, COALESCE(SUM(CAST(grand_total AS NUMERIC)), 0) as daily_total
+				FROM sales
+				WHERE business_id = ${businessId} AND status != 'void' AND created_at >= NOW() - INTERVAL '7 days'
+				GROUP BY DATE(created_at AT TIME ZONE 'Asia/Jakarta')
+				ORDER BY sale_date ASC
+			`);
+
+			const weeklyData = weeklyRes.rows.map((r: any) => ({
+				date: r.sale_date,
+				total: parseFloat(r.daily_total),
+			}));
+
+			return reply.send({ success: true, data: { todaySales, todayTransactions, weeklyData } });
+		} catch (err: unknown) {
+			return reply.status(500).send({ success: false, error: { message: "Gagal mengambil data dashboard" } });
+		}
+	});
+
+	app.get("/export", { preHandler: [app.requirePermission('reports.read')] }, async (request, reply) => {
+		try {
+			const { businessId } = request.user as any;
+			const { tab, format, startDate, endDate } = request.query as {
+				tab: string; // 'profit-loss' | 'cash-flow'
+				format: string; // 'pdf' | 'excel'
+				startDate?: string;
+				endDate?: string;
+			};
+
+			if (!tab || !format) return reply.status(400).send({ success: false, error: { message: "Parameter tab dan format diperlukan" } });
+
+			// Simulate request to existing routes to reuse logic
+			let reportData: any;
+
+			// Re-use logic for Profit-Loss
+			let dateFilterSales = sql`1=1`;
+			let dateFilterCashbook = sql`1=1`;
+			let dateFilterDebt = sql`1=1`;
+			let dateFilterPurchase = sql`1=1`;
+
+			if (startDate && endDate) {
+				dateFilterSales = and(gte(sales.createdAt, `${startDate} 00:00:00`), lte(sales.createdAt, `${endDate} 23:59:59`)) as any;
+				dateFilterCashbook = and(gte(cashbookEntries.entryDate, startDate), lte(cashbookEntries.entryDate, endDate)) as any;
+				dateFilterDebt = and(gte(debtPayments.paymentDate, startDate), lte(debtPayments.paymentDate, endDate)) as any;
+				dateFilterPurchase = and(gte(purchaseOrders.createdAt, `${startDate} 00:00:00`), lte(purchaseOrders.createdAt, `${endDate} 23:59:59`)) as any;
+			}
+
+			if (tab === 'profit-loss') {
+				const salesRes = await db.select({ total_revenue: sql`COALESCE(SUM(CAST(${sales.grandTotal} AS NUMERIC)), 0)` }).from(sales).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+				const totalRevenue = parseFloat(salesRes[0]?.total_revenue as any || 0);
+
+				const cogsRes = await db.select({ total_cogs: sql`COALESCE(SUM(${saleItems.qty} * CAST(${products.costPrice} AS NUMERIC)), 0)` }).from(saleItems).innerJoin(sales, eq(saleItems.saleId, sales.id)).innerJoin(products, eq(saleItems.productId, products.id)).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+				const totalCogs = parseFloat(cogsRes[0]?.total_cogs as any || 0);
+
+				const cashbookRes = await db.select({ type: cashbookEntries.type, total: sql`COALESCE(SUM(CAST(${cashbookEntries.amount} AS NUMERIC)), 0)` }).from(cashbookEntries).where(and(eq(cashbookEntries.businessId, businessId), dateFilterCashbook)).groupBy(cashbookEntries.type);
+				let totalCashIncome = 0;
+				let totalCashExpense = 0;
+				for (const row of cashbookRes) {
+					if (row.type === "in") totalCashIncome = parseFloat(row.total as any);
+					else if (row.type === "out") totalCashExpense = parseFloat(row.total as any);
+				}
+				const grossProfit = totalRevenue - totalCogs;
+				const netProfit = grossProfit + totalCashIncome - totalCashExpense;
+				reportData = { totalRevenue, totalCogs, grossProfit, totalCashIncome, totalCashExpense, netProfit };
+			} else if (tab === 'cash-flow') {
+				const salesRes = await db.select({ total: sql`COALESCE(SUM(CAST(${sales.grandTotal} AS NUMERIC)), 0)` }).from(sales).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+				const totalSalesIn = parseFloat(salesRes[0]?.total as any || 0);
+
+				const cashbookInRes = await db.select({ total: sql`COALESCE(SUM(CAST(${cashbookEntries.amount} AS NUMERIC)), 0)` }).from(cashbookEntries).where(and(eq(cashbookEntries.businessId, businessId), eq(cashbookEntries.type, 'in'), dateFilterCashbook));
+				const totalCashbookIn = parseFloat(cashbookInRes[0]?.total as any || 0);
+
+				const receivableRes = await db.select({ total: sql`COALESCE(SUM(CAST(${debtPayments.amount} AS NUMERIC)), 0)` }).from(debtPayments).innerJoin(debts, eq(debtPayments.debtId, debts.id)).where(and(eq(debts.businessId, businessId), eq(debts.type, 'receivable'), dateFilterDebt));
+				const totalReceivableIn = parseFloat(receivableRes[0]?.total as any || 0);
+
+				const purchaseRes = await db.select({ total: sql`COALESCE(SUM(CAST(${purchaseOrders.totalAmount} AS NUMERIC)), 0)` }).from(purchaseOrders).where(and(eq(purchaseOrders.businessId, businessId), dateFilterPurchase));
+				const totalPurchaseOut = parseFloat(purchaseRes[0]?.total as any || 0);
+
+				const cashbookOutRes = await db.select({ total: sql`COALESCE(SUM(CAST(${cashbookEntries.amount} AS NUMERIC)), 0)` }).from(cashbookEntries).where(and(eq(cashbookEntries.businessId, businessId), eq(cashbookEntries.type, 'out'), dateFilterCashbook));
+				const totalCashbookOut = parseFloat(cashbookOutRes[0]?.total as any || 0);
+
+				const payableRes = await db.select({ total: sql`COALESCE(SUM(CAST(${debtPayments.amount} AS NUMERIC)), 0)` }).from(debtPayments).innerJoin(debts, eq(debtPayments.debtId, debts.id)).where(and(eq(debts.businessId, businessId), eq(debts.type, 'payable'), dateFilterDebt));
+				const totalPayableOut = parseFloat(payableRes[0]?.total as any || 0);
+
+				const totalCashIn = totalSalesIn + totalCashbookIn + totalReceivableIn;
+				const totalCashOut = totalPurchaseOut + totalCashbookOut + totalPayableOut;
+				const netCashFlow = totalCashIn - totalCashOut;
+				reportData = { cashIn: { sales: totalSalesIn, cashbook: totalCashbookIn, receivable: totalReceivableIn, total: totalCashIn }, cashOut: { purchases: totalPurchaseOut, cashbook: totalCashbookOut, payable: totalPayableOut, total: totalCashOut }, netCashFlow };
+			} else if (tab === 'sales') {
+				const salesRes = await db.select({
+					totalRevenue: sql`COALESCE(SUM(CAST(${sales.grandTotal} AS NUMERIC)), 0)`,
+					totalTransactions: sql`COUNT(${sales.id})`,
+				}).from(sales).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales));
+				const totalRevenue = parseFloat(salesRes[0]?.totalRevenue as any || 0);
+				const totalTransactions = parseInt(salesRes[0]?.totalTransactions as any || 0);
+
+				const topProducts = await db.select({
+					name: products.name,
+					qty: sql`SUM(${saleItems.qty})`.mapWith(Number),
+					revenue: sql`SUM(${saleItems.qty} * CAST(${saleItems.price} AS NUMERIC))`.mapWith(Number)
+				}).from(saleItems).innerJoin(sales, eq(saleItems.saleId, sales.id)).innerJoin(products, eq(saleItems.productId, products.id)).where(and(eq(sales.businessId, businessId), ne(sales.status, 'void'), dateFilterSales)).groupBy(products.id).orderBy(sql`SUM(${saleItems.qty}) DESC`);
+				reportData = { totalRevenue, totalTransactions, topProducts };
+			} else if (tab === 'inventory') {
+				const valueRes = await db.select({
+					totalValue: sql`COALESCE(SUM(${productStock.quantity} * CAST(${products.costPrice} AS NUMERIC)), 0)`
+				}).from(productStock).innerJoin(products, eq(productStock.productId, products.id)).where(eq(products.businessId, businessId));
+				const totalStockValue = parseFloat(valueRes[0]?.totalValue as any || 0);
+
+				const inventoryItems = await db.select({
+					name: products.name,
+					stock: productStock.quantity,
+					minStock: products.minStock,
+					value: sql`${productStock.quantity} * CAST(${products.costPrice} AS NUMERIC)`.mapWith(Number)
+				}).from(productStock).innerJoin(products, eq(productStock.productId, products.id)).where(eq(products.businessId, businessId)).orderBy(products.name);
+				reportData = { totalStockValue, inventoryItems };
+			}
+
+			// Generate file
+			const { exportToExcel, exportToPDF } = await import("./export.js") as any;
+			let buffer: Buffer;
+
+			if (format === 'excel') {
+				buffer = await exportToExcel(reportData, tab);
+				reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+				reply.header('Content-Disposition', `attachment; filename="Laporan_${tab}.xlsx"`);
+			} else if (format === 'pdf') {
+				buffer = await exportToPDF(reportData, tab);
+				reply.header('Content-Type', 'application/pdf');
+				reply.header('Content-Disposition', `attachment; filename="Laporan_${tab}.pdf"`);
+			} else {
+				return reply.status(400).send({ success: false, error: { message: "Format tidak didukung" } });
+			}
+
+			return reply.send(buffer);
+		} catch (err: unknown) {
+			app.log.error(err);
+			return reply.status(500).send({ success: false, error: { message: "Gagal mengekspor laporan" } });
+		}
+	});
 }

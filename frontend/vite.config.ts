@@ -56,6 +56,9 @@ export default defineConfig({
 			}
 		})
 	],
+	ssr: {
+		noExternal: ['@tanstack/svelte-query']
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

@@ -44,3 +44,22 @@ export function loadAuthFromStorage() {
 		}
 	}
 }
+
+export function hasPermission(requiredPermission: string): boolean {
+	if (!authState.isAuthenticated || !authState.user || !authState.user.permissions) return false;
+	
+	const perms: string[] = authState.user.permissions;
+	if (!Array.isArray(perms)) return false;
+
+	// Owner or Admin wildcard
+	if (perms.includes('*')) return true;
+
+	// Exact match (e.g. 'products.read')
+	if (perms.includes(requiredPermission)) return true;
+
+	// Base module match (e.g. 'products' covers 'products.read')
+	const basePerm = requiredPermission.split('.')[0];
+	if (perms.includes(basePerm)) return true;
+
+	return false;
+}

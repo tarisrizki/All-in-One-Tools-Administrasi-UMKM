@@ -1,107 +1,148 @@
-import { FastifyInstance } from 'fastify';
-import { query } from '../../plugins/database.js';
+import { FastifyInstance } from "fastify";
+import { db } from "../../plugins/drizzle.js";
+import { eq, and, or, ilike, asc, sql, getTableColumns } from "drizzle-orm";
+import { sales, customers } from "../../db/schema.js";
 
 export default async function customerRoutes(fastify: FastifyInstance) {
-  // Get all customers
-  fastify.get('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { search } = request.query as any;
+	fastify.get(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('customers.read')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { search } = request.query as any;
 
-    let sql = `SELECT * FROM customers WHERE business_id = $1`;
-    const params: any[] = [businessId];
+			let conditions = eq(customers.businessId, businessId);
+			if (search) {
+				const searchTerm = `%${search}%`;
+				conditions = and(
+					conditions,
+					or(
+						ilike(customers.name, searchTerm),
+						ilike(customers.phone, searchTerm),
+						ilike(customers.email, searchTerm)
+					)
+				) as any;
+			}
 
-    if (search) {
-      sql += ` AND (name ILIKE $2 OR phone ILIKE $2 OR email ILIKE $2)`;
-      params.push(`%${search}%`);
-    }
+			const rawResult = await db.select({
+				...getTableColumns(customers),
+				totalSpent: sql<number>`COALESCE(SUM(${sales.grandTotal}), 0)`.mapWith(Number)
+			})
+				.from(customers)
+				.leftJoin(sales, and(eq(sales.customerId, customers.id), eq(sales.status, 'paid')))
+				.where(conditions)
+				.groupBy(customers.id)
+				.orderBy(asc(customers.name));
+				
+			const result = rawResult.map(c => {
+				let tier = 'Reguler';
+				if (c.totalSpent >= 5000000) tier = 'Gold';
+				else if (c.totalSpent >= 1000000) tier = 'Silver';
+				
+				return { ...c, tier };
+			});
 
-    sql += ` ORDER BY name ASC`;
+			return { success: true, data: result };
+		},
+	);
 
-    const result = await query(sql, params);
+	fastify.get(
+		"/:id",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('customers.read')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
 
-    return {
-      success: true,
-      data: result.rows,
-    };
-  });
+			const rawResult = await db.select({
+				...getTableColumns(customers),
+				totalSpent: sql<number>`COALESCE(SUM(${sales.grandTotal}), 0)`.mapWith(Number)
+			})
+				.from(customers)
+				.leftJoin(sales, and(eq(sales.customerId, customers.id), eq(sales.status, 'paid')))
+				.where(and(eq(customers.id, id), eq(customers.businessId, businessId)))
+				.groupBy(customers.id);
 
-  // Get specific customer
-  fastify.get('/:id', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
+			if (rawResult.length === 0) {
+				return reply.status(404).send({
+					success: false,
+					error: { message: "Pelanggan tidak ditemukan" },
+				});
+			}
 
-    const result = await query(
-      `SELECT * FROM customers WHERE id = $1 AND business_id = $2`,
-      [id, businessId]
-    );
+			const c = rawResult[0];
+			let tier = 'Reguler';
+			if (c.totalSpent >= 5000000) tier = 'Gold';
+			else if (c.totalSpent >= 1000000) tier = 'Silver';
 
-    if (result.rowCount === 0) {
-      return reply.status(404).send({ success: false, error: { message: 'Pelanggan tidak ditemukan' } });
-    }
+			return { success: true, data: { ...c, tier } };
+		},
+	);
 
-    return {
-      success: true,
-      data: result.rows[0],
-    };
-  });
+	fastify.post(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('customers.write')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { name, phone, email, address } = request.body as any;
 
-  // Create new customer
-  fastify.post('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { name, phone, email, address } = request.body as any;
+			if (!name) {
+				return reply.status(400).send({
+					success: false,
+					error: { message: "Nama pelanggan wajib diisi" },
+				});
+			}
 
-    if (!name) {
-      return reply.status(400).send({ success: false, error: { message: 'Nama pelanggan wajib diisi' } });
-    }
+			const result = await db.insert(customers).values({
+				businessId,
+				name,
+				phone: phone || null,
+				email: email || null,
+				address: address || null,
+				createdBy: user.id,
+			}).returning();
 
-    const result = await query(
-      `INSERT INTO customers (business_id, name, phone, email, address, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [businessId, name, phone || null, email || null, address || null, user.id]
-    );
+			return reply.status(201).send({ success: true, data: result[0] });
+		},
+	);
 
-    return reply.status(201).send({
-      success: true,
-      data: result.rows[0],
-    });
-  });
+	fastify.put(
+		"/:id",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('customers.write')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
+			const { name, phone, email, address } = request.body as any;
 
-  // Update customer
-  fastify.put('/:id', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
-    const { name, phone, email, address } = request.body as any;
+			if (!name) {
+				return reply.status(400).send({
+					success: false,
+					error: { message: "Nama pelanggan wajib diisi" },
+				});
+			}
 
-    if (!name) {
-      return reply.status(400).send({ success: false, error: { message: 'Nama pelanggan wajib diisi' } });
-    }
+			const result = await db.update(customers)
+				.set({
+					name,
+					phone: phone || null,
+					email: email || null,
+					address: address || null,
+					updatedAt: new Date().toISOString(),
+				})
+				.where(and(eq(customers.id, id), eq(customers.businessId, businessId)))
+				.returning();
 
-    const result = await query(
-      `UPDATE customers 
-       SET name = $1, phone = $2, email = $3, address = $4, updated_at = NOW() 
-       WHERE id = $5 AND business_id = $6 RETURNING *`,
-      [name, phone || null, email || null, address || null, id, businessId]
-    );
+			if (result.length === 0) {
+				return reply.status(404).send({
+					success: false,
+					error: { message: "Pelanggan tidak ditemukan" },
+				});
+			}
 
-    if (result.rowCount === 0) {
-      return reply.status(404).send({ success: false, error: { message: 'Pelanggan tidak ditemukan' } });
-    }
-
-    return {
-      success: true,
-      data: result.rows[0],
-    };
-  });
+			return { success: true, data: result[0] };
+		},
+	);
 }

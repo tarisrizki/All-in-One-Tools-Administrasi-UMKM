@@ -1,194 +1,204 @@
-import { FastifyInstance } from 'fastify';
-import { getClient, query } from '../../plugins/database.js';
+import { FastifyInstance } from "fastify";
+import { db } from "../../plugins/drizzle.js";
+import { debts, debtPayments } from "../../db/schema.js";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export default async function debtsRoutes(fastify: FastifyInstance) {
-  // Get all debts for the business
-  fastify.get('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { type, status } = request.query as any;
+	fastify.get(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('debts.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { type, status } = request.query as any;
 
-    let sql = `SELECT * FROM debts WHERE business_id = $1`;
-    const params: any[] = [businessId];
-    let count = 2;
+			let conditions = [eq(debts.businessId, businessId)];
+			if (type) conditions.push(eq(debts.type, type));
+			if (status) conditions.push(eq(debts.status, status));
 
-    if (type) {
-      sql += ` AND type = $${count++}`;
-      params.push(type);
-    }
-    if (status) {
-      sql += ` AND status = $${count++}`;
-      params.push(status);
-    }
+			const result = await db.select()
+				.from(debts)
+				.where(and(...conditions))
+				// Using raw sql for order by due_date ASC NULLS LAST
+				.orderBy(sql`${debts.dueDate} ASC NULLS LAST`, desc(debts.createdAt));
 
-    sql += ` ORDER BY due_date ASC NULLS LAST, created_at DESC`;
+			return { success: true, data: result };
+		},
+	);
 
-    const result = await query(sql, params);
+	fastify.delete(
+		"/:id",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('debts.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const { id } = request.params as any;
 
-    return {
-      success: true,
-      data: result.rows,
-    };
-  });
+			await db.delete(debtPayments).where(eq(debtPayments.debtId, id));
+			await db.delete(debts).where(and(eq(debts.id, id), eq(debts.businessId, user.businessId)));
 
-  // Get debt details with payments
-  fastify.get('/:id', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
+			return reply.send({ success: true, message: "Hutang/Piutang berhasil dihapus" });
+		}
+	);
 
-    const debtRes = await query(
-      `SELECT * FROM debts WHERE id = $1 AND business_id = $2`,
-      [id, businessId]
-    );
+	fastify.post(
+		"/:id/remind",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('debts.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const { id } = request.params as any;
 
-    if (debtRes.rowCount === 0) {
-      return reply.status(404).send({ success: false, error: { message: 'Data tidak ditemukan' } });
-    }
+			const debtRes = await db.select().from(debts).where(and(eq(debts.id, id), eq(debts.businessId, user.businessId))).limit(1);
+			if (debtRes.length === 0) {
+				return reply.status(404).send({ success: false, error: { message: "Data tidak ditemukan" } });
+			}
 
-    const paymentsRes = await query(
-      `SELECT * FROM debt_payments WHERE debt_id = $1 ORDER BY payment_date DESC`,
-      [id]
-    );
+			const debt = debtRes[0];
+			if (!debt.entityPhone) {
+				return reply.status(400).send({ success: false, error: { message: "Nomor telepon pelanggan/supplier tidak tersedia" } });
+			}
 
-    return {
-      success: true,
-      data: {
-        ...debtRes.rows[0],
-        payments: paymentsRes.rows,
-      },
-    };
-  });
+			if (debt.status === 'paid') {
+				return reply.status(400).send({ success: false, error: { message: "Tagihan ini sudah lunas" } });
+			}
 
-  // Create new debt
-  fastify.post('/', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { type, entity_name, entity_phone, amount, due_date, notes } = request.body as any;
+			const labelTagihan = debt.type === 'piutang' ? 'Tagihan Piutang' : 'Peringatan Hutang';
+			const msg = `Halo ${debt.entityName},\n\nIni adalah pengingat untuk ${labelTagihan} Anda sejumlah Rp${debt.remainingAmount}.\nJatuh tempo pada: ${new Date(debt.dueDate as string).toLocaleDateString('id-ID')}.\n\nMohon segera diselesaikan. Terima kasih!`;
 
-    if (!type || !entity_name || !amount) {
-      return reply.status(400).send({ success: false, error: { message: 'Data tidak lengkap' } });
-    }
+			const success = await fastify.sendWhatsAppMessage(debt.entityPhone, msg);
 
-    const result = await query(
-      `INSERT INTO debts (business_id, type, entity_name, entity_phone, amount, remaining_amount, due_date, notes, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [businessId, type, entity_name, entity_phone || null, amount, amount, due_date || null, notes || null, user.id]
-    );
+			if (success) {
+				return reply.send({ success: true, message: "Pengingat WA berhasil dikirim" });
+			} else {
+				return reply.status(500).send({ success: false, error: { message: "Gagal mengirim pengingat via WhatsApp" } });
+			}
+		}
+	);
 
-    return reply.status(201).send({
-      success: true,
-      data: result.rows[0],
-    });
-  });
+	fastify.get(
+		"/:id",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('debts.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
 
-  // Record a payment
-  fastify.post('/:id/payments', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
-    const { amount, payment_method, notes } = request.body as any;
+			const debtRes = await db.select().from(debts).where(and(eq(debts.id, id), eq(debts.businessId, businessId)));
 
-    if (!amount || amount <= 0) {
-      return reply.status(400).send({ success: false, error: { message: 'Nominal pembayaran tidak valid' } });
-    }
+			if (debtRes.length === 0) {
+				return reply.status(404).send({ success: false, error: { message: "Data tidak ditemukan" } });
+			}
 
-    const client = await getClient();
-    try {
-      await client.query('BEGIN');
+			const paymentsRes = await db.select()
+				.from(debtPayments)
+				.where(eq(debtPayments.debtId, id))
+				.orderBy(desc(debtPayments.paymentDate));
 
-      // Check debt
-      const debtRes = await client.query(
-        `SELECT * FROM debts WHERE id = $1 AND business_id = $2 FOR UPDATE`,
-        [id, businessId]
-      );
+			return {
+				success: true,
+				data: {
+					...debtRes[0],
+					payments: paymentsRes,
+				},
+			};
+		},
+	);
 
-      if (debtRes.rowCount === 0) {
-        await client.query('ROLLBACK');
-        return reply.status(404).send({ success: false, error: { message: 'Data tidak ditemukan' } });
-      }
+	fastify.post(
+		"/",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('debts.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { type, entity_name, entity_phone, amount, due_date, notes } = request.body as any;
 
-      const debt = debtRes.rows[0];
-      if (debt.status === 'paid' || debt.remaining_amount <= 0) {
-        await client.query('ROLLBACK');
-        return reply.status(400).send({ success: false, error: { message: 'Tagihan sudah lunas' } });
-      }
+			if (!type || !entity_name || !amount) {
+				return reply.status(400).send({ success: false, error: { message: "Data tidak lengkap" } });
+			}
 
-      let paymentAmount = amount;
-      if (paymentAmount > debt.remaining_amount) {
-        paymentAmount = debt.remaining_amount; // don't overpay
-      }
+			const result = await db.insert(debts).values({
+				businessId,
+				type,
+				entityName: entity_name,
+				entityPhone: entity_phone || null,
+				amount: amount.toString(),
+				remainingAmount: amount.toString(),
+				dueDate: due_date ? new Date(due_date).toISOString() : null,
+				notes: notes || null,
+				createdBy: user.id,
+			}).returning();
 
-      const newRemaining = debt.remaining_amount - paymentAmount;
-      let newStatus = debt.status;
+			return reply.status(201).send({ success: true, data: result[0] });
+		},
+	);
 
-      if (newRemaining <= 0) {
-        newStatus = 'paid';
-      } else if (newRemaining < debt.amount) {
-        newStatus = 'partial';
-      }
+	fastify.post(
+		"/:id/payments",
+		{ preValidation: [fastify.authenticate, fastify.requirePermission('debts.manage')] },
+		async (request, reply) => {
+			const user = request.user as any;
+			const businessId = user.businessId;
+			const { id } = request.params as any;
+			const { amount, payment_method, notes } = request.body as any;
 
-      // Insert payment
-      await client.query(
-        `INSERT INTO debt_payments (debt_id, amount, payment_method, notes, created_by)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, paymentAmount, payment_method || 'cash', notes || null, user.id]
-      );
+			if (!amount || amount <= 0) {
+				return reply.status(400).send({ success: false, error: { message: "Nominal pembayaran tidak valid" } });
+			}
 
-      // Update debt
-      const updatedDebtRes = await client.query(
-        `UPDATE debts SET remaining_amount = $1, status = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
-        [newRemaining, newStatus, id]
-      );
+			try {
+				const updatedDebtRes = await db.transaction(async (tx) => {
+					const debtRes = await tx.select().from(debts).where(and(eq(debts.id, id), eq(debts.businessId, businessId)));
 
-      await client.query('COMMIT');
-      return reply.send({ success: true, data: updatedDebtRes.rows[0] });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-  });
+					if (debtRes.length === 0) {
+						throw new Error("Data tidak ditemukan");
+					}
 
-  // Remind via WhatsApp (Mock)
-  fastify.post('/:id/remind', {
-    preValidation: [fastify.authenticate],
-  }, async (request, reply) => {
-    const user = request.user as any;
-    const businessId = user.businessId;
-    const { id } = request.params as any;
+					const debt = debtRes[0];
+					const currentRemaining = parseFloat(debt.remainingAmount as string);
+					const currentAmount = parseFloat(debt.amount as string);
 
-    const debtRes = await query(
-      `SELECT * FROM debts WHERE id = $1 AND business_id = $2`,
-      [id, businessId]
-    );
+					if (debt.status === "paid" || currentRemaining <= 0) {
+						throw new Error("Tagihan sudah lunas");
+					}
 
-    if (debtRes.rowCount === 0) {
-      return reply.status(404).send({ success: false, error: { message: 'Data tidak ditemukan' } });
-    }
+					let paymentAmount = amount;
+					if (paymentAmount > currentRemaining) {
+						paymentAmount = currentRemaining;
+					}
 
-    const debt = debtRes.rows[0];
-    if (!debt.entity_phone) {
-      return reply.status(400).send({ success: false, error: { message: 'Nomor telepon tidak tersedia' } });
-    }
+					const newRemaining = currentRemaining - paymentAmount;
+					let newStatus = debt.status;
 
-    // MOCK WHATSAPP API
-    const message = `Halo ${debt.entity_name}, sekadar mengingatkan bahwa ada tagihan/piutang sebesar Rp ${debt.remaining_amount} yang jatuh tempo pada ${debt.due_date ? new Date(debt.due_date).toLocaleDateString('id-ID') : 'waktu dekat'}.`;
-    
-    fastify.log.info(`[MOCK WA API] Mengirim pesan ke ${debt.entity_phone}: ${message}`);
+					if (newRemaining <= 0) {
+						newStatus = "paid";
+					} else if (newRemaining < currentAmount) {
+						newStatus = "partial";
+					}
 
-    return {
-      success: true,
-      message: 'Pengingat berhasil dikirim (Mock)'
-    };
-  });
+					await tx.insert(debtPayments).values({
+						debtId: id,
+						amount: paymentAmount.toString(),
+						paymentMethod: payment_method || "cash",
+						notes: notes || null,
+						createdBy: user.id,
+					});
+
+					const [updatedDebt] = await tx.update(debts)
+						.set({ remainingAmount: newRemaining.toString(), status: newStatus as any, updatedAt: new Date().toISOString() })
+						.where(eq(debts.id, id))
+						.returning();
+
+					return updatedDebt;
+				});
+
+				return reply.send({ success: true, data: updatedDebtRes });
+			} catch (error: any) {
+				const statusMap: Record<string, number> = { "Data tidak ditemukan": 404, "Tagihan sudah lunas": 400 };
+				if (statusMap[error.message]) {
+					return reply.status(statusMap[error.message]).send({ success: false, error: { message: error.message } });
+				}
+				throw error;
+			}
+		},
+	);
+
 }
