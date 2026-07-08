@@ -1,0 +1,17 @@
+{
+  "name": "UMKM Tools",
+  "short_name": "UMKM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F7F8",
+  "theme_color": "#2E5AAC",
+  "description": "All-in-One Tools Administrasi UMKM",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

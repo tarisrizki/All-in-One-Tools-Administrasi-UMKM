@@ -1,0 +1,87 @@
+# ============================================
+# All-in-One Tools Administrasi UMKM
+# Docker Compose — Production Environment
+# ============================================
+
+services:
+  # --- Frontend (SvelteKit) ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: umkm-frontend-prod
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+
+  # --- Backend (Fastify) ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: umkm-backend-prod
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-umkm_db}
+      - DB_USER=${POSTGRES_USER:-umkm_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-umkm_pass}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-for-prod-change-me}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:8080}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: umkm-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-umkm_db}
+      POSTGRES_USER: ${POSTGRES_USER:-umkm_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-umkm_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+      - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-umkm_user} -d ${POSTGRES_DB:-umkm_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: umkm-redis-prod
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_prod:
+  redisdata_prod:

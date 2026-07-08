@@ -30,7 +30,7 @@ const config = {
 
   // CORS
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: true,
   },
 } as const;
 

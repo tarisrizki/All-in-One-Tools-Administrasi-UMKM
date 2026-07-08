@@ -39,3 +39,16 @@ coverage/
 
 # Misc
 *.tgz
+
+# Documents & Designs
+Testing qa checklist allinone umkm.HTML
+Technical specification allinone umkm.MD
+Project timeline umkm.HTML
+Prd allinone tools administrasi umkm.MD
+FLOW WIREFRAME.HTML
+Deployment maintenance plan allinone umkm.HTML
+DESIGN.MD
+
+# Local Test Files
+test-db.js
+backend/test-db.js
