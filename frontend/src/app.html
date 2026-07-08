@@ -4,7 +4,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.json" />
-		<meta name="theme-color" content="#2E5AAC" />
+		<meta name="theme-color" content="#0E9F6E" />
 		<meta
 			name="description"
 			content="All-in-One Tools Administrasi UMKM — kasir, stok, keuangan, dan laporan dalam satu aplikasi."
@@ -14,6 +14,14 @@
 		<meta name="apple-mobile-web-app-title" content="UMKM Tools" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<!-- FIX (load lambat): dipindah dari @import di layout.css ke <link> di sini.
+		     @import di dalam CSS bersifat render-blocking & berantai (browser harus
+		     ambil layout.css, parse, baru temukan @import, baru ambil font CSS, baru
+		     temukan file font) — <link> di <head> membuatnya diambil paralel. -->
+		<link
+			href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap"
+			rel="stylesheet"
+		/>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

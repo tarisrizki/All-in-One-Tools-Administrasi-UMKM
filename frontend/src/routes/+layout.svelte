@@ -57,4 +57,12 @@
 
 {#if initialized}
 	{@render children()}
+{:else}
+	<!-- FIX (load terasa lambat): sebelumnya di sini kosong total sampai
+	     onMount selesai (localStorage read + redirect check) — layar putih
+	     polos, terasa lebih lambat dari yang sebenarnya, khususnya di device
+	     rendah. Indikator minimal ini tampil instan sambil menunggu. -->
+	<div class="min-h-screen flex items-center justify-center bg-surface">
+		<div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+	</div>
 {/if}

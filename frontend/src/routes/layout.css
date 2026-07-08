@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap');
+/* FIX (load lambat): font Plus Jakarta Sans dipindah ke <link rel="stylesheet">
+   di app.html supaya diambil paralel, bukan @import di sini yang render-blocking
+   dan berantai (fetch layout.css → parse → baru mulai fetch font CSS → baru
+   fetch file font). Lihat app.html untuk link-nya. */
 
 /* =============================================================
    All-in-One Tools Administrasi UMKM — Design System
