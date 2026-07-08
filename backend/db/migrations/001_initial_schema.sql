@@ -126,6 +126,76 @@ CREATE TABLE IF NOT EXISTS product_stock (
 );
 
 -- =============================================================
+-- SALES (Transaksi POS)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS sales (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  warehouse_id UUID NOT NULL REFERENCES warehouses(id) ON DELETE RESTRICT,
+  customer_id UUID, -- Bisa null untuk pelanggan umum
+  client_transaction_id UUID NOT NULL, -- Untuk idempotency & sync offline
+  invoice_number VARCHAR(100) NOT NULL,
+  subtotal NUMERIC(14,2) NOT NULL DEFAULT 0,
+  discount_total NUMERIC(14,2) NOT NULL DEFAULT 0,
+  grand_total NUMERIC(14,2) NOT NULL DEFAULT 0,
+  status VARCHAR(50) NOT NULL DEFAULT 'paid', -- paid, partial, void
+  created_by UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  UNIQUE(business_id, client_transaction_id),
+  UNIQUE(business_id, invoice_number)
+);
+
+CREATE INDEX idx_sales_business_id ON sales(business_id);
+CREATE INDEX idx_sales_created_at ON sales(created_at);
+
+-- =============================================================
+-- SALE ITEMS
+-- =============================================================
+CREATE TABLE IF NOT EXISTS sale_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sale_id UUID NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  qty INTEGER NOT NULL DEFAULT 1,
+  price NUMERIC(14,2) NOT NULL DEFAULT 0,
+  discount NUMERIC(14,2) NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_sale_items_sale_id ON sale_items(sale_id);
+
+-- =============================================================
+-- PAYMENTS
+-- =============================================================
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sale_id UUID NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  method VARCHAR(50) NOT NULL, -- cash, qris, transfer
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  reference VARCHAR(255),
+  paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_payments_sale_id ON payments(sale_id);
+
+-- =============================================================
+-- CASHBOOK ENTRIES (Buku Kas)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS cashbook_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL, -- income, expense
+  category VARCHAR(100) NOT NULL,
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  note TEXT,
+  entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_by UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_cashbook_business_id ON cashbook_entries(business_id);
+CREATE INDEX idx_cashbook_entry_date ON cashbook_entries(entry_date);
+
+-- =============================================================
 -- SEED: Default roles
 -- =============================================================
 INSERT INTO roles (name, description, permissions) VALUES

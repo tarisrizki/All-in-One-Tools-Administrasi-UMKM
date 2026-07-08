@@ -13,27 +13,28 @@
     "migrate": "node --import tsx db/migrate.ts"
   },
   "dependencies": {
-    "fastify": "^5.0.0",
-    "@fastify/jwt": "^10.0.0",
     "@fastify/cors": "^11.0.0",
+    "@fastify/jwt": "^10.0.0",
     "@fastify/multipart": "^9.0.0",
     "@fastify/rate-limit": "^10.0.0",
-    "pg": "^8.0.0",
-    "redis": "^5.0.0",
-    "bullmq": "^5.0.0",
-    "zod": "^3.0.0",
-    "nanoid": "^5.0.0",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.0.0",
     "dotenv": "^16.0.0",
-    "pino-pretty": "^13.0.0"
+    "fastify": "^5.0.0",
+    "nanoid": "^5.0.0",
+    "pg": "^8.0.0",
+    "pino-pretty": "^13.0.0",
+    "redis": "^5.0.0",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "tsx": "^4.0.0",
+    "@types/bcrypt": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.0.0",
-    "@types/bcrypt": "^5.0.0",
     "eslint": "^9.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.63.0",
     "vitest": "^3.0.0"
   }
 }
