@@ -52,3 +52,6 @@ DESIGN.MD
 # Local Test Files
 test-db.js
 backend/test-db.js
+
+# Prompts
+prompt.md

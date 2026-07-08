@@ -2,8 +2,8 @@
 
 Aplikasi PWA all-in-one untuk UMKM Indonesia: kasir/POS, stok, keuangan, dan laporan dalam satu aplikasi.
 
-> **Status:** Sprint S0 — Scaffolding & Setup (8–19 Juli 2026)
-
+> **Status:** MVP & Core Features (Batch A-G) Completed
+> **Current Version:** v1.0.0-beta
 ## Tech Stack
 
 | Layer | Teknologi |
