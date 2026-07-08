@@ -1,0 +1,45 @@
+# ============================================
+# All-in-One Tools Administrasi UMKM
+# Docker Compose — Development Environment
+# ============================================
+# Sesuai Technical Specification §3.3 & §3.4
+
+services:
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: umkm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umkm_db
+      POSTGRES_USER: umkm_user
+      POSTGRES_PASSWORD: umkm_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umkm_user -d umkm_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: umkm-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:

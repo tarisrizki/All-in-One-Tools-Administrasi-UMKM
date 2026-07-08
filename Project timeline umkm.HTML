@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Timeline &amp; Milestone — All-in-One Tools Administrasi UMKM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F7F8; --panel:#FFFFFF; --ink:#1E2227; --ink-soft:#565D66;
+    --line:#C7CBD1; --line-strong:#8A909A;
+    --blue:#2E5AAC; --blue-soft:#E9EFFB; --blue-line:#B7C8EA;
+    --amber:#B4690E; --amber-soft:#FBF0DE; --amber-line:#E7C68C;
+    --green:#1E8A63; --green-soft:#E1F5EC; --green-line:#A9DFC7;
+    --violet:#7A4FB5; --violet-soft:#F1E9FA; --violet-line:#D2BCEE;
+    --radius:10px; --mono:'JetBrains Mono', ui-monospace, monospace; --sans:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; font-size:15px;
+    background-image:linear-gradient(var(--line) .5px, transparent .5px), linear-gradient(90deg, var(--line) .5px, transparent .5px);
+    background-size:32px 32px; background-attachment:local;
+  }
+  a{color:var(--blue);}
+  h1,h2,h3,h4{font-family:var(--sans); letter-spacing:-0.01em; margin:0 0 8px;}
+  .eyebrow{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--blue); font-weight:700; margin-bottom:6px; display:block;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px;}
+
+  nav.topnav{position:sticky; top:0; z-index:50; background:rgba(246,247,248,.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--line);}
+  nav.topnav .inner{max-width:1180px; margin:0 auto; padding:12px 24px; display:flex; align-items:center; gap:22px; flex-wrap:wrap; font-family:var(--mono); font-size:12.5px;}
+  nav.topnav .brand{font-weight:700; color:var(--ink); margin-right:auto; letter-spacing:-.02em; font-family:var(--sans); font-size:14px;}
+  nav.topnav a{color:var(--ink-soft); text-decoration:none; padding:4px 2px; border-bottom:2px solid transparent;}
+  nav.topnav a:hover{color:var(--blue); border-bottom-color:var(--blue);}
+
+  header.hero{padding:56px 0 40px; border-bottom:1px solid var(--line);}
+  header.hero h1{font-size:32px; max-width:760px; font-weight:800;}
+  header.hero p.lead{max-width:660px; color:var(--ink-soft); font-size:16px;}
+  .meta-row{display:flex; gap:28px; flex-wrap:wrap; margin-top:22px; font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  .meta-row b{color:var(--ink); display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px;}
+
+  section{padding:52px 0;}
+  section + section{border-top:1px solid var(--line);}
+  .ruler{display:flex; align-items:center; gap:2px; margin:0 0 30px; color:var(--line-strong);}
+  .ruler .tick{width:1px; height:8px; background:var(--line-strong);}
+  .ruler .tick.major{height:14px; background:var(--ink-soft);}
+  .sec-head{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:26px; flex-wrap:wrap;}
+  .sec-head h2{font-size:26px;}
+  .sec-head .count{font-family:var(--mono); font-size:12px; color:var(--ink-soft); border:1px solid var(--line); border-radius:20px; padding:4px 12px; white-space:nowrap;}
+
+  /* ---- team legend ---- */
+  .team-legend{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:10px;}
+  .role-pill{display:flex; align-items:center; gap:7px; background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:6px 14px; font-family:var(--mono); font-size:11.5px;}
+  .role-dot{width:9px; height:9px; border-radius:50%;}
+  .role-pm .role-dot{background:var(--ink);}
+  .role-fe .role-dot{background:var(--blue);}
+  .role-be .role-dot{background:var(--violet);}
+  .role-ux .role-dot{background:#D6608A;}
+  .role-qa .role-dot{background:var(--green);}
+  .role-ops .role-dot{background:var(--amber);}
+
+  /* ---- Gantt ---- */
+  .gantt-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); padding:20px 20px 10px;}
+  table.gantt{border-collapse:collapse; min-width:1520px; width:100%;}
+  table.gantt th, table.gantt td{padding:0; text-align:center; vertical-align:middle;}
+  table.gantt th.colhead{font-family:var(--mono); font-size:10px; color:var(--ink-soft); padding:4px 2px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.gantt th.colhead b{display:block; font-size:11px; color:var(--ink); margin-bottom:2px;}
+  table.gantt th.rowlabel, table.gantt td.rowlabel{
+    text-align:left; font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--ink);
+    padding:10px 14px 10px 4px; white-space:nowrap; position:sticky; left:0; background:var(--panel);
+  }
+  table.gantt td.cell{height:34px; padding:3px 1px;}
+  table.gantt td.cell .bar{height:100%; border-radius:0;}
+  table.gantt td.cell.start .bar{border-top-left-radius:8px; border-bottom-left-radius:8px;}
+  table.gantt td.cell.end .bar{border-top-right-radius:8px; border-bottom-right-radius:8px;}
+  .bar.ph1{background:var(--blue-soft); border-top:3px solid var(--blue); border-bottom:3px solid var(--blue);}
+  .bar.ph2{background:var(--green-soft); border-top:3px solid var(--green); border-bottom:3px solid var(--green);}
+  .bar.ph3{background:var(--violet-soft); border-top:3px solid var(--violet); border-bottom:3px solid var(--violet);}
+  .bar.buffer{background-image:repeating-linear-gradient(45deg, rgba(180,105,14,.30) 0 6px, transparent 6px 12px); border-top:3px dashed var(--amber) !important; border-bottom:3px dashed var(--amber) !important;}
+  tr.milestone-row td{height:30px; position:relative; font-family:var(--mono); font-size:9.5px; color:var(--ink);}
+  .flag{position:absolute; right:2px; top:0; display:flex; flex-direction:column; align-items:flex-end; white-space:nowrap;}
+  .flag .tri{width:0;height:0;border-left:6px solid transparent; border-right:0; border-top:9px solid var(--ink);}
+  .flag .lbl{background:var(--ink); color:#fff; border-radius:5px; padding:2px 7px; margin-bottom:2px; font-size:9px;}
+
+  .gantt-legend{display:flex; flex-wrap:wrap; gap:18px; margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  .gantt-legend .item{display:flex; align-items:center; gap:7px;}
+  .gantt-legend .sw{width:20px; height:12px; border-radius:3px;}
+
+  .callout{display:inline-flex; align-items:baseline; gap:8px; background:var(--amber-soft); border:1px solid var(--amber-line); border-radius:20px; padding:6px 16px; font-family:var(--mono); font-size:12px; color:var(--amber); margin-top:16px;}
+  .callout b{font-size:16px;}
+
+  /* ---- sprint tables (reuse edge-case-like styling) ---- */
+  .phase-block{margin-bottom:26px; background:var(--panel); border-radius:var(--radius); overflow:hidden;}
+  .phase-block.p1{border:1px solid var(--blue-line);}
+  .phase-block.p2{border:1px solid var(--green-line);}
+  .phase-block.p3{border:1px solid var(--violet-line);}
+  .phase-head{padding:13px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; border-bottom:1px solid var(--line);}
+  .p1 .phase-head{background:var(--blue-soft); border-bottom-color:var(--blue-line);}
+  .p2 .phase-head{background:var(--green-soft); border-bottom-color:var(--green-line);}
+  .p3 .phase-head{background:var(--violet-soft); border-bottom-color:var(--violet-line);}
+  .phase-head h4{margin:0; font-size:14.5px;}
+  .phase-head .range{font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  table.sprint-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.sprint-table th{text-align:left; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:10px 16px; border-bottom:1px solid var(--line); background:var(--paper);}
+  table.sprint-table td{padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-soft);}
+  table.sprint-table tr:last-child td{border-bottom:none;}
+  table.sprint-table td.sprint{color:var(--ink); font-weight:700; width:9%; font-family:var(--mono); font-size:12px;}
+  table.sprint-table td.dates{width:15%; font-family:var(--mono); font-size:11px;}
+  table.sprint-table td.focus{width:19%; color:var(--ink); font-weight:600;}
+  table.sprint-table td.tasks{width:37%;}
+  table.sprint-table td.tasks ul{margin:0; padding-left:16px;}
+  table.sprint-table td.tasks li{margin-bottom:3px;}
+  table.sprint-table td.owner{width:20%;}
+  .own-tag{display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px; margin:1px 3px 1px 0;}
+  .own-tag.pm{background:var(--paper); border:1px solid var(--ink); color:var(--ink);}
+  .own-tag.fe{background:var(--blue-soft); border:1px solid var(--blue-line); color:var(--blue);}
+  .own-tag.be{background:var(--violet-soft); border:1px solid var(--violet-line); color:var(--violet);}
+  .own-tag.ux{background:#FCEBF1; border:1px solid #F0C2D5; color:#D6608A;}
+  .own-tag.qa{background:var(--green-soft); border:1px solid var(--green-line); color:var(--green);}
+  .own-tag.ops{background:var(--amber-soft); border:1px solid var(--amber-line); color:var(--amber);}
+  tr.buffer-row td{background:var(--amber-soft) !important; }
+
+  /* ---- milestone detail ---- */
+  .ms-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px;}
+  .ms-card{background:var(--panel); border:1px solid var(--ink); border-radius:var(--radius); padding:20px;}
+  .ms-card .ms-date{font-family:var(--mono); font-size:11px; color:#fff; background:var(--ink); border-radius:20px; padding:3px 12px; display:inline-block; margin-bottom:10px;}
+  .ms-card h4{font-size:15.5px; margin:0 0 10px;}
+  .ms-card ul{margin:0; padding-left:18px; font-size:12.5px; color:var(--ink-soft);}
+  .ms-card li{margin-bottom:5px;}
+
+  /* ---- RACI ---- */
+  table.raci{width:100%; border-collapse:collapse; font-size:12px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  table.raci th, table.raci td{border:1px solid var(--line); padding:10px 12px; text-align:center;}
+  table.raci th{font-family:var(--mono); font-size:10.5px; background:var(--paper); color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+  table.raci td:first-child, table.raci th:first-child{text-align:left; font-weight:600; color:var(--ink); font-size:12.5px;}
+  table.raci td.R{background:var(--blue-soft); color:var(--blue); font-weight:700; font-family:var(--mono);}
+  table.raci td.A{background:var(--ink); color:#fff; font-weight:700; font-family:var(--mono);}
+  table.raci td.C{background:var(--green-soft); color:var(--green); font-weight:700; font-family:var(--mono);}
+  table.raci td.I{color:var(--line-strong); font-family:var(--mono);}
+  .raci-key{display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
+  .raci-key span b{color:var(--ink);}
+
+  /* ---- buffer rationale ---- */
+  .buffer-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin-top:20px;}
+  .buffer-card{background:var(--amber-soft); border:1px solid var(--amber-line); border-radius:var(--radius); padding:18px;}
+  .buffer-card .tag{font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:.05em;}
+  .buffer-card h4{font-size:14px; margin:6px 0 8px;}
+  .buffer-card p{font-size:12.5px; color:var(--ink-soft); margin:0;}
+
+  /* ---- risks ---- */
+  table.risk-table{width:100%; border-collapse:collapse; font-size:12.5px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  table.risk-table th{text-align:left; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:10px 18px; border-bottom:1px solid var(--line); background:var(--paper);}
+  table.risk-table td{padding:12px 18px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-soft);}
+  table.risk-table tr:last-child td{border-bottom:none;}
+  table.risk-table td.r-name{color:var(--ink); font-weight:600; width:30%;}
+
+  footer{padding:40px 0 60px; color:var(--ink-soft); font-size:12px; font-family:var(--mono);}
+
+  @media (max-width:640px){ header.hero h1{font-size:24px;} }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="inner">
+    <span class="brand">Project Timeline · UMKM All-in-One</span>
+    <a href="#gantt">Gantt &amp; Sprint</a>
+    <a href="#backlog">Sprint Breakdown</a>
+    <a href="#milestones">Milestone</a>
+    <a href="#ownership">Ownership</a>
+    <a href="#buffer">Buffer</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow">Dokumen Perencanaan · Draft v1.0 · 8 Juli 2026</span>
+    <h1>Project Timeline &amp; Milestone: All-in-One Tools Administrasi UMKM</h1>
+    <p class="lead">Rencana kerja dari sprint persiapan hingga rilis Fase 3, diturunkan dari roadmap teknis pada Technical Specification v1.0. Disusun untuk tim inti 5 orang, dengan buffer eksplisit di setiap titik rawan keterlambatan.</p>
+    <div class="meta-row">
+      <div><b>Durasi total</b>8 Jul 2026 – 26 Apr 2027 (±42 minggu)</div>
+      <div><b>Jumlah sprint</b>17 sprint kerja (2 minggu)</div>
+      <div><b>Buffer</b>4 blok, ±8 minggu (≈19% dari total)</div>
+      <div><b>Milestone rilis</b>3 titik (MVP, Fase 2, Fase 3 v1)</div>
+    </div>
+  </header>
+
+  <!-- ================= TEAM LEGEND + GANTT ================= -->
+  <section id="gantt">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">01 · Tim &amp; Timeline</span><h2>Gantt Sprint-Level</h2></div><span class="count">21 unit waktu</span></div>
+
+    <div class="team-legend">
+      <div class="role-pill role-pm"><span class="role-dot"></span>PM — Product Manager</div>
+      <div class="role-pill role-fe"><span class="role-dot"></span>FE — Frontend (SvelteKit/PWA)</div>
+      <div class="role-pill role-be"><span class="role-dot"></span>BE — Backend (Fastify/DB/Sync)</div>
+      <div class="role-pill role-ux"><span class="role-dot"></span>UX — UI/UX Designer</div>
+      <div class="role-pill role-qa"><span class="role-dot"></span>QA — QA Engineer</div>
+      <div class="role-pill role-ops"><span class="role-dot"></span>OPS — DevOps/Infra <span style="opacity:.6">(rangkap BE)</span></div>
+    </div>
+
+    <div class="gantt-scroll">
+      <table class="gantt">
+        <tr>
+          <th class="colhead rowlabel"></th>
+          <th class="colhead"><b>S0</b>8–19 Jul</th>
+          <th class="colhead"><b>S1</b>20 Jul–2 Ags</th>
+          <th class="colhead"><b>S2</b>3–16 Ags</th>
+          <th class="colhead"><b>S3</b>17–30 Ags</th>
+          <th class="colhead"><b>S4</b>31 Ags–13 Sep</th>
+          <th class="colhead"><b>S5</b>14–27 Sep</th>
+          <th class="colhead"><b>B1</b>28 Sep–11 Okt</th>
+          <th class="colhead"><b>S6</b>12–25 Okt</th>
+          <th class="colhead"><b>S7</b>26 Okt–8 Nov</th>
+          <th class="colhead"><b>S8</b>9–22 Nov</th>
+          <th class="colhead"><b>S9</b>23 Nov–6 Des</th>
+          <th class="colhead"><b>S10</b>7–20 Des</th>
+          <th class="colhead"><b>HB</b>21 Des–3 Jan</th>
+          <th class="colhead"><b>S11</b>4–17 Jan</th>
+          <th class="colhead"><b>B2</b>18–31 Jan</th>
+          <th class="colhead"><b>S12</b>1–14 Feb</th>
+          <th class="colhead"><b>S13</b>15–28 Feb</th>
+          <th class="colhead"><b>S14</b>1–14 Mar</th>
+          <th class="colhead"><b>S15</b>15–28 Mar</th>
+          <th class="colhead"><b>B3</b>29 Mar–11 Apr</th>
+          <th class="colhead"><b>S16</b>12–25 Apr</th>
+        </tr>
+        <tr class="milestone-row">
+          <td class="rowlabel">Milestone</td>
+          <td></td><td></td><td></td><td></td><td></td><td></td>
+          <td><div class="flag"><span class="lbl">🏁 MVP Launch · 12 Okt</span><span class="tri"></span></div></td>
+          <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          <td><div class="flag"><span class="lbl">🏁 Fase 2 Release · 1 Feb</span><span class="tri"></span></div></td>
+          <td></td><td></td><td></td><td></td><td></td>
+          <td><div class="flag"><span class="lbl">🏁 Fase 3 v1 · 26 Apr</span><span class="tri"></span></div></td>
+        </tr>
+        <tr>
+          <td class="rowlabel">Fase 1 — MVP</td>
+          <td class="cell start"><div class="bar ph1"></div></td>
+          <td class="cell"><div class="bar ph1"></div></td>
+          <td class="cell"><div class="bar ph1"></div></td>
+          <td class="cell"><div class="bar ph1"></div></td>
+          <td class="cell"><div class="bar ph1"></div></td>
+          <td class="cell"><div class="bar ph1"></div></td>
+          <td class="cell end"><div class="bar ph1 buffer"></div></td>
+          <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
+          <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
+        </tr>
+        <tr>
+          <td class="rowlabel">Fase 2 — Operasional Penuh</td>
+          <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
+          <td class="cell start"><div class="bar ph2"></div></td>
+          <td class="cell"><div class="bar ph2"></div></td>
+          <td class="cell"><div class="bar ph2"></div></td>
+          <td class="cell"><div class="bar ph2"></div></td>
+          <td class="cell"><div class="bar ph2"></div></td>
+          <td class="cell"><div class="bar ph2 buffer"></div></td>
+          <td class="cell"><div class="bar ph2"></div></td>
+          <td class="cell end"><div class="bar ph2 buffer"></div></td>
+          <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
+        </tr>
+        <tr>
+          <td class="rowlabel">Fase 3 — Diferensiasi</td>
+          <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
+          <td class="cell start"><div class="bar ph3"></div></td>
+          <td class="cell"><div class="bar ph3"></div></td>
+          <td class="cell"><div class="bar ph3"></div></td>
+          <td class="cell"><div class="bar ph3"></div></td>
+          <td class="cell"><div class="bar ph3 buffer"></div></td>
+          <td class="cell end"><div class="bar ph3"></div></td>
+        </tr>
+      </table>
+
+      <div class="gantt-legend">
+        <div class="item"><div class="sw" style="background:var(--blue-soft); border:1px solid var(--blue);"></div>Fase 1 — MVP</div>
+        <div class="item"><div class="sw" style="background:var(--green-soft); border:1px solid var(--green);"></div>Fase 2 — Operasional Penuh</div>
+        <div class="item"><div class="sw" style="background:var(--violet-soft); border:1px solid var(--violet);"></div>Fase 3 — Diferensiasi &amp; Skala</div>
+        <div class="item"><div class="sw" style="background-image:repeating-linear-gradient(45deg, rgba(180,105,14,.3) 0 4px, transparent 4px 8px); border:1px dashed var(--amber);"></div>Buffer / stabilisasi</div>
+        <div class="item">🏁 Milestone rilis</div>
+      </div>
+    </div>
+    <span class="callout"><b>≈19%</b>&nbsp;dari total durasi dialokasikan sebagai buffer — di atas rata-rata rule of thumb 10–15%, karena produk ini punya banyak titik ketergantungan pihak ketiga (payment gateway, WhatsApp Business API) dan fitur offline-sync yang secara historis sering meleset dari estimasi awal.</span>
+  </section>
+
+  <!-- ================= SPRINT BREAKDOWN ================= -->
+  <section id="backlog">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">02 · Rincian Kerja</span><h2>Sprint Breakdown &amp; Ownership</h2></div><span class="count">17 sprint + 4 buffer</span></div>
+
+    <!-- FASE 1 -->
+    <div class="phase-block p1">
+      <div class="phase-head"><h4>Fase 1 — MVP</h4><span class="range">8 Jul – 11 Okt 2026 · Target launch pilot: 12 Okt 2026</span></div>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Tanggal</th><th>Fokus</th><th>Task Utama</th><th>Owner</th></tr>
+        <tr>
+          <td class="sprint">S0</td><td class="dates">8–19 Jul</td><td class="focus">Persiapan &amp; Setup</td>
+          <td class="tasks"><ul><li>Scaffold repo SvelteKit + Fastify (§3, §7 Tech Spec)</li><li>Setup CI/CD, environment dev/staging</li><li>Terjemahkan design token dari wireframe ke Tailwind config</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span><span class="own-tag fe">FE</span><br><span class="own-tag pm">PM (koordinasi)</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S1</td><td class="dates">20 Jul–2 Ags</td><td class="focus">Auth &amp; Multi-tenant</td>
+          <td class="tasks"><ul><li>Skema DB inti: business, user, role</li><li>Login/register + JWT + refresh token</li><li>UI login/onboarding dari wireframe #1</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span> support</td>
+        </tr>
+        <tr>
+          <td class="sprint">S2</td><td class="dates">3–16 Ags</td><td class="focus">Produk, Kategori &amp; Stok</td>
+          <td class="tasks"><ul><li>CRUD produk &amp; kategori, generator barcode/QR</li><li>Stok single-gudang</li><li>UI Tambah Produk &amp; Manajemen Stok (wireframe #4, #5)</li></ul></td>
+          <td class="owner"><span class="own-tag fe">FE</span><span class="own-tag be">BE</span> shared<br><span class="own-tag qa">QA</span> mulai test case</td>
+        </tr>
+        <tr>
+          <td class="sprint">S3</td><td class="dates">17–30 Ags</td><td class="focus">POS / Kasir Inti</td>
+          <td class="tasks"><ul><li>UI Kasir sesuai wireframe #3 (layar paling kritis)</li><li>Transaksi tunai, keranjang, cetak struk thermal (ESC/POS)</li><li>Validasi edge case kategori A (Transaksi &amp; Pembayaran)</li></ul></td>
+          <td class="owner"><span class="own-tag fe">FE</span> primary<br><span class="own-tag be">BE</span> API transaksi · <span class="own-tag qa">QA</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S4</td><td class="dates">31 Ags–13 Sep</td><td class="focus">Pembayaran &amp; Dokumen</td>
+          <td class="tasks"><ul><li>Integrasi QRIS</li><li>Generate invoice &amp; nota PDF otomatis</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span> · <span class="own-tag ops">OPS</span> keamanan API eksternal</td>
+        </tr>
+        <tr>
+          <td class="sprint">S5</td><td class="dates">14–27 Sep</td><td class="focus">Buku Kas &amp; PWA Offline</td>
+          <td class="tasks"><ul><li>Buku kas sederhana (pemasukan/pengeluaran)</li><li>PWA installable, service worker + cache read-only offline</li></ul></td>
+          <td class="owner"><span class="own-tag fe">FE</span> primary (PWA)<br><span class="own-tag be">BE</span> API buku kas</td>
+        </tr>
+        <tr class="buffer-row">
+          <td class="sprint">B1</td><td class="dates">28 Sep–11 Okt</td><td class="focus">Buffer — Stabilisasi</td>
+          <td class="tasks"><ul><li>Testing end-to-end seluruh edge case dokumen UX</li><li>UAT bersama beberapa UMKM pilot</li><li>Perbaikan bug kritis sebelum launch</li></ul></td>
+          <td class="owner"><span class="own-tag qa">QA</span> primary<br>seluruh tim bug-fixing · <span class="own-tag pm">PM</span> koordinasi UAT</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase-block p2">
+      <div class="phase-head"><h4>Fase 2 — Operasional Penuh</h4><span class="range">12 Okt 2026 – 31 Jan 2027 · Target rilis: 1 Feb 2027</span></div>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Tanggal</th><th>Fokus</th><th>Task Utama</th><th>Owner</th></tr>
+        <tr>
+          <td class="sprint">S6</td><td class="dates">12–25 Okt</td><td class="focus">Multi-gudang &amp; Pembelian</td>
+          <td class="tasks"><ul><li>Dukungan multi-gudang penuh</li><li>Supplier &amp; Purchase Order (wireframe #6)</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S7</td><td class="dates">26 Okt–8 Nov</td><td class="focus">Hutang-Piutang</td>
+          <td class="tasks"><ul><li>Modul hutang-piutang &amp; status pelunasan</li><li>Reminder otomatis via WhatsApp (awal)</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span> · <span class="own-tag ops">OPS</span> integrasi WA awal</td>
+        </tr>
+        <tr>
+          <td class="sprint">S8</td><td class="dates">9–22 Nov</td><td class="focus">Laporan Keuangan</td>
+          <td class="tasks"><ul><li>Laporan laba rugi &amp; arus kas otomatis</li><li>Visualisasi ringkas di dashboard</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> kalkulasi<br><span class="own-tag fe">FE</span> visualisasi · <span class="own-tag qa">QA</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S9</td><td class="dates">23 Nov–6 Des</td><td class="focus">CRM &amp; Kalkulator</td>
+          <td class="tasks"><ul><li>Database pelanggan (CRM dasar)</li><li>Kalkulator harga jual, margin, BEP, ROI</li></ul></td>
+          <td class="owner"><span class="own-tag fe">FE</span> primary<br><span class="own-tag be">BE</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S10</td><td class="dates">7–20 Des</td><td class="focus">Offline Write &amp; Sync Engine</td>
+          <td class="tasks"><ul><li>Sync queue penuh (push/pull, idempotency)</li><li>UI status offline/sync (pola interaksi #4)</li><li>Validasi edge case kategori B &amp; C</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary — bagian paling kompleks<br><span class="own-tag fe">FE</span> · <span class="own-tag qa">QA</span></td>
+        </tr>
+        <tr class="buffer-row">
+          <td class="sprint">HB</td><td class="dates">21 Des–3 Jan</td><td class="focus">Buffer — Libur Akhir Tahun</td>
+          <td class="tasks"><ul><li>Cuti bersama, kapasitas tim menurun sesuai musim</li><li>Dijadwalkan eksplisit, bukan diabaikan dalam estimasi</li></ul></td>
+          <td class="owner">— (jeda resmi)</td>
+        </tr>
+        <tr>
+          <td class="sprint">S11</td><td class="dates">4–17 Jan</td><td class="focus">Dashboard &amp; Hak Akses</td>
+          <td class="tasks"><ul><li>Dashboard analitik dasar</li><li>Manajemen karyawan &amp; RBAC granular (edge case D)</li></ul></td>
+          <td class="owner"><span class="own-tag fe">FE</span> dashboard<br><span class="own-tag be">BE</span> RBAC · <span class="own-tag ux">UX</span> review usability</td>
+        </tr>
+        <tr class="buffer-row">
+          <td class="sprint">B2</td><td class="dates">18–31 Jan</td><td class="focus">Buffer — Hardening</td>
+          <td class="tasks"><ul><li>Regression testing menyeluruh</li><li>Persiapan rilis ke seluruh pengguna (bukan pilot saja)</li></ul></td>
+          <td class="owner"><span class="own-tag qa">QA</span> primary<br>seluruh tim</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase-block p3">
+      <div class="phase-head"><h4>Fase 3 — Diferensiasi &amp; Skala</h4><span class="range">1 Feb – 25 Apr 2027 · Target rilis v1: 26 Apr 2027</span></div>
+      <table class="sprint-table">
+        <tr><th>Sprint</th><th>Tanggal</th><th>Fokus</th><th>Task Utama</th><th>Owner</th></tr>
+        <tr>
+          <td class="sprint">S12</td><td class="dates">1–14 Feb</td><td class="focus">AI — Prediksi Stok</td>
+          <td class="tasks"><ul><li>Model/endpoint prediksi stok habis</li><li>Rekomendasi restok otomatis</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span> UI insight</td>
+        </tr>
+        <tr>
+          <td class="sprint">S13</td><td class="dates">15–28 Feb</td><td class="focus">AI — Prediksi Penjualan</td>
+          <td class="tasks"><ul><li>Prediksi penjualan</li><li>Ringkasan performa bisnis otomatis</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S14</td><td class="dates">1–14 Mar</td><td class="focus">Integrasi Komunikasi</td>
+          <td class="tasks"><ul><li>Integrasi WhatsApp Business API penuh</li><li>Integrasi Email</li></ul></td>
+          <td class="owner"><span class="own-tag ops">OPS</span> / <span class="own-tag be">BE</span> primary<br><span class="own-tag fe">FE</span></td>
+        </tr>
+        <tr>
+          <td class="sprint">S15</td><td class="dates">15–28 Mar</td><td class="focus">Payment Gateway &amp; Marketplace</td>
+          <td class="tasks"><ul><li>Payment gateway lengkap (multi-provider)</li><li>Integrasi marketplace (mulai 1 platform)</li></ul></td>
+          <td class="owner"><span class="own-tag be">BE</span> primary<br><span class="own-tag ops">OPS</span> keamanan kredensial</td>
+        </tr>
+        <tr class="buffer-row">
+          <td class="sprint">B3</td><td class="dates">29 Mar–11 Apr</td><td class="focus">Buffer — Integrasi Eksternal</td>
+          <td class="tasks"><ul><li>Testing integrasi pihak ketiga &amp; regression penuh</li><li>Mengantisipasi keterlambatan approval API eksternal</li></ul></td>
+          <td class="owner"><span class="own-tag qa">QA</span> primary<br>seluruh tim</td>
+        </tr>
+        <tr>
+          <td class="sprint">S16</td><td class="dates">12–25 Apr</td><td class="focus">Loyalty &amp; Penunjang</td>
+          <td class="tasks"><ul><li>Membership &amp; program loyalty</li><li>Ekspor Excel, backup otomatis terjadwal</li></ul></td>
+          <td class="owner"><span class="own-tag fe">FE</span> membership UI<br><span class="own-tag be">BE</span> backup job · <span class="own-tag qa">QA</span></td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= MILESTONES ================= -->
+  <section id="milestones">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">03 · Titik Rilis</span><h2>Detail Milestone</h2></div><span class="count">3 milestone</span></div>
+    <div class="ms-grid">
+      <div class="ms-card">
+        <span class="ms-date">12 Oktober 2026</span>
+        <h4>🏁 MVP Launch (Pilot)</h4>
+        <ul>
+          <li>Alur Kasir/POS berfungsi penuh, online maupun offline (Journey J2)</li>
+          <li>Produk, stok, buku kas, invoice/nota berjalan tanpa bug kritis</li>
+          <li>Minimal beberapa UMKM pilot sudah onboarding &amp; transaksi nyata</li>
+          <li>Tidak ada bug kategori A/B (Transaksi, Stok) yang belum tertangani dari dokumen edge case</li>
+        </ul>
+      </div>
+      <div class="ms-card">
+        <span class="ms-date">1 Februari 2027</span>
+        <h4>🏁 Fase 2 Release</h4>
+        <ul>
+          <li>Multi-gudang, PO, hutang-piutang, laporan laba rugi/arus kas tersedia</li>
+          <li>Sinkronisasi offline penuh (bukan read-only lagi) sudah teruji sesuai edge case kategori C</li>
+          <li>RBAC granular aktif — karyawan tidak bisa akses menu di luar wewenang</li>
+          <li>Siap dibuka untuk pengguna umum, tidak terbatas pilot</li>
+        </ul>
+      </div>
+      <div class="ms-card">
+        <span class="ms-date">26 April 2027</span>
+        <h4>🏁 Fase 3 Release v1</h4>
+        <ul>
+          <li>Fitur AI (prediksi stok, prediksi penjualan, ringkasan bisnis) aktif untuk seluruh pengguna</li>
+          <li>Integrasi WhatsApp, email, payment gateway, dan minimal 1 marketplace berjalan stabil</li>
+          <li>Membership/loyalty, ekspor Excel, dan backup otomatis tersedia</li>
+          <li>Iterasi berikutnya (evaluasi PowerSync, wrap Capacitor bila perlu) berjalan berdasarkan feedback nyata setelah titik ini</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= OWNERSHIP MATRIX ================= -->
+  <section id="ownership">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">04 · Tanggung Jawab</span><h2>Ownership Matrix (RACI ringkas)</h2></div><span class="count">9 workstream</span></div>
+    <table class="raci">
+      <tr><th>Workstream</th><th>PM</th><th>FE</th><th>BE</th><th>UX</th><th>QA</th><th>OPS</th></tr>
+      <tr><td>Auth &amp; Multi-tenant</td><td class="A">A</td><td class="C">C</td><td class="R">R</td><td class="I">I</td><td class="C">C</td><td class="C">C</td></tr>
+      <tr><td>Produk &amp; Stok</td><td class="A">A</td><td class="R">R</td><td class="R">R</td><td class="C">C</td><td class="C">C</td><td class="I">I</td></tr>
+      <tr><td>POS / Kasir (Offline-first)</td><td class="A">A</td><td class="R">R</td><td class="R">R</td><td class="C">C</td><td class="R">R</td><td class="I">I</td></tr>
+      <tr><td>Pembayaran &amp; Integrasi Eksternal</td><td class="A">A</td><td class="C">C</td><td class="R">R</td><td class="I">I</td><td class="C">C</td><td class="R">R</td></tr>
+      <tr><td>Keuangan (Kas, Laporan, Hutang-Piutang)</td><td class="A">A</td><td class="R">R</td><td class="R">R</td><td class="I">I</td><td class="C">C</td><td class="I">I</td></tr>
+      <tr><td>Offline Sync Engine</td><td class="A">A</td><td class="C">C</td><td class="R">R</td><td class="I">I</td><td class="R">R</td><td class="C">C</td></tr>
+      <tr><td>AI &amp; Analitik</td><td class="A">A</td><td class="C">C</td><td class="R">R</td><td class="I">I</td><td class="C">C</td><td class="C">C</td></tr>
+      <tr><td>Desain UI/UX (Wireframe → Hi-Fi)</td><td class="A">A</td><td class="C">C</td><td class="I">I</td><td class="R">R</td><td class="I">I</td><td class="I">I</td></tr>
+      <tr><td>Infra, CI/CD &amp; Deployment</td><td class="A">A</td><td class="I">I</td><td class="C">C</td><td class="I">I</td><td class="I">I</td><td class="R">R</td></tr>
+    </table>
+    <div class="raci-key">
+      <span><b>A</b> = Accountable (penanggung jawab akhir)</span>
+      <span><b>R</b> = Responsible (mengerjakan)</span>
+      <span><b>C</b> = Consulted (diminta masukan)</span>
+      <span><b>I</b> = Informed (diberi tahu hasil)</span>
+    </div>
+  </section>
+
+  <!-- ================= BUFFER RATIONALE ================= -->
+  <section id="buffer">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">05 · Jaring Pengaman</span><h2>Alasan Penempatan Buffer</h2></div><span class="count">4 blok buffer</span></div>
+    <div class="buffer-grid">
+      <div class="buffer-card">
+        <span class="tag">B1 · 28 Sep–11 Okt</span>
+        <h4>Stabilisasi Pra-Peluncuran</h4>
+        <p>Diletakkan sebelum milestone resmi (bukan sesudah), supaya hasil UAT pilot yang mungkin minta perubahan tidak menggeser tanggal launch.</p>
+      </div>
+      <div class="buffer-card">
+        <span class="tag">HB · 21 Des–3 Jan</span>
+        <h4>Musim Libur Akhir Tahun</h4>
+        <p>Kapasitas tim realistis menurun karena cuti bersama. Dijadwalkan eksplisit di roadmap, alih-alih berpura-pura tim tetap produktif 100%.</p>
+      </div>
+      <div class="buffer-card">
+        <span class="tag">B2 · 18–31 Jan</span>
+        <h4>Hardening Sebelum Rilis Publik</h4>
+        <p>Fase 2 dibuka untuk pengguna umum (bukan pilot terbatas lagi) — regression testing menyeluruh wajib sebelum eksposur bertambah.</p>
+      </div>
+      <div class="buffer-card">
+        <span class="tag">B3 · 29 Mar–11 Apr</span>
+        <h4>Ketergantungan Pihak Ketiga</h4>
+        <p>Payment gateway, marketplace, dan WhatsApp Business API punya proses approval/verifikasi yang di luar kendali tim internal — buffer ini mengantisipasi keterlambatan tersebut.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RISKS ================= -->
+  <section id="risks">
+    <div class="sec-head"><div><span class="eyebrow">06 · Perhatian</span><h2>Risiko yang Bisa Menggerus Buffer</h2></div></div>
+    <table class="risk-table">
+      <tr><th>Risiko</th><th>Dampak ke Timeline</th><th>Mitigasi</th></tr>
+      <tr><td class="r-name">Verifikasi WhatsApp Business API / payment gateway molor</td><td>Menunda go-live Sprint 14–15</td><td>Mulai proses approval sejak awal S13, jangan tunggu sampai S14 dimulai.</td></tr>
+      <tr><td class="r-name">Tim inti kecil, satu orang per peran</td><td>Satu orang absen bisa hentikan satu workstream</td><td>Dokumentasi teknis lengkap (Technical Spec) + sesi pairing berkala agar tidak ada silo pengetahuan.</td></tr>
+      <tr><td class="r-name">Kompleksitas sync engine offline-first meleset dari estimasi</td><td>S10 berpotensi molor</td><td>Sudah dialokasikan satu sprint penuh + buffer B2 terdekat sebagai jaring pengaman kedua.</td></tr>
+      <tr><td class="r-name">Hasil UAT pilot MVP minta perubahan signifikan</td><td>Bisa menggeser tanggal MVP Launch</td><td>Buffer B1 sengaja diletakkan sebelum milestone resmi diumumkan ke publik.</td></tr>
+    </table>
+  </section>
+
+  <footer>Dokumen ini adalah rencana kerja awal — tanggal dapat disesuaikan setelah kickoff bersama tim. Terkait dengan PRD v1.0, Technical Specification v1.0, dan User Flow &amp; Wireframe v1.0.</footer>
+</div>
+
+</body>
+</html>

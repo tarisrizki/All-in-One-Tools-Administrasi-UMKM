@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+frontend/.svelte-kit/
+frontend/build/
+backend/dist/
+
+# Environment
+.env
+.env.local
+.env.production
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+pnpm-debug.log*
+
+# Docker
+pgdata/
+redisdata/
+
+# Test output
+frontend/test-results/
+frontend/playwright-report/
+coverage/
+
+# Misc
+*.tgz

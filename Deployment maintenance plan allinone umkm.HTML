@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deployment &amp; Maintenance Plan — All-in-One Tools Administrasi UMKM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F7F8; --panel:#FFFFFF; --ink:#1E2227; --ink-soft:#565D66;
+    --line:#C7CBD1; --line-strong:#8A909A;
+    --blue:#2E5AAC; --blue-soft:#E9EFFB; --blue-line:#B7C8EA;
+    --amber:#B4690E; --amber-soft:#FBF0DE; --amber-line:#E7C68C;
+    --green:#1E8A63; --green-soft:#E1F5EC; --green-line:#A9DFC7;
+    --violet:#7A4FB5; --violet-soft:#F1E9FA; --violet-line:#D2BCEE;
+    --red:#B23B3B; --red-soft:#FBE7E7; --red-line:#EAB6B6;
+    --radius:10px; --mono:'JetBrains Mono', ui-monospace, monospace; --sans:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.55; font-size:15px;
+    background-image:linear-gradient(var(--line) .5px, transparent .5px), linear-gradient(90deg, var(--line) .5px, transparent .5px);
+    background-size:32px 32px; background-attachment:local;
+  }
+  a{color:var(--blue);}
+  h1,h2,h3,h4{font-family:var(--sans); letter-spacing:-0.01em; margin:0 0 8px;}
+  .eyebrow{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--blue); font-weight:700; margin-bottom:6px; display:block;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px;}
+
+  nav.topnav{position:sticky; top:0; z-index:50; background:rgba(246,247,248,.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--line);}
+  nav.topnav .inner{max-width:1180px; margin:0 auto; padding:12px 24px; display:flex; align-items:center; gap:22px; flex-wrap:wrap; font-family:var(--mono); font-size:12.5px;}
+  nav.topnav .brand{font-weight:700; color:var(--ink); margin-right:auto; letter-spacing:-.02em; font-family:var(--sans); font-size:14px;}
+  nav.topnav a{color:var(--ink-soft); text-decoration:none; padding:4px 2px; border-bottom:2px solid transparent;}
+  nav.topnav a:hover{color:var(--blue); border-bottom-color:var(--blue);}
+
+  header.hero{padding:56px 0 40px; border-bottom:1px solid var(--line);}
+  header.hero h1{font-size:32px; max-width:760px; font-weight:800;}
+  header.hero p.lead{max-width:660px; color:var(--ink-soft); font-size:16px;}
+  .meta-row{display:flex; gap:28px; flex-wrap:wrap; margin-top:22px; font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  .meta-row b{color:var(--ink); display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px;}
+
+  section{padding:52px 0;}
+  section + section{border-top:1px solid var(--line);}
+  .ruler{display:flex; align-items:center; gap:2px; margin:0 0 30px; color:var(--line-strong);}
+  .ruler .tick{width:1px; height:8px; background:var(--line-strong);}
+  .ruler .tick.major{height:14px; background:var(--ink-soft);}
+  .sec-head{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:26px; flex-wrap:wrap;}
+  .sec-head h2{font-size:26px;}
+  .sec-head .count{font-family:var(--mono); font-size:12px; color:var(--ink-soft); border:1px solid var(--line); border-radius:20px; padding:4px 12px; white-space:nowrap;}
+  .sub-head{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); margin:32px 0 12px;}
+  .sub-head:first-of-type{margin-top:0;}
+
+  /* ---- flow (branch/pipeline/incident diagrams) ---- */
+  .flow{display:flex; flex-wrap:wrap; align-items:stretch; gap:0; margin:6px 0 6px;}
+  .flow-step{flex:1 1 140px; min-width:120px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 12px;}
+  .flow-step .n{font-family:var(--mono); font-size:10px; font-weight:700; color:var(--blue); display:block; margin-bottom:4px;}
+  .flow-step strong{display:block; font-size:12.5px; margin-bottom:3px;}
+  .flow-step span.d{font-size:11.5px; color:var(--ink-soft); line-height:1.4;}
+  .flow-arrow{display:flex; align-items:center; justify-content:center; color:var(--line-strong); font-family:var(--mono); font-size:16px; padding:0 6px; flex:0 0 auto;}
+  .flow-note{margin-top:10px; font-size:11.5px; color:var(--ink-soft); font-family:var(--mono);}
+
+  /* ---- generic panel/card ---- */
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px;}
+  .panel + .panel{margin-top:16px;}
+
+  /* ---- environment / trigger tables ---- */
+  table.t{width:100%; border-collapse:collapse; font-size:12.5px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  table.t th{text-align:left; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:10px 18px; border-bottom:1px solid var(--line); background:var(--paper);}
+  table.t td{padding:12px 18px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-soft);}
+  table.t tr:last-child td{border-bottom:none;}
+  table.t td.main{color:var(--ink); font-weight:600;}
+
+  .env-tag{display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:12px;}
+  .env-dev{background:var(--blue-soft); color:var(--blue); border:1px solid var(--blue-line);}
+  .env-staging{background:var(--amber-soft); color:var(--amber); border:1px solid var(--amber-line);}
+  .env-prod{background:var(--red-soft); color:var(--red); border:1px solid var(--red-line);}
+
+  /* ---- code block ---- */
+  .code{background:var(--ink); color:#D7DCE2; border-radius:var(--radius); padding:18px 20px; font-family:var(--mono); font-size:12px; line-height:1.7; overflow-x:auto; margin:16px 0;}
+  .code .c1{color:#7CD992;} .code .c2{color:#8FB4F0;} .code .c3{color:#E7B96A;} .code .c4{color:#8A909A;}
+
+  /* ---- callout ---- */
+  .callout-box{border-radius:var(--radius); padding:18px 20px; margin:18px 0; font-size:13px;}
+  .callout-box.warn{background:var(--amber-soft); border:1px solid var(--amber-line); color:#6B4A0E;}
+  .callout-box.info{background:var(--blue-soft); border:1px solid var(--blue-line); color:#1E3A6E;}
+  .callout-box b{display:block; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;}
+
+  /* ---- monitoring metric cards ---- */
+  .metric-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px;}
+  .metric-card{background:var(--panel); border:1px solid var(--green-line); border-radius:var(--radius); padding:16px 18px;}
+  .metric-card .name{font-size:13px; font-weight:700; margin-bottom:8px;}
+  .metric-row{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; padding:4px 0; border-top:1px dashed var(--line);}
+  .metric-row:first-of-type{border-top:none;}
+  .metric-row .k{color:var(--ink-soft);}
+  .metric-row .v{color:var(--ink); font-weight:700;}
+  .metric-row .v.alert{color:var(--red);}
+
+  /* ---- runbook cards ---- */
+  .rb-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:18px;}
+  .rb-card{background:var(--panel); border:1px solid var(--violet-line); border-radius:var(--radius); overflow:hidden;}
+  .rb-head{background:var(--violet-soft); border-bottom:1px solid var(--violet-line); padding:12px 18px; display:flex; align-items:center; gap:10px;}
+  .rb-head .ico{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--violet);}
+  .rb-head h4{margin:0; font-size:13.5px;}
+  .rb-body{padding:14px 18px;}
+  .rb-line{margin-bottom:10px;}
+  .rb-line .lbl{font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); display:block; margin-bottom:2px;}
+  .rb-line .txt{font-size:12.5px; color:var(--ink); margin:0;}
+  .rb-line ul{margin:2px 0 0; padding-left:16px; font-size:12.5px; color:var(--ink);}
+  .rb-line li{margin-bottom:3px;}
+
+  .esc-badge{display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:12px;}
+  .esc-l1{background:var(--blue-soft); color:var(--blue); border:1px solid var(--blue-line);}
+  .esc-l2{background:var(--amber-soft); color:var(--amber); border:1px solid var(--amber-line);}
+  .esc-l3{background:var(--red-soft); color:var(--red); border:1px solid var(--red-line);}
+
+  .pir-template{background:var(--panel); border:2px dashed var(--line-strong); border-radius:var(--radius); padding:18px 20px;}
+  .pir-template .f{margin-bottom:10px;}
+  .pir-template label{display:block; font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:3px;}
+  .pir-template .v{border-bottom:1px dashed var(--line-strong); padding:4px 2px; font-size:12.5px; color:var(--ink-soft); min-height:18px;}
+
+  footer{padding:40px 0 60px; color:var(--ink-soft); font-size:12px; font-family:var(--mono);}
+
+  @media (max-width:640px){ header.hero h1{font-size:24px;} }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="inner">
+    <span class="brand">Deployment &amp; Maintenance · UMKM All-in-One</span>
+    <a href="#cicd">CI/CD Pipeline</a>
+    <a href="#rollback">Rollback</a>
+    <a href="#monitoring">Monitoring</a>
+    <a href="#runbook">Runbook</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow">Dokumen Operasional · Draft v1.0 · 8 Juli 2026</span>
+    <h1>Deployment &amp; Maintenance Plan: All-in-One Tools Administrasi UMKM</h1>
+    <p class="lead">Pipeline rilis, strategi rollback, setup monitoring, dan runbook operasional — melanjutkan keputusan infrastruktur di Technical Specification §3.4 dan ownership di RACI Project Timeline. Dokumen ini yang dipegang tim saat sistem bermasalah pukul 2 pagi.</p>
+    <div class="meta-row">
+      <div><b>Environment</b>3 tingkat (Dev/Staging/Prod)</div>
+      <div><b>Rollback trigger</b>4 kondisi terdefinisi</div>
+      <div><b>Metrik dipantau</b>7 metrik inti</div>
+      <div><b>Runbook</b>7 skenario insiden umum</div>
+    </div>
+  </header>
+
+  <!-- ================= CI/CD PIPELINE ================= -->
+  <section id="cicd">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">01 · Rilis Otomatis</span><h2>CI/CD Pipeline</h2></div><span class="count">GitHub Actions</span></div>
+
+    <div class="sub-head">Strategi Branch</div>
+    <div class="flow">
+      <div class="flow-step"><span class="n">01</span><strong>feature/*</strong><span class="d">Kerja per task, dari backlog sprint</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">02</span><strong>PR ke develop</strong><span class="d">Review kode min. 1 rekan tim</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">03</span><strong>develop</strong><span class="d">Auto-deploy ke Staging</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">04</span><strong>QA sign-off</strong><span class="d">Uji sesuai Testing &amp; QA Checklist</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">05</span><strong>PR ke main</strong><span class="d">Approval PM + reviewer</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">06</span><strong>main</strong><span class="d">Auto-deploy ke Production</span></div>
+    </div>
+
+    <div class="sub-head">Tahapan Pipeline (tiap push/PR)</div>
+    <div class="flow">
+      <div class="flow-step"><span class="n">1</span><strong>Lint &amp; Type Check</strong><span class="d">ESLint + TypeScript</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">2</span><strong>Unit Test</strong><span class="d">Vitest (FE) + Fastify test (BE)</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">3</span><strong>Build</strong><span class="d">SvelteKit build + Docker image BE</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">4</span><strong>Deploy Staging</strong><span class="d">Otomatis bila di branch develop</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">5</span><strong>E2E Test</strong><span class="d">Playwright — cakupan skenario QA Checklist</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">6</span><strong>Deploy Production</strong><span class="d">Manual gate, hanya dari main</span></div>
+    </div>
+    <div class="flow-note">Gagal di tahap manapun → pipeline berhenti, tidak lanjut ke deploy. Notifikasi otomatis ke channel tim.</div>
+
+    <div class="sub-head">Environment</div>
+    <table class="t">
+      <tr><th>Environment</th><th>Trigger Deploy</th><th>Infra</th><th>Data</th><th>Akses</th></tr>
+      <tr>
+        <td class="main"><span class="env-tag env-dev">Development</span></td>
+        <td>Manual, lokal tiap developer</td><td>Docker Compose lokal</td><td>Data dummy/seed</td><td>Semua developer</td>
+      </tr>
+      <tr>
+        <td class="main"><span class="env-tag env-staging">Staging</span></td>
+        <td>Otomatis, tiap push ke <code>develop</code></td><td>VPS Coolify — instance terpisah dari produksi</td><td>Data dummy realistis + subset anonim</td><td>Tim internal + pilot tester terbatas</td>
+      </tr>
+      <tr>
+        <td class="main"><span class="env-tag env-prod">Production</span></td>
+        <td>Manual approval, hanya dari <code>main</code></td><td>VPS Coolify / Fly.io (§3.4 Tech Spec)</td><td>Data real pengguna</td><td>Publik</td>
+      </tr>
+    </table>
+
+    <div class="sub-head">Contoh Struktur GitHub Actions Workflow</div>
+    <div class="code">
+name: <span class="c3">deploy-pipeline</span><br>
+on:<br>
+&nbsp;&nbsp;push:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;branches: [<span class="c1">develop</span>, <span class="c1">main</span>]<br>
+<br>
+jobs:<br>
+&nbsp;&nbsp;<span class="c2">lint-test</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- run: <span class="c4">npm ci &amp;&amp; npm run lint &amp;&amp; npm run test</span><br>
+&nbsp;&nbsp;<span class="c2">build</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;needs: <span class="c1">lint-test</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- run: <span class="c4">docker build -t app:${{ github.sha }} .</span><br>
+&nbsp;&nbsp;<span class="c2">deploy-staging</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if: <span class="c1">github.ref == 'refs/heads/develop'</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;needs: <span class="c1">build</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps: [<span class="c4">deploy via Coolify webhook</span>]<br>
+&nbsp;&nbsp;<span class="c2">deploy-production</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if: <span class="c1">github.ref == 'refs/heads/main'</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment: <span class="c3">production</span> <span class="c4"># wajib approval manual</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;needs: <span class="c1">build</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps: [<span class="c4">deploy via Coolify webhook, tag image dengan versi semver</span>]
+    </div>
+  </section>
+
+  <!-- ================= ROLLBACK ================= -->
+  <section id="rollback">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">02 · Jaring Pengaman</span><h2>Rollback Strategy</h2></div><span class="count">4 trigger</span></div>
+
+    <div class="panel">
+      <b style="font-family:var(--mono); font-size:11px; text-transform:uppercase; color:var(--ink-soft);">Pendekatan Deployment</b>
+      <p style="margin:8px 0 0; font-size:13px; color:var(--ink-soft);">Rolling update dengan health check (didukung native oleh Docker Compose/Coolify) — cukup untuk skala tim &amp; traffic saat ini. Migrasi ke blue-green deployment dipertimbangkan saat traffic bertambah signifikan di Fase 3, bukan di awal, karena kompleksitas tambahan tidak sepadan dengan skala saat ini.</p>
+    </div>
+
+    <div class="sub-head">Versioning</div>
+    <p style="font-size:13px; color:var(--ink-soft); max-width:760px;">Semantic versioning (<code>vMAJOR.MINOR.PATCH</code>) + git tag per rilis production. Docker image di-tag ganda: <code>git-sha</code> (untuk rollback presisi ke commit tertentu) dan <code>versi semver</code> (untuk komunikasi rilis ke tim/pengguna).</p>
+
+    <div class="sub-head">Trigger Rollback</div>
+    <table class="t">
+      <tr><th>Trigger</th><th>Ambang Batas</th><th>Aksi</th></tr>
+      <tr><td class="main">Error rate 5xx API meningkat</td><td>&gt;5% dalam 5 menit setelah deploy</td><td>Alert otomatis (§03 Monitoring), tim putuskan rollback atau hotfix forward</td></tr>
+      <tr><td class="main">Health check endpoint gagal</td><td>3x berturut-turut</td><td>Auto-restart container; jika masih gagal → rollback manual</td></tr>
+      <tr><td class="main">Bug Critical baru ditemukan pasca-deploy</td><td>Sesuai definisi severity di Testing &amp; QA Checklist</td><td>Rollback segera — tidak menunggu investigasi akar masalah selesai dulu</td></tr>
+      <tr><td class="main">Lonjakan komplain pengguna</td><td>Laporan manual dari CS/PM yang mengindikasikan dampak luas</td><td>Tim putuskan rollback berdasarkan dampak bisnis, bukan hanya data teknis</td></tr>
+    </table>
+
+    <div class="sub-head">Prosedur Rollback</div>
+    <div class="flow">
+      <div class="flow-step"><span class="n">1</span><strong>Deteksi</strong><span class="d">Alert monitoring / laporan pengguna</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">2</span><strong>Putuskan</strong><span class="d">Rollback vs hotfix forward</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">3</span><strong>Revert image</strong><span class="d">Ke tag versi sebelumnya</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">4</span><strong>Cek migrasi DB</strong><span class="d">Lihat catatan expand-contract di bawah</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">5</span><strong>Smoke test</strong><span class="d">Verifikasi alur Kasir inti berjalan</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">6</span><strong>Komunikasi</strong><span class="d">Ke tim &amp; pengguna bila perlu</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="n">7</span><strong>Review</strong><span class="d">Jadwalkan post-incident review (§04)</span></div>
+    </div>
+
+    <div class="callout-box warn">
+      <b>Perhatian khusus — migrasi database &amp; arsitektur offline-first</b>
+      Karena client menyimpan salinan data lokal yang sinkron ke server (§4 Tech Spec), rollback skema database secara langsung berisiko tinggi begitu client mulai sinkron dengan skema baru. Gunakan pola <b>expand-contract</b>: migrasi menambah kolom/tabel baru tanpa menghapus yang lama dulu → deploy → baru di rilis berikutnya hapus struktur lama setelah dipastikan tidak ada client offline lama yang masih memakainya. Hindari rollback migration langsung di production jika sudah ada data baru yang masuk ke skema baru — lebih aman melakukan hotfix forward.
+    </div>
+
+    <div class="callout-box info">
+      <b>Feature flag sebagai kill switch</b>
+      Fitur besar/berisiko (mis. prediksi AI, integrasi marketplace baru) diaktifkan lewat flag sederhana (env var atau tabel <code>feature_flags</code>), sehingga bisa dimatikan cepat tanpa rollback deployment penuh saat bermasalah — terutama berguna untuk fitur Fase 3 yang bergantung pada API pihak ketiga.
+    </div>
+  </section>
+
+  <!-- ================= MONITORING ================= -->
+  <section id="monitoring">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">03 · Kesehatan Sistem</span><h2>Monitoring Setup</h2></div><span class="count">7 metrik inti</span></div>
+
+    <div class="sub-head">Tools (selaras prinsip biaya rendah §3.4 Tech Spec)</div>
+    <table class="t">
+      <tr><th>Kebutuhan</th><th>Tools</th><th>Catatan</th></tr>
+      <tr><td class="main">Uptime monitoring</td><td>Uptime Kuma (self-hosted)</td><td>Gratis, cek endpoint API &amp; frontend tiap beberapa menit</td></tr>
+      <tr><td class="main">Error tracking</td><td>Sentry (free tier)</td><td>Menangkap error FE (SvelteKit) &amp; BE (Fastify) dengan stack trace</td></tr>
+      <tr><td class="main">Log terstruktur</td><td>Pino (BE) → file / Loki</td><td>JSON log, retensi 14–30 hari</td></tr>
+      <tr><td class="main">Metrics &amp; dashboard</td><td>Grafana + Prometheus (self-host di VPS yang sama)</td><td>API latency, request rate, error rate</td></tr>
+      <tr><td class="main">Queue monitoring</td><td>Bull Board</td><td>Dashboard bawaan untuk job BullMQ (PDF, WhatsApp, AI)</td></tr>
+      <tr><td class="main">Analitik pengguna nyata</td><td>Cloudflare Analytics</td><td>Sudah tersedia karena Cloudflare dipakai sebagai CDN</td></tr>
+    </table>
+
+    <div class="sub-head">Metrik Inti &amp; Ambang Alert</div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="name">Uptime API</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">≥ 99.5%</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">turun 24 jam berjalan</span></div>
+        <div class="metric-row"><span class="k">Sumber</span><span class="v">PRD §4.4</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="name">API Latency (p95)</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">&lt; 500ms</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">&gt;1000ms, 5 menit</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Error Rate 5xx</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">&lt; 1%</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">&gt; 5%</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Sync Queue Backlog</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">Terproses &lt;5 detik</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">&gt;100 tertunda &gt;10 menit</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="name">BullMQ Failed Jobs</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">&lt; 1% gagal</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">&gt; 5% gagal</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Disk Usage VPS</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">&lt; 70%</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">&gt; 80%</span></div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Lighthouse Mobile (mingguan)</div>
+        <div class="metric-row"><span class="k">Target</span><span class="v">≥ 90</span></div>
+        <div class="metric-row"><span class="k">Alert jika</span><span class="v alert">&lt; 80</span></div>
+        <div class="metric-row"><span class="k">Sumber</span><span class="v">§8 Tech Spec</span></div>
+      </div>
+    </div>
+
+    <div class="callout-box info" style="margin-top:20px;">
+      <b>Kanal alert &amp; on-call ringan</b>
+      Karena tim inti kecil (§01 Project Timeline), alert dikirim ke grup WhatsApp internal tim + email — bukan sistem paging enterprise yang mahal. BE/OPS jadi penerima alert utama (sesuai RACI), dieskalasi ke PM jika belum ada respons dalam 30 menit untuk insiden berdampak tinggi.
+    </div>
+  </section>
+
+  <!-- ================= RUNBOOK ================= -->
+  <section id="runbook">
+    <div class="ruler"><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick major"></div></div>
+    <div class="sec-head"><div><span class="eyebrow">04 · Saat Terjadi Insiden</span><h2>Runbook</h2></div><span class="count">7 skenario</span></div>
+
+    <div class="sub-head">Alur Umum Penanganan Insiden</div>
+    <div class="flow">
+      <div class="flow-step"><strong>Deteksi</strong><span class="d">Alert atau laporan pengguna</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Triase</strong><span class="d">Tentukan severity &amp; dampak</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Mitigasi Cepat</strong><span class="d">Hentikan dampak meluas dulu</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Akar Masalah</strong><span class="d">Investigasi &amp; perbaikan permanen</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Verifikasi</strong><span class="d">Pastikan benar-benar pulih</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><strong>Review</strong><span class="d">Post-incident review</span></div>
+    </div>
+
+    <div class="sub-head">Runbook per Skenario</div>
+    <div class="rb-grid">
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">01</span><h4>Server/API Down</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Alert Uptime Kuma, pengguna tidak bisa transaksi sama sekali</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Cek status container di Coolify</li><li>Cek log Fastify terakhir</li><li>Cek koneksi ke database</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Restart container</li><li>Jika masih gagal → rollback ke image sebelumnya (§02)</li><li>Jika VPS provider bermasalah → cek status page provider</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">02</span><h4>Koneksi Database Bermasalah</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Error 500 masal, log "connection refused/timeout"</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Cek jumlah koneksi aktif vs limit Postgres</li><li>Cek query yang berjalan lama (slow query)</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Restart connection pool</li><li>Hentikan/optimalkan query bermasalah</li><li>Scale up resource DB bila perlu</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">03</span><h4>Payment Gateway/QRIS Gagal</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Banyak transaksi QRIS macet di status "menunggu konfirmasi"</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Cek status page payment gateway</li><li>Cek log webhook callback masuk</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Informasikan mode fallback tunai via banner in-app</li><li>Hubungi support payment gateway</li><li>Verifikasi ulang transaksi tertunda begitu API pulih</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">04</span><h4>Sync Engine Backlog Menumpuk</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Dashboard sync backlog tinggi, banyak device belum ter-update</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Cek Bull Board untuk job sync yang stuck</li><li>Cari payload corrupt yang macet di antrean</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Isolasi item gagal (sesuai edge case kategori C, QA Checklist)</li><li>Scale worker sync</li><li>Restart worker jika perlu</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">05</span><h4>WhatsApp Business API Gagal Kirim</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Reminder piutang / invoice digital tidak terkirim ke pelanggan</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Cek rate limit di dashboard WhatsApp Business Platform</li><li>Cek status verifikasi nomor bisnis</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Fallback ke email/unduh PDF manual (sesuai edge case E1)</li><li>Hubungi dukungan WhatsApp Business jika akun bermasalah</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">06</span><h4>Sertifikat SSL Mendekati Kadaluarsa</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Alert otomatis 30/7 hari sebelum expired</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Pastikan auto-renewal Let's Encrypt aktif di Coolify</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Trigger renewal manual jika auto-renewal gagal</li><li>Verifikasi sertifikat baru aktif di seluruh domain/subdomain</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rb-card">
+        <div class="rb-head"><span class="ico">07</span><h4>Disk Space Penuh di VPS</h4></div>
+        <div class="rb-body">
+          <div class="rb-line"><span class="lbl">Gejala</span><p class="txt">Alert disk usage &gt;80%</p></div>
+          <div class="rb-line"><span class="lbl">Diagnosis</span><ul><li>Cek ukuran log lama &amp; Docker image menumpuk</li></ul></div>
+          <div class="rb-line"><span class="lbl">Resolusi</span><ul><li>Bersihkan log lama &amp; prune Docker image tidak terpakai</li><li>Pindahkan file backup ke object storage (Cloudflare R2)</li></ul></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sub-head">Eskalasi</div>
+    <table class="t">
+      <tr><th>Level</th><th>Siapa</th><th>Kapan Dieskalasi</th></tr>
+      <tr><td><span class="esc-badge esc-l1">L1</span></td><td class="main">BE/OPS — first responder</td><td>Selalu direspons lebih dulu, sesuai RACI Project Timeline</td></tr>
+      <tr><td><span class="esc-badge esc-l2">L2</span></td><td class="main">PM — keputusan bisnis</td><td>Insiden &gt;30 menit belum teratasi, atau perlu komunikasi ke pengguna</td></tr>
+      <tr><td><span class="esc-badge esc-l3">L3</span></td><td class="main">Seluruh tim</td><td>Insiden Critical yang berdampak langsung ke transaksi/data uang</td></tr>
+    </table>
+    <div class="callout-box warn" style="margin-top:16px;">
+      <b>Catatan realistis untuk tim kecil</b>
+      Belum ada on-call 24/7 penuh. Insiden di luar jam kerja direspons maksimal di awal jam kerja berikutnya — <b>kecuali</b> insiden Critical yang menyangkut data/uang, yang tetap butuh respons darurat via WhatsApp/telepon langsung ke BE/OPS.
+    </div>
+
+    <div class="sub-head">Template Post-Incident Review</div>
+    <div class="pir-template">
+      <div class="f"><label>Apa yang terjadi</label><div class="v">&nbsp;</div></div>
+      <div class="f"><label>Linimasa kejadian (deteksi → mitigasi → pulih)</label><div class="v">&nbsp;</div></div>
+      <div class="f"><label>Akar masalah</label><div class="v">&nbsp;</div></div>
+      <div class="f"><label>Dampak ke pengguna</label><div class="v">&nbsp;</div></div>
+      <div class="f"><label>Action items (dengan owner &amp; tenggat)</label><div class="v">&nbsp;</div></div>
+    </div>
+    <div class="flow-note">Dilakukan maksimal 2 hari kerja setelah insiden Critical/Major selesai ditangani.</div>
+  </section>
+
+  <footer>Dokumen ini adalah rencana operasional awal — akan disempurnakan setelah environment production pertama kali aktif (menjelang MVP Launch, 12 Okt 2026). Terkait dengan Technical Specification v1.0, Project Timeline &amp; Milestone v1.0, dan Testing &amp; QA Checklist v1.0.</footer>
+</div>
+
+</body>
+</html>
