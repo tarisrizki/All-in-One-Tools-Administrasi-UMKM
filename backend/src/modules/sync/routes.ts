@@ -14,7 +14,7 @@ const saleItemSchema = z.object({
 });
 
 const paymentSchema = z.object({
-	method: z.string(),
+	method: z.string().max(50),
 	amount: z.number().min(0),
 });
 
@@ -24,8 +24,8 @@ const syncPushSchema = z.object({
 			client_transaction_id: z.string().uuid(),
 			items: z.array(saleItemSchema).min(1),
 			payments: z.array(paymentSchema).min(1),
-			customerName: z.string().nullable().optional(),
-			customerPhone: z.string().nullable().optional(),
+			customerName: z.string().max(255).nullable().optional(),
+			customerPhone: z.string().max(30).nullable().optional(),
 			notes: z.string().nullable().optional(),
 		})
 	)

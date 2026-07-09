@@ -5,10 +5,10 @@ import { products, productStock, categories, warehouses } from "../../db/schema.
 import { eq, desc, sql, and, ilike, or } from "drizzle-orm";
 
 const productSchema = z.object({
-	name: z.string().min(2),
+	name: z.string().min(1, "Nama produk wajib diisi").max(255),
 	categoryId: z.string().uuid().nullable().optional(),
-	sku: z.string().optional(),
-	barcode: z.string().optional(),
+	sku: z.string().max(100).nullable().optional(),
+	barcode: z.string().max(100).nullable().optional(),
 	costPrice: z.number().min(0),
 	sellPrice: z.number().min(0),
 	minStock: z.number().min(0).default(5),

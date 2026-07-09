@@ -5,8 +5,9 @@ import { categories } from "../../db/schema.js";
 import { eq, asc, desc } from "drizzle-orm";
 
 const categorySchema = z.object({
-	name: z.string().min(2),
-	description: z.string().optional(),
+	name: z.string().min(1, "Nama kategori wajib diisi").max(255),
+	description: z.string().nullable().optional(),
+	sort_order: z.number().optional(),
 });
 
 export default async function categoryRoutes(app: FastifyInstance) {

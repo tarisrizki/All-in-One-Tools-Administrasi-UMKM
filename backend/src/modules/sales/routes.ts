@@ -13,7 +13,7 @@ const saleItemSchema = z.object({
 });
 
 const paymentSchema = z.object({
-	method: z.string(),
+	method: z.string().max(50),
 	amount: z.number().min(0),
 });
 
@@ -21,8 +21,8 @@ const saleSchema = z.object({
 	clientTransactionId: z.string().uuid().optional(),
 	items: z.array(saleItemSchema).min(1),
 	payments: z.array(paymentSchema).min(1),
-	customerName: z.string().optional().nullable(),
-	customerPhone: z.string().optional().nullable(),
+	customerName: z.string().max(255).optional().nullable(),
+	customerPhone: z.string().max(30).optional().nullable(),
 	customerId: z.string().uuid().optional().nullable(),
 	redeemPoints: z.number().min(0).optional().default(0),
 });

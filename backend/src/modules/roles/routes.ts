@@ -5,8 +5,8 @@ import { ne, eq, and, or, isNull, asc } from "drizzle-orm";
 import { z } from "zod";
 
 const roleSchema = z.object({
-	name: z.string().min(2),
-	description: z.string().optional(),
+	name: z.string().min(1, "Nama role wajib diisi").max(50),
+	description: z.string().nullable().optional(),
 	permissions: z.array(z.string())
 });
 

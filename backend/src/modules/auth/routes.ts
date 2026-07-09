@@ -6,14 +6,14 @@ import { users, roles, businesses, warehouses, categories } from "../../db/schem
 import { eq } from "drizzle-orm";
 
 const registerSchema = z.object({
-	phone: z.string().min(10),
-	password: z.string().min(6),
-	businessName: z.string().min(2),
+	phone: z.string().min(10).max(30),
+	password: z.string().min(6).max(255),
+	businessName: z.string().min(2).max(255),
 });
 
 const loginSchema = z.object({
-	phone: z.string().min(10),
-	password: z.string().min(6),
+	phone: z.string().min(10).max(30),
+	password: z.string().min(6).max(255),
 });
 
 export default async function authRoutes(app: FastifyInstance) {

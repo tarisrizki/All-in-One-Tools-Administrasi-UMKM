@@ -1,7 +1,21 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { db } from "../../plugins/drizzle.js";
 import { suppliers } from "../../db/schema.js";
 import { eq, and, asc } from "drizzle-orm";
+
+const createSupplierSchema = z.object({
+	name: z.string().min(1, "Nama supplier wajib diisi").max(255),
+	contact_name: z.string().max(255).nullable().optional(),
+	phone: z.string().max(30).nullable().optional(),
+	address: z.string().nullable().optional(),
+	email: z.string().max(255).nullable().optional(),
+});
+
+const updateSupplierSchema = createSupplierSchema.extend({
+	name: z.string().min(1).max(255).optional(),
+	is_active: z.boolean().optional(),
+});
 
 export default async function supplierRoutes(fastify: FastifyInstance) {
 	fastify.get(
@@ -26,14 +40,7 @@ export default async function supplierRoutes(fastify: FastifyInstance) {
 		async (request, reply) => {
 			const user = request.user as any;
 			const businessId = user.businessId;
-			const { name, contact_name, phone, address, email } = request.body as any;
-
-			if (!name) {
-				return reply.status(400).send({
-					success: false,
-					error: { message: "Nama supplier wajib diisi" },
-				});
-			}
+			const { name, contact_name, phone, address, email } = createSupplierSchema.parse(request.body);
 
 			const result = await db.insert(suppliers).values({
 				businessId,
@@ -55,7 +62,7 @@ export default async function supplierRoutes(fastify: FastifyInstance) {
 			const user = request.user as any;
 			const businessId = user.businessId;
 			const { id } = request.params as any;
-			const { name, contact_name, phone, address, email, is_active } = request.body as any;
+			const { name, contact_name, phone, address, email, is_active } = updateSupplierSchema.parse(request.body);
 
 			const updateData: any = { updatedAt: new Date().toISOString() };
 			if (name !== undefined) updateData.name = name;

@@ -1,7 +1,23 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { db } from "../../plugins/drizzle.js";
 import { debts, debtPayments } from "../../db/schema.js";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
+
+const debtSchema = z.object({
+	type: z.enum(["hutang", "piutang"]),
+	entity_name: z.string().min(1, "Nama entitas wajib diisi").max(255),
+	entity_phone: z.string().max(30).nullable().optional(),
+	amount: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val > 0, "Nominal harus lebih dari 0"),
+	due_date: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
+});
+
+const paymentSchema = z.object({
+	amount: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val > 0, "Nominal pembayaran tidak valid"),
+	payment_method: z.string().max(100).nullable().optional(),
+	notes: z.string().nullable().optional(),
+});
 
 export default async function debtsRoutes(fastify: FastifyInstance) {
 	fastify.get(
@@ -118,11 +134,7 @@ export default async function debtsRoutes(fastify: FastifyInstance) {
 		async (request, reply) => {
 			const user = request.user as any;
 			const businessId = user.businessId;
-			const { type, entity_name, entity_phone, amount, due_date, notes } = request.body as any;
-
-			if (!type || !entity_name || !amount) {
-				return reply.status(400).send({ success: false, error: { message: "Data tidak lengkap" } });
-			}
+			const { type, entity_name, entity_phone, amount, due_date, notes } = debtSchema.parse(request.body);
 
 			const result = await db.insert(debts).values({
 				businessId,
@@ -147,11 +159,7 @@ export default async function debtsRoutes(fastify: FastifyInstance) {
 			const user = request.user as any;
 			const businessId = user.businessId;
 			const { id } = request.params as any;
-			const { amount, payment_method, notes } = request.body as any;
-
-			if (!amount || amount <= 0) {
-				return reply.status(400).send({ success: false, error: { message: "Nominal pembayaran tidak valid" } });
-			}
+			const { amount, payment_method, notes } = paymentSchema.parse(request.body);
 
 			try {
 				const updatedDebtRes = await db.transaction(async (tx) => {

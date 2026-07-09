@@ -1,7 +1,26 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { db } from "../../plugins/drizzle.js";
 import { purchaseOrders, purchaseOrderItems, suppliers, warehouses, products, productStock } from "../../db/schema.js";
 import { eq, and, desc, sql } from "drizzle-orm";
+
+const purchaseItemSchema = z.object({
+	product_id: z.string().uuid(),
+	qty: z.number().positive(),
+	cost_price: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val >= 0),
+});
+
+const purchaseSchema = z.object({
+	warehouse_id: z.string().uuid(),
+	supplier_id: z.string().uuid(),
+	expected_date: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
+	items: z.array(purchaseItemSchema).min(1, "Data PO tidak lengkap"),
+});
+
+const purchaseStatusSchema = z.object({
+	status: z.enum(["draft", "ordered", "received"]),
+});
 
 export default async function purchaseRoutes(fastify: FastifyInstance) {
 	fastify.get(
@@ -99,14 +118,7 @@ export default async function purchaseRoutes(fastify: FastifyInstance) {
 		async (request, reply) => {
 			const user = request.user as any;
 			const businessId = user.businessId;
-			const { warehouse_id, supplier_id, expected_date, notes, items } = request.body as any;
-
-			if (!warehouse_id || !supplier_id || !items || items.length === 0) {
-				return reply.status(400).send({
-					success: false,
-					error: { message: "Data PO tidak lengkap" },
-				});
-			}
+			const { warehouse_id, supplier_id, expected_date, notes, items } = purchaseSchema.parse(request.body);
 
 			try {
 				const newPo = await db.transaction(async (tx) => {
@@ -159,11 +171,7 @@ export default async function purchaseRoutes(fastify: FastifyInstance) {
 			const user = request.user as any;
 			const businessId = user.businessId;
 			const { id } = request.params as any;
-			const { status } = request.body as any;
-
-			if (!["draft", "ordered", "received"].includes(status)) {
-				return reply.status(400).send({ success: false, error: { message: "Status tidak valid" } });
-			}
+			const { status } = purchaseStatusSchema.parse(request.body);
 
 			try {
 				const updatedPo = await db.transaction(async (tx) => {

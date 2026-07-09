@@ -7,7 +7,7 @@ import { eq, desc } from "drizzle-orm";
 const cashbookSchema = z.object({
 	type: z.enum(["in", "out"]),
 	amount: z.number().min(1),
-	description: z.string().min(2),
+	description: z.string().min(1, "Deskripsi wajib diisi"),
 });
 
 export default async function cashbookRoutes(app: FastifyInstance) {

@@ -1,7 +1,19 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { db } from "../../plugins/drizzle.js";
 import { warehouses } from "../../db/schema.js";
 import { eq, and, asc } from "drizzle-orm";
+
+const createWarehouseSchema = z.object({
+	name: z.string().min(1, "Nama gudang wajib diisi").max(255),
+	address: z.string().nullable().optional(),
+	is_default: z.boolean().optional(),
+});
+
+const updateWarehouseSchema = createWarehouseSchema.extend({
+	name: z.string().min(1).max(255).optional(),
+	is_active: z.boolean().optional(),
+});
 
 export default async function warehouseRoutes(fastify: FastifyInstance) {
 	fastify.get(
@@ -26,14 +38,7 @@ export default async function warehouseRoutes(fastify: FastifyInstance) {
 		async (request, reply) => {
 			const user = request.user as any;
 			const businessId = user.businessId;
-			const { name, address, is_default } = request.body as any;
-
-			if (!name) {
-				return reply.status(400).send({
-					success: false,
-					error: { message: "Nama gudang wajib diisi" },
-				});
-			}
+			const { name, address, is_default } = createWarehouseSchema.parse(request.body);
 
 			const result = await db.insert(warehouses).values({
 				businessId,
@@ -53,7 +58,7 @@ export default async function warehouseRoutes(fastify: FastifyInstance) {
 			const user = request.user as any;
 			const businessId = user.businessId;
 			const { id } = request.params as any;
-			const { name, address, is_default, is_active } = request.body as any;
+			const { name, address, is_default, is_active } = updateWarehouseSchema.parse(request.body);
 
 			const updateData: any = { updatedAt: new Date().toISOString() };
 			if (name !== undefined) updateData.name = name;

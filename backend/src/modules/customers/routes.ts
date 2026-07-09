@@ -1,7 +1,15 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { db } from "../../plugins/drizzle.js";
 import { eq, and, or, ilike, asc, sql, getTableColumns } from "drizzle-orm";
 import { sales, customers } from "../../db/schema.js";
+
+const customerSchema = z.object({
+	name: z.string().min(1, "Nama pelanggan wajib diisi").max(255),
+	phone: z.string().max(30).nullable().optional(),
+	email: z.string().max(255).nullable().optional(),
+	address: z.string().nullable().optional(),
+});
 
 export default async function customerRoutes(fastify: FastifyInstance) {
 	fastify.get(
@@ -86,14 +94,7 @@ export default async function customerRoutes(fastify: FastifyInstance) {
 		async (request, reply) => {
 			const user = request.user as any;
 			const businessId = user.businessId;
-			const { name, phone, email, address } = request.body as any;
-
-			if (!name) {
-				return reply.status(400).send({
-					success: false,
-					error: { message: "Nama pelanggan wajib diisi" },
-				});
-			}
+			const { name, phone, email, address } = customerSchema.parse(request.body);
 
 			const result = await db.insert(customers).values({
 				businessId,
@@ -115,14 +116,7 @@ export default async function customerRoutes(fastify: FastifyInstance) {
 			const user = request.user as any;
 			const businessId = user.businessId;
 			const { id } = request.params as any;
-			const { name, phone, email, address } = request.body as any;
-
-			if (!name) {
-				return reply.status(400).send({
-					success: false,
-					error: { message: "Nama pelanggan wajib diisi" },
-				});
-			}
+			const { name, phone, email, address } = customerSchema.parse(request.body);
 
 			const result = await db.update(customers)
 				.set({
