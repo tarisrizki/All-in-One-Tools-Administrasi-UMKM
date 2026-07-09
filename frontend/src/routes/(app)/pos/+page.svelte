@@ -8,7 +8,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { toast } from 'svelte-sonner';
-	import { Home, Search, ShoppingCart, Store } from 'lucide-svelte';
+	import { Home, Search, ShoppingCart, Store } from '@lucide/svelte';
 	import { v4 as uuidv4 } from 'uuid';
 
 	import ProductGrid from '$lib/components/pos/ProductGrid.svelte';

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
-	import { ShieldCheck, ChevronRight } from 'lucide-svelte';
+	import { ShieldCheck, ChevronRight } from '@lucide/svelte';
 	import { hasPermission } from '$lib/stores/auth.svelte';
 </script>
 

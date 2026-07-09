@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Brain, TrendingUp, AlertTriangle, MessageSquare, Send, Sparkles } from 'lucide-svelte';
+	import { Brain, TrendingUp, AlertTriangle, MessageSquare, Send, Sparkles } from '@lucide/svelte';
 	import { formatRupiah } from '$lib/utils/format';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import { slide } from 'svelte/transition';

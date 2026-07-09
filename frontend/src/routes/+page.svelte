@@ -8,7 +8,7 @@
 		ShoppingCart, Warehouse, Wallet, Users, BarChart2, Printer, Plug,
 		Archive, TrendingUp, Lightbulb, FileText, Bot,
 		Package
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 
 
 	let navScrolled = $state(false);

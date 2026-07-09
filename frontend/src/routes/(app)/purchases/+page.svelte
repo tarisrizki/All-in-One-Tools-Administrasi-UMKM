@@ -8,7 +8,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Badge } from '$lib/components/ui/badge';
 	import { toast } from 'svelte-sonner';
-	import { PackageOpen, Plus } from 'lucide-svelte';
+	import { PackageOpen, Plus } from '@lucide/svelte';
 	import { formatRupiah, formatDate } from '$lib/utils/format';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';

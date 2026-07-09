@@ -6,7 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
 	import * as Card from '$lib/components/ui/card';
-	import { ShieldCheck, Plus, Trash2, Edit } from 'lucide-svelte';
+	import { ShieldCheck, Plus, Trash2, Edit } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';

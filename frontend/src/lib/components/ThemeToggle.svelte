@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { toggleMode } from 'mode-watcher';
-	import { Sun, Moon } from 'lucide-svelte';
+	import { Sun, Moon } from '@lucide/svelte';
 </script>
 
 <Button variant="ghost" size="icon" onclick={toggleMode} aria-label="Toggle theme" class="rounded-full">

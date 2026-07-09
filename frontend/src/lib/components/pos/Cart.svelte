@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Plus, Minus, ShoppingCart, Trash2 } from 'lucide-svelte';
+	import { Plus, Minus, ShoppingCart, Trash2 } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { formatRupiah } from '$lib/utils/format';

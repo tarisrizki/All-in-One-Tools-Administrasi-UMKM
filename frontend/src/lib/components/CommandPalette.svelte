@@ -20,7 +20,7 @@
 		CornerDownLeft,
 		ArrowUp,
 		ArrowDown
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 

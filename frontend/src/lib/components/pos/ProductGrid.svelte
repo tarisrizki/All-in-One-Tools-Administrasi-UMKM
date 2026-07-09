@@ -4,7 +4,7 @@
 	import type { LocalProduct } from '$lib/db';
 	import { fade } from 'svelte/transition';
 	import { animate, spring } from '@motionone/dom';
-	import { PackageOpen } from 'lucide-svelte';
+	import { PackageOpen } from '@lucide/svelte';
 	import { formatRupiah } from '$lib/utils/format';
 
 	let {

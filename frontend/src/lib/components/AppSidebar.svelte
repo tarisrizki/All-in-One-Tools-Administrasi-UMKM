@@ -21,7 +21,7 @@
 		LogOut,
 		Search,
 		X
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 
 	let { onNavigate }: { onNavigate?: () => void } = $props();
 

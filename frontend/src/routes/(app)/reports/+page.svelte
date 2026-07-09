@@ -8,7 +8,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Card from '$lib/components/ui/card';
 	import { toast } from 'svelte-sonner';
-	import { FileText, Download } from 'lucide-svelte';
+	import { FileText, Download } from '@lucide/svelte';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import TabBar from '$lib/components/TabBar.svelte';

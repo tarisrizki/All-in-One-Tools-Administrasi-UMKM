@@ -7,7 +7,7 @@
 	import { fly } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
-	import { RefreshCcw, Settings, LogOut } from 'lucide-svelte';
+	import { RefreshCcw, Settings, LogOut } from '@lucide/svelte';
 
 	import StatsGrid from '$lib/components/dashboard/StatsGrid.svelte';
 	import SalesChart from '$lib/components/dashboard/SalesChart.svelte';

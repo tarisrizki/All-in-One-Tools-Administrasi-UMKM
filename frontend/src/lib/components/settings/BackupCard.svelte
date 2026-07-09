@@ -2,7 +2,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
-	import { DatabaseBackup } from 'lucide-svelte';
+	import { DatabaseBackup } from '@lucide/svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { onMount } from 'svelte';
 

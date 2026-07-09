@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import { formatRupiah } from '$lib/utils/format';
-	import { TrendingUp, Package } from 'lucide-svelte';
+	import { TrendingUp, Package } from '@lucide/svelte';
 
 	let {
 		report,

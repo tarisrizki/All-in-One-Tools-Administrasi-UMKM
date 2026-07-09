@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Separator } from '$lib/components/ui/separator';
-	import { Store, ShoppingCart, Receipt, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
+	import { Store, ShoppingCart, Receipt, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
 
 	const quickMenus = [

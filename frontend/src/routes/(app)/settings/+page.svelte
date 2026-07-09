@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
-	import { LogOut } from 'lucide-svelte';
+	import { LogOut } from '@lucide/svelte';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import StoreProfileCard from '$lib/components/settings/StoreProfileCard.svelte';

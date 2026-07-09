@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import { toast } from 'svelte-sonner';
-	import { FileImage, Store } from 'lucide-svelte';
+	import { FileImage, Store } from '@lucide/svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 
 	async function uploadFile(file: File, type: 'stamp' | 'signature') {

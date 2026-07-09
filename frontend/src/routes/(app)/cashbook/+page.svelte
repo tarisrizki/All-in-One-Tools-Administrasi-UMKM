@@ -6,7 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
 	import * as Card from '$lib/components/ui/card';
-	import { Plus, BookOpen } from 'lucide-svelte';
+	import { Plus, BookOpen } from '@lucide/svelte';
 	import { formatRupiah, formatDateTime } from '$lib/utils/format';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';

@@ -2,7 +2,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
-	import { CheckCircle2, FileText, Download, Printer, Plus } from 'lucide-svelte';
+	import { CheckCircle2, FileText, Download, Printer, Plus } from '@lucide/svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 
 	let {

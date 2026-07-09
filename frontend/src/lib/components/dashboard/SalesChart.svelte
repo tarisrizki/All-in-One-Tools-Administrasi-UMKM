@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BarChart2 } from 'lucide-svelte';
+	import { BarChart2 } from '@lucide/svelte';
 	import { formatRupiah, formatDateShort } from '$lib/utils/format';
 	import { fly } from 'svelte/transition';
 

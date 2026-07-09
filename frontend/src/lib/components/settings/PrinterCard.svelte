@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { toast } from 'svelte-sonner';
-	import { Usb, Printer } from 'lucide-svelte';
+	import { Usb, Printer } from '@lucide/svelte';
 	import { thermalPrinter } from '$lib/utils/printer';
 
 	let printerStatus = $state('Terputus');

@@ -10,7 +10,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Select from '$lib/components/ui/select';
 	import { toast } from 'svelte-sonner';
-	import { ArrowLeft, Plus, Trash2 } from 'lucide-svelte';
+	import { ArrowLeft, Plus, Trash2 } from '@lucide/svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	let warehouses = $state<any[]>([]);

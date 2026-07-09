@@ -7,7 +7,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Card from '$lib/components/ui/card';
-	import { Search, Users, Phone, Mail, Plus } from 'lucide-svelte';
+	import { Search, Users, Phone, Mail, Plus } from '@lucide/svelte';
 
 	import { hasPermission } from '$lib/stores/auth.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';

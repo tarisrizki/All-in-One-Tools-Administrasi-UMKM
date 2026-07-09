@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
-	import { UserCog, Plus } from 'lucide-svelte';
+	import { UserCog, Plus } from '@lucide/svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import { toast } from 'svelte-sonner';

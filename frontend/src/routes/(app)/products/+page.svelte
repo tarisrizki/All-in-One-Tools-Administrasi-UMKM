@@ -8,7 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Table from '$lib/components/ui/table';
 	import * as Card from '$lib/components/ui/card';
-	import { Search, PackageOpen, Plus, Barcode, QrCode } from 'lucide-svelte';
+	import { Search, PackageOpen, Plus, Barcode, QrCode } from '@lucide/svelte';
 	import { formatRupiah } from '$lib/utils/format';
 
 	import { hasPermission } from '$lib/stores/auth.svelte';

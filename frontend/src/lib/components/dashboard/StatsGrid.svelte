@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
-	import { TrendingUp, AlertTriangle } from 'lucide-svelte';
+	import { TrendingUp, AlertTriangle } from '@lucide/svelte';
 	import { formatRupiah } from '$lib/utils/format';
 	import { fade } from 'svelte/transition';
 	import { countUp } from '$lib/utils/countUp';

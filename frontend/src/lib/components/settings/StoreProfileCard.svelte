@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Store, User } from 'lucide-svelte';
+	import { Store, User } from '@lucide/svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 </script>
 

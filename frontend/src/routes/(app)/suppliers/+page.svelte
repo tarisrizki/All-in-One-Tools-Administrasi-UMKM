@@ -11,7 +11,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { toast } from 'svelte-sonner';
-	import { Building2, User, Phone, MapPin, Plus } from 'lucide-svelte';
+	import { Building2, User, Phone, MapPin, Plus } from '@lucide/svelte';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';

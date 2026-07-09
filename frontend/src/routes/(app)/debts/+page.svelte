@@ -5,7 +5,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Card from '$lib/components/ui/card';
 	import { formatRupiah, formatDate, isOverdue } from '$lib/utils/format';
-	import { Handshake, Plus } from 'lucide-svelte';
+	import { Handshake, Plus } from '@lucide/svelte';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import TabBar from '$lib/components/TabBar.svelte';

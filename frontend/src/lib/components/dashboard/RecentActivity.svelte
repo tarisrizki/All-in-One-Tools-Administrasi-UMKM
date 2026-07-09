@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Clock } from 'lucide-svelte';
+	import { Clock } from '@lucide/svelte';
 	import { formatRupiah, formatTime } from '$lib/utils/format';
 	import { fly } from 'svelte/transition';
 
