@@ -156,15 +156,24 @@ export default async function syncRoutes(app: FastifyInstance) {
 						createdBy: userId,
 					}).returning();
 
+					// Dulu: 1 INSERT + 1 UPDATE per item, dijalankan satu-satu dalam loop.
+					// Untuk N transaksi offline x M item, ini bisa jadi ratusan round-trip
+					// DB dalam SATU request sync. Baris saleItems sekarang di-insert
+					// sekaligus (1 query untuk semua item), update stok tetap per baris
+					// karena tiap item punya productId berbeda (tidak bisa digabung aman
+					// dalam satu UPDATE tanpa CASE WHEN yang rawan salah produk).
+					if (t.items.length > 0) {
+						await tx.insert(saleItems).values(
+							t.items.map((item) => ({
+								saleId: sale.id,
+								productId: item.productId,
+								qty: item.qty,
+								price: item.price.toString(),
+								discount: item.discount.toString(),
+							}))
+						);
+					}
 					for (const item of t.items) {
-						await tx.insert(saleItems).values({
-							saleId: sale.id,
-							productId: item.productId,
-							qty: item.qty,
-							price: item.price.toString(),
-							discount: item.discount.toString(),
-						});
-
 						// Update stock
 						await tx.update(productStock)
 							.set({
@@ -177,11 +186,15 @@ export default async function syncRoutes(app: FastifyInstance) {
 					let totalPaid = 0;
 					for (const pay of t.payments) {
 						totalPaid += pay.amount;
-						await tx.insert(payments).values({
-							saleId: sale.id,
-							method: pay.method,
-							amount: pay.amount.toString(),
-						});
+					}
+					if (t.payments.length > 0) {
+						await tx.insert(payments).values(
+							t.payments.map((pay) => ({
+								saleId: sale.id,
+								method: pay.method,
+								amount: pay.amount.toString(),
+							}))
+						);
 					}
 
 					const status = totalPaid >= grandTotal ? "paid" : "partial";

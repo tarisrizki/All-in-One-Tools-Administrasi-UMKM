@@ -131,13 +131,15 @@ export default async function purchaseRoutes(fastify: FastifyInstance) {
 						createdBy: user.id,
 					}).returning();
 
-					for (const item of items) {
-						await tx.insert(purchaseOrderItems).values({
-							poId: po.id,
-							productId: item.product_id,
-							qty: item.qty,
-							costPrice: item.cost_price.toString(),
-						});
+					if (items.length > 0) {
+						await tx.insert(purchaseOrderItems).values(
+							items.map((item: any) => ({
+								poId: po.id,
+								productId: item.product_id,
+								qty: item.qty,
+								costPrice: item.cost_price.toString(),
+							}))
+						);
 					}
 
 					return po;
@@ -185,25 +187,34 @@ export default async function purchaseRoutes(fastify: FastifyInstance) {
 					if (status === "received") {
 						const itemsRes = await tx.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.poId, id));
 
+						// Dulu: SELECT lalu INSERT-atau-UPDATE per item (sampai 2N query
+						// untuk N item PO). Sekarang 1 query upsert untuk semua item
+						// sekaligus, memanfaatkan primary key (productId, warehouseId)
+						// yang memang sudah ada di tabel product_stock.
+						// Digabung dulu per productId -- Postgres menolak ON CONFLICT
+						// yang menyasar baris konflik yang sama dua kali dalam satu
+						// statement (bisa terjadi kalau PO punya 2 baris produk sama).
+						const qtyByProduct = new Map<string, number>();
 						for (const item of itemsRes) {
-							const stockRes = await tx.select({ quantity: productStock.quantity })
-								.from(productStock)
-								.where(and(eq(productStock.productId, item.productId), eq(productStock.warehouseId, po.warehouseId)));
+							qtyByProduct.set(item.productId, (qtyByProduct.get(item.productId) || 0) + item.qty);
+						}
 
-							if (stockRes.length === 0) {
-								await tx.insert(productStock).values({
-									productId: item.productId,
-									warehouseId: po.warehouseId,
-									quantity: item.qty
-								});
-							} else {
-								await tx.update(productStock)
-									.set({
-										quantity: sql`${productStock.quantity} + ${item.qty}`,
+						if (qtyByProduct.size > 0) {
+							await tx.insert(productStock)
+								.values(
+									Array.from(qtyByProduct.entries()).map(([productId, quantity]) => ({
+										productId,
+										warehouseId: po.warehouseId,
+										quantity
+									}))
+								)
+								.onConflictDoUpdate({
+									target: [productStock.productId, productStock.warehouseId],
+									set: {
+										quantity: sql`${productStock.quantity} + excluded.quantity`,
 										updatedAt: new Date().toISOString()
-									})
-									.where(and(eq(productStock.productId, item.productId), eq(productStock.warehouseId, po.warehouseId)));
-							}
+									}
+								});
 						}
 					}
 

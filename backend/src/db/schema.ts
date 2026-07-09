@@ -79,6 +79,11 @@ export const roles = pgTable(
 	"roles",
 	{
 		id: uuid().defaultRandom().primaryKey().notNull(),
+		// Nullable dengan sengaja: 3 role bawaan sistem (owner/admin/cashier)
+		// tetap satu baris global dipakai bersama semua business (businessId
+		// NULL), sedangkan role custom yang dibuat lewat "Tambah Role" di
+		// Pengaturan sekarang terikat ke business pembuatnya.
+		businessId: uuid("business_id"),
 		name: varchar({ length: 50 }).notNull(),
 		description: text(),
 		permissions: jsonb().default([]).notNull(),
@@ -86,7 +91,11 @@ export const roles = pgTable(
 			.defaultNow()
 			.notNull(),
 	},
-	(table) => [unique("roles_name_key").on(table.name)],
+	// Dulu: unique(name) GLOBAL -- artinya 2 business berbeda tidak bisa
+	// sama-sama punya role custom bernama sama, dan business A bisa melihat
+	// (bahkan tanpa sengaja bentrok nama dengan) role custom business B.
+	// Sekarang unique per (businessId, name).
+	(table) => [unique("roles_business_name_key").on(table.businessId, table.name)],
 );
 
 export const categories = pgTable(

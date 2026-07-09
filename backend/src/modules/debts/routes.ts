@@ -33,6 +33,15 @@ export default async function debtsRoutes(fastify: FastifyInstance) {
 			const user = request.user as any;
 			const { id } = request.params as any;
 
+			// Dulu: debtPayments dihapus duluan tanpa cek businessId sama sekali --
+			// artinya siapa pun yang tahu/menebak UUID hutang milik business LAIN
+			// bisa menghapus riwayat pembayarannya (baris debts sendiri sudah aman,
+			// tapi child table-nya tidak). Sekarang verifikasi kepemilikan dulu.
+			const debtRes = await db.select({ id: debts.id }).from(debts).where(and(eq(debts.id, id), eq(debts.businessId, user.businessId)));
+			if (debtRes.length === 0) {
+				return reply.status(404).send({ success: false, error: { message: "Data tidak ditemukan" } });
+			}
+
 			await db.delete(debtPayments).where(eq(debtPayments.debtId, id));
 			await db.delete(debts).where(and(eq(debts.id, id), eq(debts.businessId, user.businessId)));
 

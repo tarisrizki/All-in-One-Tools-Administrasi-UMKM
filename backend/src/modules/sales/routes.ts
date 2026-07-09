@@ -177,16 +177,21 @@ export default async function salesRoutes(app: FastifyInstance) {
 					createdBy: userId,
 				}).returning();
 
-				// 2. Insert Items & Update Stock
+				// 2. Insert Items (satu query untuk semua baris, bukan 1 insert per item)
+				//    lalu update stok per produk (tetap per-baris, lihat catatan di
+				//    sync/routes.ts untuk alasannya).
+				if (data.items.length > 0) {
+					await tx.insert(saleItems).values(
+						data.items.map((item) => ({
+							saleId: sale.id,
+							productId: item.productId,
+							qty: item.qty,
+							price: item.price.toString(),
+							discount: item.discount.toString(),
+						}))
+					);
+				}
 				for (const item of data.items) {
-					await tx.insert(saleItems).values({
-						saleId: sale.id,
-						productId: item.productId,
-						qty: item.qty,
-						price: item.price.toString(),
-						discount: item.discount.toString(),
-					});
-
 					// Update stock
 					await tx.update(productStock)
 						.set({
@@ -196,15 +201,19 @@ export default async function salesRoutes(app: FastifyInstance) {
 						.where(and(eq(productStock.productId, item.productId), eq(productStock.warehouseId, warehouseId)));
 				}
 
-				// 3. Insert Payments
+				// 3. Insert Payments (dibatch juga)
 				let totalPaid = 0;
 				for (const pay of data.payments) {
 					totalPaid += pay.amount;
-					await tx.insert(payments).values({
-						saleId: sale.id,
-						method: pay.method,
-						amount: pay.amount.toString(),
-					});
+				}
+				if (data.payments.length > 0) {
+					await tx.insert(payments).values(
+						data.payments.map((pay) => ({
+							saleId: sale.id,
+							method: pay.method,
+							amount: pay.amount.toString(),
+						}))
+					);
 				}
 
 				// 4. Update status if fully paid or partial
