@@ -99,50 +99,50 @@
 	}
 </script>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-	<div class="bg-surface w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
+	<div class="bg-paper w-full max-w-2xl rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
 		<!-- Header -->
-		<div class="px-6 py-4 border-b flex justify-between items-center bg-surface">
-			<h3 class="text-xl font-bold font-sans">
+		<div class="px-6 py-4 border-b border-border flex justify-between items-center bg-paper">
+			<h3 class="text-xl font-bold font-grotesk text-ink">
 				{role?.id ? 'Ubah Hak Akses (Role)' : 'Tambah Role Baru'}
 			</h3>
-			<button class="text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted" onclick={oncancel}>
+			<button class="text-ink-faint hover:text-ink p-2 rounded-full hover:bg-paper-alt" onclick={oncancel}>
 				<X class="w-5 h-5" />
 			</button>
 		</div>
 
 		<!-- Form Content -->
-		<div class="p-6 overflow-y-auto flex-1 space-y-6">
+		<div class="p-6 overflow-y-auto flex-1 space-y-6 bg-paper">
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div class="space-y-2">
-					<label class="text-sm font-semibold" for="role-name">Nama Role <span class="text-danger">*</span></label>
-					<Input id="role-name" bind:value={name} placeholder="Misal: Staff Gudang" required />
+					<label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono" for="role-name">Nama Role <span class="text-cta">*</span></label>
+					<Input id="role-name" bind:value={name} placeholder="Misal: Staff Gudang" required class="h-12 rounded-xl border-border bg-paper-alt font-medium" />
 				</div>
 				<div class="space-y-2">
-					<label class="text-sm font-semibold" for="role-desc">Deskripsi</label>
-					<Input id="role-desc" bind:value={description} placeholder="Misal: Hanya bisa mengelola stok" />
+					<label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono" for="role-desc">Deskripsi</label>
+					<Input id="role-desc" bind:value={description} placeholder="Misal: Hanya bisa mengelola stok" class="h-12 rounded-xl border-border bg-paper-alt font-medium" />
 				</div>
 			</div>
 
 			<div class="space-y-4">
-				<h4 class="font-bold text-lg border-b pb-2">Matriks Hak Akses</h4>
-				<p class="text-sm text-muted-foreground -mt-2">Pilih menu dan aksi apa saja yang boleh dilakukan oleh role ini.</p>
+				<h4 class="font-bold font-grotesk text-lg border-b border-border pb-2 text-ink">Matriks Hak Akses</h4>
+				<p class="text-sm text-ink-soft -mt-2">Pilih menu dan aksi apa saja yang boleh dilakukan oleh role ini.</p>
 				
-				<div class="grid gap-6 sm:grid-cols-2">
+				<div class="grid gap-4 sm:grid-cols-2">
 					{#each PERMISSION_GROUPS as group}
-						<div class="bg-muted/30 p-4 rounded-xl border">
-							<h5 class="font-bold mb-3">{group.title}</h5>
+						<div class="bg-paper-alt p-4 rounded-2xl border border-border">
+							<h5 class="font-bold font-grotesk mb-3 text-ink text-sm">{group.title}</h5>
 							<div class="space-y-3">
 								{#each group.options as opt}
 									<label class="flex items-center space-x-3 cursor-pointer">
 										<input 
 											type="checkbox"
-											class="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand"
+											class="w-4 h-4 rounded border-border text-brand focus:ring-brand accent-brand"
 											checked={permissions.includes(opt.id) || permissions.includes('*')}
 											disabled={permissions.includes('*')}
 											onchange={() => togglePermission(opt.id)}
 										/>
-										<span class="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+										<span class="text-sm leading-none font-medium text-ink peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
 											{opt.label}
 										</span>
 									</label>
@@ -155,9 +155,9 @@
 		</div>
 
 		<!-- Footer -->
-		<div class="px-6 py-4 border-b border-t flex justify-end gap-3 bg-surface mt-auto">
-			<Button variant="outline" onclick={oncancel}>Batal</Button>
-			<Button onclick={handleSubmit} disabled={!name}>Simpan Role</Button>
+		<div class="px-6 py-4 border-t border-border flex justify-end gap-3 bg-paper mt-auto">
+			<Button variant="outline" onclick={oncancel} class="rounded-xl h-11 font-bold border-border">Batal</Button>
+			<Button variant="cta" onclick={handleSubmit} disabled={!name} class="rounded-xl h-11 font-bold">Simpan Role</Button>
 		</div>
 	</div>
 </div>
