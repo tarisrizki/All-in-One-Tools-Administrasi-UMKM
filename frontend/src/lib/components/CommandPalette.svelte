@@ -3,6 +3,7 @@
 	import {
 		LayoutDashboard,
 		ShoppingCart,
+		Receipt,
 		Package,
 		ClipboardList,
 		Truck,
@@ -28,6 +29,7 @@
 	const NAV_ITEMS: Item[] = [
 		{ href: '/dashboard', label: 'Dashboard', group: 'Navigasi', icon: LayoutDashboard },
 		{ href: '/pos', label: 'Kasir (POS)', group: 'Navigasi', icon: ShoppingCart, keywords: 'jual transaksi' },
+		{ href: '/penjualan', label: 'Penjualan', group: 'Navigasi', icon: Receipt, keywords: 'riwayat invoice kwitansi nota struk' },
 		{ href: '/products', label: 'Produk & Stok', group: 'Navigasi', icon: Package, keywords: 'barang stok' },
 		{ href: '/purchases', label: 'Pembelian (PO)', group: 'Navigasi', icon: ClipboardList },
 		{ href: '/suppliers', label: 'Supplier', group: 'Navigasi', icon: Truck },

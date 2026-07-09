@@ -1,8 +1,7 @@
 import 'dotenv/config';
 import { db } from '../plugins/drizzle.js';
-import { users, roles, businesses, warehouses, categories, products, customers, suppliers } from '../db/schema.js';
+import { users, roles, businesses, warehouses, categories, products, customers, suppliers, productStock } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 
 async function main() {
 	try {
@@ -54,18 +53,18 @@ async function main() {
 		const cat2 = cats.find(c => c.name === 'Makanan Ringan') || cats[0];
 
 		if (cat1 && cat2) {
-			// 5. Inject Produk
+			// 5. Inject Produk (harga & stok memakai nama kolom asli: sellPrice/costPrice,
+			// stok disimpan terpisah di tabel productStock -- bukan kolom langsung di products)
 			console.log('Menginjeksi produk...');
-			await db.insert(products).values([
+			const insertedProducts = await db.insert(products).values([
 				{
 					businessId,
 					categoryId: cat1.id,
 					sku: `KP-${Date.now().toString().slice(-4)}`,
 					name: 'Kopi Susu Gula Aren',
 					description: 'Kopi susu manis dengan gula aren asli',
-					price: '18000',
-					cost: '10000',
-					stock: 50,
+					sellPrice: '18000',
+					costPrice: '10000',
 					minStock: 10,
 					unit: 'Cup',
 					barcode: `899${Date.now().toString().slice(-8)}`
@@ -76,9 +75,8 @@ async function main() {
 					sku: `KP-${Date.now().toString().slice(-4)}A`,
 					name: 'Americano Dingin',
 					description: 'Espresso dengan es batu',
-					price: '15000',
-					cost: '8000',
-					stock: 100,
+					sellPrice: '15000',
+					costPrice: '8000',
 					minStock: 20,
 					unit: 'Cup',
 					barcode: `899${(Date.now() + 1).toString().slice(-8)}`
@@ -89,14 +87,24 @@ async function main() {
 					sku: `MK-${Date.now().toString().slice(-4)}`,
 					name: 'Kentang Goreng',
 					description: 'Kentang goreng renyah',
-					price: '12000',
-					cost: '6000',
-					stock: 30,
+					sellPrice: '12000',
+					costPrice: '6000',
 					minStock: 5,
 					unit: 'Porsi',
 					barcode: `899${(Date.now() + 2).toString().slice(-8)}`
 				}
-			]).onConflictDoNothing();
+			]).onConflictDoNothing().returning({ id: products.id });
+
+			const stockByProduct = [50, 100, 30];
+			if (insertedProducts.length > 0 && defaultWarehouseId) {
+				await db.insert(productStock).values(
+					insertedProducts.map((p, i) => ({
+						productId: p.id,
+						warehouseId: defaultWarehouseId,
+						quantity: stockByProduct[i] ?? 20
+					}))
+				).onConflictDoNothing();
+			}
 		}
 
 		// 6. Inject Customers
@@ -107,11 +115,11 @@ async function main() {
 			{ businessId, name: 'Andi Pratama', phone: `0856${Date.now().toString().slice(-8)}`, loyaltyPoints: 0, createdBy: demoUser.id }
 		]).onConflictDoNothing();
 
-		// 7. Inject Suppliers
+		// 7. Inject Suppliers (tabel suppliers tidak punya kolom createdBy)
 		console.log('Menginjeksi supplier...');
 		await db.insert(suppliers).values([
-			{ businessId, name: 'Distributor Kopi Nusantara', phone: `02199${Date.now().toString().slice(-6)}`, address: 'Jl. Sudirman No. 10', createdBy: demoUser.id },
-			{ businessId, name: 'Toko Kemasan Plastik', phone: `02155${Date.now().toString().slice(-6)}`, address: 'Pasar Baru', createdBy: demoUser.id }
+			{ businessId, name: 'Distributor Kopi Nusantara', phone: `02199${Date.now().toString().slice(-6)}`, address: 'Jl. Sudirman No. 10' },
+			{ businessId, name: 'Toko Kemasan Plastik', phone: `02155${Date.now().toString().slice(-6)}`, address: 'Pasar Baru' }
 		]).onConflictDoNothing();
 
 		console.log('✅ Demo data berhasil diinjeksi!');

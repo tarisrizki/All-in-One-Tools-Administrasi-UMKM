@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { db } from '../plugins/drizzle.js';
 import { sql } from 'drizzle-orm';
-import { users, roles, products, customers, purchases, sales } from '../db/schema.js';
+import { users, roles, products, customers, purchaseOrders, sales } from '../db/schema.js';
 
 async function run() {
 	try {
@@ -15,7 +15,7 @@ async function run() {
 
 		const p = await db.select({ count: sql`count(*)` }).from(products);
 		const c = await db.select({ count: sql`count(*)` }).from(customers);
-		const pu = await db.select({ count: sql`count(*)` }).from(purchases);
+		const pu = await db.select({ count: sql`count(*)` }).from(purchaseOrders);
 		const s = await db.select({ count: sql`count(*)` }).from(sales);
 		
 		console.log("PRODUCTS:", p[0].count);
