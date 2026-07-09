@@ -9,6 +9,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Card from '$lib/components/ui/card';
 	import { toast } from 'svelte-sonner';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	let form = $state({
 		name: '',
@@ -54,69 +55,43 @@
 </script>
 
 <svelte:head>
-	<title>Tambah Pelanggan | UMKM Tools</title>
+	<title>Tambah Pelanggan — Beres</title>
 </svelte:head>
 
-<div class="min-h-screen bg-muted/40 pb-20">
-	<header class="bg-background px-4 py-4 border-b flex items-center gap-3 sticky top-0 z-10">
-		<Button variant="ghost" size="icon" href="/customers">
-			←
-		</Button>
-		<h1 class="text-lg font-bold">Pelanggan Baru</h1>
-	</header>
+<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
+	<PageHeader title="Pelanggan Baru" subtitle="Database Pelanggan" backHref="/customers" />
 
-	<main class="p-4 max-w-md mx-auto space-y-4 mt-2">
-		<Card.Root>
-			<Card.Content class="p-5 space-y-4">
+	<main class="p-4 sm:p-6 max-w-md mx-auto w-full flex-1">
+		<Card.Root class="bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
+			<Card.Content class="p-5 sm:p-6 space-y-5">
 				<div class="space-y-2">
-					<Label>
-						Nama Lengkap <span class="text-destructive">*</span>
+					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
+						Nama Lengkap <span class="text-cta">*</span>
 					</Label>
-					<Input
-						type="text"
-						bind:value={form.name}
-						placeholder="Mis. Budi Santoso"
-					/>
+					<Input type="text" bind:value={form.name} placeholder="Mis. Budi Santoso" class="h-12 rounded-xl border-border bg-paper-alt font-medium" />
 				</div>
 
 				<div class="space-y-2">
-					<Label>Nomor WhatsApp</Label>
-					<Input
-						type="tel"
-						bind:value={form.phone}
-						placeholder="Mis. 08123456789"
-					/>
-					<p class="text-[10px] text-muted-foreground mt-1">
+					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Nomor WhatsApp</Label>
+					<Input type="tel" bind:value={form.phone} placeholder="Mis. 08123456789" class="h-12 rounded-xl border-border bg-paper-alt font-mono font-medium" />
+					<p class="text-[11px] text-ink-faint mt-1">
 						Gunakan format angka untuk memudahkan klik Hubungi WA nanti.
 					</p>
 				</div>
 
 				<div class="space-y-2">
-					<Label>Email</Label>
-					<Input
-						type="email"
-						bind:value={form.email}
-						placeholder="budi@example.com"
-					/>
+					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Email</Label>
+					<Input type="email" bind:value={form.email} placeholder="budi@example.com" class="h-12 rounded-xl border-border bg-paper-alt font-medium" />
 				</div>
 
 				<div class="space-y-2">
-					<Label>Alamat Domisili</Label>
-					<Textarea
-						bind:value={form.address}
-						rows={3}
-						placeholder="Opsional..."
-					/>
+					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Alamat Domisili</Label>
+					<Textarea bind:value={form.address} rows={3} placeholder="Opsional..." class="rounded-xl border-border bg-paper-alt font-medium" />
 				</div>
 
-				<Button
-					variant="cta"
-					onclick={handleSave}
-					disabled={loading}
-					class="w-full mt-2"
-				>
+				<Button variant="cta" onclick={handleSave} disabled={loading} class="w-full mt-2 rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all">
 					{#if loading}
-						<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
+						<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
 						Menyimpan...
 					{:else}
 						Simpan Data Pelanggan

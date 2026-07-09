@@ -112,26 +112,23 @@
 
 	{#if loading}
 		<div class="flex justify-center p-12">
-			<div
-				class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
-			></div>
+			<LoadingSpinner />
 		</div>
 	{:else if error}
 		<div class="bg-destructive/10 text-destructive p-4 rounded-md border border-destructive/20 font-medium">
 			{error}
 		</div>
-	{:else if purchases.length === 0}
 		<div>
-			<Card.Root class="text-center py-12">
-				<Card.Content class="flex flex-col items-center justify-center">
-					<div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-						<PackageOpen class="w-8 h-8 text-muted-foreground" />
+			<Card.Root class="text-center py-16 bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
+				<Card.Content class="flex flex-col items-center justify-center p-6">
+					<div class="w-20 h-20 bg-paper-alt rounded-full flex items-center justify-center mb-6">
+						<PackageOpen class="w-10 h-10 text-ink-faint" />
 					</div>
-					<h3 class="text-lg font-bold mb-2">Belum Ada Pesanan Pembelian</h3>
-					<p class="text-muted-foreground text-sm mb-6 max-w-sm">
+					<h3 class="text-xl font-bold mb-2 font-grotesk text-ink">Belum Ada Pesanan Pembelian</h3>
+					<p class="text-ink-soft text-sm mb-8 max-w-sm">
 						Buat Purchase Order (PO) untuk merekam transaksi pembelian barang dari supplier Anda.
 					</p>
-					<Button variant="cta" href="/purchases/new">
+					<Button variant="cta" href="/purchases/new" class="rounded-xl h-12 font-bold px-6 shadow-md hover:-translate-y-0.5 transition-all">
 						<Plus class="w-4 h-4 mr-2" />
 						Buat PO Baru
 					</Button>
@@ -139,37 +136,35 @@
 			</Card.Root>
 		</div>
 	{:else}
-		<Card.Root>
+		<Card.Root class="bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
 			<div class="overflow-x-auto">
 				<Table.Root>
-					<Table.Header>
-						<Table.Row>
-							<Table.Head>No. PO</Table.Head>
-							<Table.Head>Tanggal</Table.Head>
-							<Table.Head>Supplier</Table.Head>
-							<Table.Head>Gudang Tujuan</Table.Head>
-							<Table.Head>Total</Table.Head>
-							<Table.Head>Status</Table.Head>
-							<Table.Head class="text-right">Aksi</Table.Head>
+					<Table.Header class="bg-paper-alt">
+						<Table.Row class="border-b-border hover:bg-transparent">
+							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">No. PO</Table.Head>
+							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Tanggal</Table.Head>
+							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Supplier</Table.Head>
+							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Gudang Tujuan</Table.Head>
+							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Total</Table.Head>
+							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Status</Table.Head>
+							<Table.Head class="text-right font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Aksi</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
 						{#each purchases as po, index}
-							<!-- Wait, Table.Row is a component too. But we can't wrap a tr with a div. We should just apply style or class if possible.
-							 Actually, motion doesn't work on Table.Row. We can just skip motion for Table.Row or use it inside the cells. Let's just remove use:motion from Table.Row for now to fix build. -->
-							<Table.Row>
-								<Table.Cell class="font-bold">{po.po_number}</Table.Cell>
-								<Table.Cell class="text-muted-foreground">{formatDate(po.created_at)}</Table.Cell>
-								<Table.Cell>{po.supplier_name}</Table.Cell>
-								<Table.Cell class="text-muted-foreground">{po.warehouse_name}</Table.Cell>
-								<Table.Cell class="font-bold">{formatRupiah(po.total_amount)}</Table.Cell>
+							<Table.Row class="border-b-border/60 hover:bg-muted/40">
+								<Table.Cell class="font-bold font-mono text-brand">{po.po_number}</Table.Cell>
+								<Table.Cell class="text-ink-soft font-mono text-[13px]">{formatDate(po.created_at)}</Table.Cell>
+								<Table.Cell class="font-bold text-ink">{po.supplier_name}</Table.Cell>
+								<Table.Cell class="text-ink-soft font-medium text-[13px]">{po.warehouse_name}</Table.Cell>
+								<Table.Cell class="font-bold font-mono text-ink">{formatRupiah(po.total_amount)}</Table.Cell>
 								<Table.Cell>
 									{#if po.status === 'draft'}
-										<Badge variant="secondary">DRAFT</Badge>
+										<Badge variant="secondary" class="bg-paper-alt text-ink-soft font-mono text-[10px] tracking-wider border-border/60 font-bold">DRAFT</Badge>
 									{:else if po.status === 'ordered'}
-										<Badge variant="outline" class="text-info border-info bg-info-soft">DIPESAN</Badge>
+										<Badge variant="outline" class="text-info font-mono text-[10px] tracking-wider border-info bg-info-soft font-bold">DIPESAN</Badge>
 									{:else if po.status === 'received'}
-										<Badge class="bg-primary hover:bg-primary-dark text-white">DITERIMA</Badge>
+										<Badge class="bg-success hover:bg-success-dark text-white font-mono text-[10px] tracking-wider font-bold">DITERIMA</Badge>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="text-right">
@@ -178,7 +173,7 @@
 										size="sm"
 										onclick={() => openStatusModal(po)}
 										disabled={po.status === 'received'}
-										class="text-primary font-medium"
+										class="text-cta font-bold hover:bg-cta-soft hover:text-cta h-8 rounded-lg"
 									>
 										Update Status
 									</Button>
@@ -195,70 +190,72 @@
 
 <!-- Modal Update Status -->
 <Dialog.Root bind:open={showStatusModal}>
-	<Dialog.Content class="sm:max-w-[425px]">
-		<Dialog.Header>
-			<Dialog.Title>Update Status PO</Dialog.Title>
-			<Dialog.Description>
-				Ubah status untuk pesanan <strong class="text-foreground">{selectedPo?.po_number}</strong> dari <strong class="text-foreground">{selectedPo?.supplier_name}</strong>.
+	<Dialog.Content class="sm:max-w-[425px] bg-paper border-border rounded-3xl p-6 sm:p-8">
+		<Dialog.Header class="mb-4">
+			<Dialog.Title class="font-grotesk font-bold text-ink text-xl">Update Status PO</Dialog.Title>
+			<Dialog.Description class="text-ink-soft">
+				Ubah status untuk pesanan <strong class="text-ink font-mono bg-paper-alt px-1.5 py-0.5 rounded text-[13px]">{selectedPo?.po_number}</strong> dari <strong class="text-ink">{selectedPo?.supplier_name}</strong>.
 			</Dialog.Description>
 		</Dialog.Header>
 
-		<div class="py-4 space-y-3">
+		<div class="py-2 space-y-3">
 			<!-- Option: Draft -->
-			<label class="flex items-start gap-3 p-4 border rounded-md cursor-pointer transition-colors {newStatus === 'draft' ? 'border-primary bg-primary/5' : 'hover:bg-muted'}">
+			<label class="flex items-start gap-4 p-4 border rounded-2xl cursor-pointer transition-colors {newStatus === 'draft' ? 'border-brand bg-brand-soft/30' : 'border-border bg-paper-alt hover:bg-muted/40'}">
 				<input
 					type="radio"
 					bind:group={newStatus}
 					value="draft"
-					class="mt-1"
+					class="mt-1 accent-brand w-4 h-4"
 				/>
 				<div>
-					<div class="font-bold text-sm">Draft</div>
-					<div class="text-xs text-muted-foreground mt-1">Pesanan belum dikirim ke supplier</div>
+					<div class="font-bold text-ink">Draft</div>
+					<div class="text-sm text-ink-soft mt-0.5">Pesanan belum dikirim ke supplier</div>
 				</div>
 			</label>
 
 			<!-- Option: Ordered -->
-			<label class="flex items-start gap-3 p-4 border rounded-md cursor-pointer transition-colors {newStatus === 'ordered' ? 'border-primary bg-primary/5' : 'hover:bg-muted'}">
+			<label class="flex items-start gap-4 p-4 border rounded-2xl cursor-pointer transition-colors {newStatus === 'ordered' ? 'border-brand bg-brand-soft/30' : 'border-border bg-paper-alt hover:bg-muted/40'}">
 				<input
 					type="radio"
 					bind:group={newStatus}
 					value="ordered"
-					class="mt-1"
+					class="mt-1 accent-brand w-4 h-4"
 				/>
 				<div>
-					<div class="font-bold text-sm">Dipesan (Ordered)</div>
-					<div class="text-xs text-muted-foreground mt-1">Pesanan sudah diteruskan ke supplier</div>
+					<div class="font-bold text-ink">Dipesan (Ordered)</div>
+					<div class="text-sm text-ink-soft mt-0.5">Pesanan sudah diteruskan ke supplier</div>
 				</div>
 			</label>
 
 			<!-- Option: Received -->
-			<label class="flex items-start gap-3 p-4 border rounded-md cursor-pointer transition-colors {newStatus === 'received' ? 'border-primary bg-primary/5' : 'hover:bg-muted'}">
+			<label class="flex items-start gap-4 p-4 border rounded-2xl cursor-pointer transition-colors {newStatus === 'received' ? 'border-brand bg-brand-soft/30' : 'border-border bg-paper-alt hover:bg-muted/40'}">
 				<input
 					type="radio"
 					bind:group={newStatus}
 					value="received"
-					class="mt-1"
+					class="mt-1 accent-brand w-4 h-4"
 				/>
 				<div>
-					<div class="font-bold text-sm">Diterima (Received)</div>
-					<div class="text-xs text-muted-foreground mt-1">
-						Barang sudah diterima, <strong class="text-warning">Stok gudang akan bertambah otomatis!</strong>
+					<div class="font-bold text-ink">Diterima (Received)</div>
+					<div class="text-sm text-ink-soft mt-0.5">
+						Barang sudah diterima, <strong class="text-warning-dark">Stok gudang akan bertambah otomatis!</strong>
 					</div>
 				</div>
 			</label>
 		</div>
 
-		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (showStatusModal = false)}>
+		<Dialog.Footer class="mt-6 gap-2 sm:gap-0">
+			<Button variant="outline" class="rounded-xl h-12 font-bold border-border" onclick={() => (showStatusModal = false)}>
 				Batal
 			</Button>
 			<Button
+				variant="cta"
 				onclick={updateStatus}
 				disabled={isSubmitting || newStatus === selectedPo?.status}
+				class="rounded-xl h-12 font-bold"
 			>
 				{#if isSubmitting}
-					<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
+					<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
 					Menyimpan...
 				{:else}
 					Simpan Status

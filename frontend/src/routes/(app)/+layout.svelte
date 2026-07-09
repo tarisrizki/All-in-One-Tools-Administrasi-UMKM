@@ -12,6 +12,7 @@
 	import { queryClient } from '$lib/queryClient';
 	import { slide } from 'svelte/transition';
 	import { ModeWatcher } from 'mode-watcher';
+	import AppSidebar from '$lib/components/AppSidebar.svelte';
 
 	let { children } = $props();
 
@@ -19,6 +20,10 @@
 		// Sync manager berjalan di background, tidak memblokir render
 		initSyncManager();
 	});
+
+	// Kasir (POS) sengaja dibuat full-screen tanpa sidebar, supaya layar kasir
+	// lega untuk transaksi -- pola yang sama dipakai POS fisik pada umumnya.
+	let showSidebar = $derived(!$page.url.pathname.startsWith('/pos'));
 </script>
 
 <svelte:head>
@@ -56,5 +61,18 @@
 
 <ModeWatcher />
 <QueryClientProvider client={queryClient}>
-	{@render children()}
+	{#if showSidebar}
+		<div class="lg:flex lg:min-h-screen lg:items-stretch">
+			<aside class="hidden lg:block lg:w-64 lg:shrink-0">
+				<div class="lg:fixed lg:top-0 lg:left-0 lg:h-screen lg:w-64 lg:z-40">
+					<AppSidebar />
+				</div>
+			</aside>
+			<div class="lg:flex-1 lg:min-w-0 lg:min-h-screen">
+				{@render children()}
+			</div>
+		</div>
+	{:else}
+		{@render children()}
+	{/if}
 </QueryClientProvider>

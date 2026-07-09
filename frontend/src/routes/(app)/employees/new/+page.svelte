@@ -10,6 +10,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as Select from '$lib/components/ui/select';
 	import { toast } from 'svelte-sonner';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	let roles = $state<any[]>([]);
 
@@ -88,68 +89,66 @@
 </script>
 
 <svelte:head>
-	<title>Tambah Karyawan | UMKM Tools</title>
+	<title>Tambah Karyawan — Beres</title>
 </svelte:head>
 
-<div class="min-h-screen bg-muted/40 pb-20">
-	<header class="bg-background px-4 py-4 border-b flex items-center gap-3 sticky top-0 z-10">
-		<Button variant="ghost" size="icon" href="/employees">
-			←
-		</Button>
-		<h1 class="text-lg font-bold">Karyawan Baru</h1>
-	</header>
+<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
+	<PageHeader title="Karyawan Baru" subtitle="Manajemen Karyawan" backHref="/employees" />
 
-	<main class="p-4 max-w-md mx-auto space-y-4 mt-2">
-		<Card.Root>
-			<Card.Content class="p-5 space-y-4">
+	<main class="p-4 sm:p-6 max-w-md mx-auto w-full flex-1">
+		<Card.Root class="bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
+			<Card.Content class="p-5 sm:p-6 space-y-5">
 				<div class="space-y-2">
-					<Label for="name">
-						Nama Karyawan <span class="text-destructive">*</span>
+					<Label for="name" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
+						Nama Karyawan <span class="text-cta">*</span>
 					</Label>
 					<Input
 						id="name"
 						type="text"
 						bind:value={form.name}
 						placeholder="Mis. Siti Kasir"
+						class="h-12 rounded-xl border-border bg-paper-alt font-medium"
 					/>
 				</div>
 
 				<div class="space-y-2">
-					<Label for="phone">
-						Nomor HP (Login ID) <span class="text-destructive">*</span>
+					<Label for="phone" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
+						Nomor HP (Login ID) <span class="text-cta">*</span>
 					</Label>
 					<Input
 						id="phone"
 						type="tel"
 						bind:value={form.phone}
 						placeholder="Mis. 08123456789"
+						class="h-12 rounded-xl border-border bg-paper-alt font-mono font-medium"
 					/>
 				</div>
 
 				<div class="space-y-2">
-					<Label for="password">
-						Password Sementara <span class="text-destructive">*</span>
+					<Label for="password" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
+						Password Sementara <span class="text-cta">*</span>
 					</Label>
 					<Input
 						id="password"
 						type="text"
 						bind:value={form.password}
 						placeholder="Mis. 123456"
+						class="h-12 rounded-xl border-border bg-paper-alt font-mono font-medium"
 					/>
-					<p class="text-[10px] text-muted-foreground mt-1">
+					<p class="text-[11px] text-ink-faint mt-1">
 						Berikan password ini ke karyawan. Mereka dapat mengubahnya nanti.
 					</p>
 				</div>
 
 				<div class="space-y-2">
-					<Label for="role">
-						Hak Akses (Role) <span class="text-destructive">*</span>
+					<Label for="role" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
+						Hak Akses (Role) <span class="text-cta">*</span>
 					</Label>
 					<Select.Root
 						type="single"
 						bind:value={form.role_id}
 					>
-						<Select.Trigger class="w-full">
+						<Select.Trigger class="w-full h-12 rounded-xl border-border bg-paper-alt font-medium">
 							{#if form.role_id}
 								{roles.find((r) => r.id === form.role_id)?.name.toUpperCase()}
 							{:else}
@@ -170,10 +169,10 @@
 					variant="cta"
 					onclick={handleSave}
 					disabled={loading || roles.length === 0}
-					class="w-full mt-4"
+					class="w-full mt-2 rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all"
 				>
 					{#if loading}
-						<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
+						<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
 						Menyimpan...
 					{:else}
 						Buat Akun Karyawan

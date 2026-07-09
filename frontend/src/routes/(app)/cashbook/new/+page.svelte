@@ -9,7 +9,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as RadioGroup from '$lib/components/ui/radio-group';
 	import { toast } from 'svelte-sonner';
-	import { ArrowLeft } from 'lucide-svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	let type = $state('out');
 	let amount = $state('');
@@ -51,68 +51,68 @@
 	}
 </script>
 
-<div class="min-h-screen bg-muted/40 pb-20">
-	<header class="bg-background px-4 py-4 border-b flex items-center gap-3 sticky top-0 z-10">
-		<Button variant="ghost" size="icon" href="/cashbook">
-			<ArrowLeft class="w-5 h-5" />
-		</Button>
-		<h1 class="text-lg font-bold">Catat Transaksi Kas</h1>
-	</header>
+<svelte:head>
+	<title>Catat Transaksi Kas — Beres</title>
+</svelte:head>
 
-	<main class="p-4 max-w-lg mx-auto mt-4">
-		<Card.Root>
+<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
+	<PageHeader title="Catat Transaksi Kas" subtitle="Buku Kas" backHref="/cashbook" />
+
+	<main class="p-4 sm:p-6 max-w-lg mx-auto w-full flex-1">
+		<Card.Root class="bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
 			<form onsubmit={handleSubmit}>
-				<Card.Content class="pt-6 space-y-6">
+				<Card.Content class="p-5 sm:p-6 space-y-6">
 					<div class="space-y-3">
-						<Label class="text-base">Jenis Transaksi</Label>
+						<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Jenis Transaksi</Label>
 						<RadioGroup.Root bind:value={type} class="flex flex-col gap-3 sm:flex-row sm:gap-6">
 							<div class="flex items-center space-x-2">
 								<RadioGroup.Item value="out" id="out" />
-								<Label for="out" class="text-destructive font-medium cursor-pointer">Pengeluaran</Label>
+								<Label for="out" class="text-cta font-bold cursor-pointer">Pengeluaran</Label>
 							</div>
 							<div class="flex items-center space-x-2">
 								<RadioGroup.Item value="in" id="in" />
-								<Label for="in" class="text-primary font-medium cursor-pointer">Pemasukan</Label>
+								<Label for="in" class="text-success font-bold cursor-pointer">Pemasukan</Label>
 							</div>
 						</RadioGroup.Root>
 					</div>
 
 					<div class="space-y-2">
-						<Label for="amount">Nominal (Rp) <span class="text-destructive">*</span></Label>
+						<Label for="amount" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Nominal (Rp) <span class="text-cta">*</span></Label>
 						<div class="relative">
-							<span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Rp</span>
+							<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint font-mono font-semibold">Rp</span>
 							<Input
 								type="number"
 								id="amount"
 								bind:value={amount}
 								required
-								class="pl-10 font-bold text-lg h-12"
+								class="pl-10 font-mono font-bold text-lg h-12 rounded-xl border-border bg-paper-alt"
 								placeholder="0"
 							/>
 						</div>
 					</div>
 
 					<div class="space-y-2">
-						<Label for="description">Keterangan <span class="text-destructive">*</span></Label>
+						<Label for="description" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Keterangan <span class="text-cta">*</span></Label>
 						<Input
 							type="text"
 							id="description"
 							bind:value={description}
 							required
 							placeholder="Mis: Beli kantong plastik"
+							class="h-12 rounded-xl border-border bg-paper-alt font-medium"
 						/>
 					</div>
 				</Card.Content>
-				<Card.Footer>
+				<Card.Footer class="px-5 sm:px-6 pb-6">
 					<Button
 						type="submit"
 						variant="cta"
 						disabled={loading}
-						class="w-full font-bold"
+						class="w-full font-bold rounded-xl h-12 shadow-md hover:-translate-y-0.5 transition-all"
 						size="lg"
 					>
 						{#if loading}
-							<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
+							<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
 							Menyimpan...
 						{:else}
 							Simpan Transaksi

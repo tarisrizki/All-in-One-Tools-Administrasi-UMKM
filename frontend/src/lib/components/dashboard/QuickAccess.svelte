@@ -1,16 +1,21 @@
 <script lang="ts">
 	import { Separator } from '$lib/components/ui/separator';
-	import { Store, ShoppingCart, Package, Users, LineChart, Handshake, Calculator, Sparkles } from 'lucide-svelte';
+	import { Store, ShoppingCart, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 
 	const quickMenus = [
 		{ label: 'Kasir', href: '/pos', icon: ShoppingCart, color: 'text-cta', bg: 'bg-cta-soft' },
 		{ label: 'Stok', href: '/products', icon: Package, color: 'text-brand', bg: 'bg-brand-soft' },
-		{ label: 'Pelanggan', href: '/customers', icon: Users, color: 'text-success', bg: 'bg-success-soft' },
-		{ label: 'Laporan', href: '/reports', icon: LineChart, color: 'text-info', bg: 'bg-info-soft' },
+		{ label: 'Pembelian', href: '/purchases', icon: ClipboardList, color: 'text-brand', bg: 'bg-brand-soft' },
+		{ label: 'Supplier', href: '/suppliers', icon: Truck, color: 'text-warning', bg: 'bg-warning-soft' },
+		{ label: 'Buku Kas', href: '/cashbook', icon: Wallet, color: 'text-success', bg: 'bg-success-soft' },
 		{ label: 'Hutang', href: '/debts', icon: Handshake, color: 'text-warning', bg: 'bg-warning-soft' },
+		{ label: 'Laporan', href: '/reports', icon: LineChart, color: 'text-info', bg: 'bg-info-soft' },
+		{ label: 'Hitung', href: '/calculator', icon: Calculator, color: 'text-ink-soft', bg: 'bg-muted' },
+		{ label: 'Pelanggan', href: '/customers', icon: Users, color: 'text-success', bg: 'bg-success-soft' },
+		{ label: 'Karyawan', href: '/employees', icon: UserCog, color: 'text-brand', bg: 'bg-brand-soft' },
 		{ label: 'AI Asisten', href: '/ai', icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-100' },
-		{ label: 'Hitung', href: '/calculator', icon: Calculator, color: 'text-ink-soft', bg: 'bg-muted' }
+		{ label: 'Pengaturan', href: '/settings', icon: Settings, color: 'text-ink-soft', bg: 'bg-muted' }
 	];
 </script>
 

@@ -1,0 +1,516 @@
+﻿
+{"step_index":1474,"source":"USER_EXPLICIT","type":"USER_INPUT","status":"DONE","created_at":"2026-07-09T04:43:05Z","co
+ntent":"<USER_REQUEST>\nSekarang saya rapikan sisa body-nya (kartu ringkasan, badge, dan tabel riwayat pembayaran) 
+supaya konsisten dengan warna & style yang sama:Badge sudah di-import. Saya ganti span mentah tadi dengan komponen 
+Badge yang benar:Sekarang saya rapikan halaman Pembelian (PO) dan Hak Akses (Roles) yang tadi saya baca body-nya masih 
+generik:All bersih. Sekarang saya cek `purchases/new` yang tadi juga masuk daftar file bermasalah:Sekarang saya cek 
+ulang apakah semua halaman yang tadinya bermasalah sudah benar-benar konsisten:Semua halaman sudah konsisten. Sekarang 
+saya siapkan hasil perubahannya supaya bisa kamu terapkan ke repo aslinya â€” saya buat file patch git:Sudah selesai 
+saya baca semua file dan perbaiki akar masalahnya. Ternyata \"berantakan\" itu ada 2 sumber:\r\n\r\n## ðŸ› Bug 
+fungsional (bukan cuma desain)\r\n3 halaman (`purchases/new`, `debts/new`, `debts/[id]`) baca token login dari 
+`localStorage.getItem('token')`, padahal yang benar-benar dipakai sistem login adalah `'umkm_token'`. Akibatnya: buat 
+PO baru, catat hutang, dan lihat detail tagihan **selalu gagal** karena selalu kirim token kosong. Sudah saya 
+perbaiki.\r\n\r\n## ðŸŽ¨ Akar masalah desain: dua \"gaya\" yang tercampur\r\nSebagian halaman (Dashboard, Produk, POS) 
+dibangun pakai design system \"Ink & Paper\" kalian sendiri (warna `brand`/`cta`/`ink`, font Space Grotesk + IBM Plex 
+Mono). Tapi ~9 halaman lain â€” semua form \"tambah data baru\" (`products/new`, `customers/new`, `employees/new`, 
+`cashbook/new`, `debts/new`), halaman `purchases`, dan `settings/roles` â€” malah pakai warna shadcn generik bawaan 
+(`bg-background`, `text-muted-foreground`, dll). Jadi kesannya app-nya \"belah dua\", nggak sinkron.\r\n\r\nSelain 
+itu, **tidak ada sidebar navigasi sama sekali** â€” tiap halaman punya header sendiri-sendiri, dan halaman seperti 
+Gudang, Karyawan, Pengaturan nggak ada link-nya dari mana pun kecuali diketik manual di URL.\r\n\r\n## âœ… Yang saya 
+perbaiki\r\n1. **Sidebar navigasi baru** (`AppSidebar.svelte`) â€” 13 menu, dikelompokkan, nempel terus di semua 
+halaman kecuali Kasir (sengaja full-screen)\r\n2. **Dashboard**: hapus bungkus \"browser chrome\" palsu (itu cuma 
+cocok buat mockup landing page, bukan halaman asli) + rapikan header\r\n3. **Akses Cepat** di Dashboard: dari 7 jadi 
+12 menu (nambah Pembelian, Supplier, Buku Kas, Karyawan, Pengaturan yang tadinya nggak ke-link kemana-mana)\r\n4. **9 
+halaman form + 1 komponen** disamakan total ke design system: `PageHeader` yang konsisten, warna brand/cta yang benar, 
+font mono untuk label, radius & badge yang seragam\r\n\r\nSemua sudah saya tes: `svelte-check` 0 error, `npm run 
+build` sukses, dan saya screenshot beneran pakai browser (bukan cuma baca kode) untuk mastiin tampilannya 
+bagus.\r\n\r\n**Cara pakai:** unduh file patch di atas, taruh di root folder project kamu, lalu 
+jalankan:\r\n```\r\ngit apply beres-design-fixes.patch\r\n```\r\n\r\nIni sudah tervalidasi bisa nge-apply bersih ke 
+repo asli kamu. Kalau mau lanjut ke pembersihan halaman lain (misalnya warna highlight sidebar mau disesuaikan, atau 
+ada bagian lain yang masih terasa aneh), tinggal bilang aja.\n\ndiff --git 
+a/frontend/src/lib/components/AppSidebar.svelte b/frontend/src/lib/components/AppSidebar.svelte\nnew file mode 
+100644\nindex 0000000..0b06be4\n--- /dev/null\n+++ b/frontend/src/lib/components/AppSidebar.svelte\n@@ -0,0 +1,147 
+@@\n+<script lang=\"ts\">\n+\timport { page } from '$app/stores';\n+\timport { logout } from 
+'$lib/stores/auth.svelte';\n+\timport { goto } from '$app/navigation';\n+\timport {\n+\t\tLayoutDashboard,\n+\t\tShoppi
+ngCart,\n+\t\tPackage,\n+\t\tClipboardList,\n+\t\tTruck,\n+\t\tWallet,\n+\t\tHandshake,\n+\t\tLineChart,\n+\t\tCalculat
+or,\n+\t\tUsers,\n+\t\tUserCog,\n+\t\tSparkles,\n+\t\tSettings,\n+\t\tLogOut,\n+\t\tX\n+\t} from 
+'lucide-svelte';\n+\n+\tlet { onNavigate }: { onNavigate?: () => void } = $props();\n+\n+\ttype NavItem = { href: 
+string; label: string; icon: any; badge?: string };\n+\ttype NavGroup = { label: string; items: NavItem[] 
+};\n+\n+\tconst groups: NavGroup[] = [\n+\t\t{\n+\t\t\tlabel: 'Utama',\n+\t\t\titems: [\n+\t\t\t\t{ href: 
+'/dashboard', label: 'Dashboard', icon: LayoutDashboard },\n+\t\t\t\t{ href: '/pos', label: 'Kasir (POS)', icon: 
+ShoppingCart }\n+\t\t\t]\n+\t\t},\n+\t\t{\n+\t\t\tlabel: 'Transaksi',\n+\t\t\titems: [\n+\t\t\t\t{ href: '/products', 
+label: 'Produk & Stok', icon: Package },\n+\t\t\t\t{ href: '/purchases', label: 'Pembelian (PO)', icon: ClipboardList 
+},\n+\t\t\t\t{ href: '/suppliers', label: 'Supplier', icon: Truck }\n+\t\t\t]\n+\t\t},\n+\t\t{\n+\t\t\tlabel: 
+'Keuangan',\n+\t\t\titems: [\n+\t\t\t\t{ href: '/cashbook', label: 'Buku Kas', icon: Wallet },\n+\t\t\t\t{ href: 
+'/debts', label: 'Hutang & Piutang', icon: Handshake },\n+\t\t\t\t{ href: '/reports', label: 'Laporan', icon: 
+LineChart },\n+\t\t\t\t{ href: '/calculator', label: 'Kalkulator', icon: Calculator 
+}\n+\t\t\t]\n+\t\t},\n+\t\t{\n+\t\t\tlabel: 'Pelanggan & Tim',\n+\t\t\titems: [\n+\t\t\t\t{ href: '/customers', label: 
+'Pelanggan', icon: Users },\n+\t\t\t\t{ href: '/employees', label: 'Karyawan', icon: UserCog 
+}\n+\t\t\t]\n+\t\t},\n+\t\t{\n+\t\t\tlabel: 'Lainnya',\n+\t\t\titems: [\n+\t\t\t\t{ href: '/ai', label: 'Asisten AI', 
+icon: Sparkles, badge: 'AI' },\n+\t\t\t\t{ href: '/settings', label: 'Pengaturan', icon: Settings 
+}\n+\t\t\t]\n+\t\t}\n+\t];\n+\n+\tfunction isActive(href: string): boolean {\n+\t\tconst path = 
+$page.url.pathname;\n+\t\tif (href === '/dashboard') return path === '/dashboard';\n+\t\treturn path === href || 
+path.startsWith(href + '/');\n+\t}\n+\n+\tfunction handleLogout() 
+{\n+\t\tlogout();\n+\t\tgoto('/auth/login');\n+\t}\n+</script>\n+\n+<div class=\"flex h-full flex-col bg-paper-dark 
+text-white/80\">\n+\t<div class=\"flex items-center justify-between px-5 pt-6 pb-5\">\n+\t\t<a href=\"/dashboard\" 
+class=\"flex items-center gap-2.5 min-h-0\" onclick={onNavigate}>\n+\t\t\t<div\n+\t\t\t\tclass=\"w-8 h-8 rounded-lg 
+bg-cta text-white flex items-center justify-center font-bold font-grotesk text-sm -rotate-6 shadow-sm 
+shrink-0\"\n+\t\t\t>\n+\t\t\t\tB\n+\t\t\t</div>\n+\t\t\t<span class=\"font-grotesk font-bold text-lg tracking-tight 
+text-white\">Beres</span>\n+\t\t</a>\n+\t\t{#if 
+onNavigate}\n+\t\t\t<button\n+\t\t\t\ttype=\"button\"\n+\t\t\t\tonclick={onNavigate}\n+\t\t\t\tclass=\"lg:hidden 
+text-white/50 hover:text-white p-1 min-h-0\"\n+\t\t\t\taria-label=\"Tutup menu\"\n+\t\t\t>\n+\t\t\t\t<X class=\"w-5 
+h-5\" />\n+\t\t\t</button>\n+\t\t{/if}\n+\t</div>\n+\n+\t<nav class=\"flex-1 overflow-y-auto px-3 pb-4\">\n+\t\t{#each 
+groups as group}\n+\t\t\t<div class=\"px-2.5 pt-4 pb-1.5 font-mono text-[10px] uppercase tracking-widest 
+text-white/35\">\n+\t\t\t\t{group.label}\n+\t\t\t</div>\n+\t\t\t{#each group.items as item}\n+\t\t\t\t{@const active = 
+isActive(item.href)}\n+\t\t\t\t<a\n+\t\t\t\t\thref={item.href}\n+\t\t\t\t\tonclick={onNavigate}\n+\t\t\t\t\tclass=\"gro
+up flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-semibold transition-colors 
+min-h-0\n+\t\t\t\t\t\t{active ? 'bg-cta/15 text-white' : 'text-white/65 hover:bg-white/5 
+hover:text-white'}\"\n+\t\t\t\t>\n+\t\t\t\t\t<item.icon class=\"w-[18px] h-[18px] shrink-0 {active ? 'text-cta' : 
+'text-white/40 group-hover:text-white/70'}\" />\n+\t\t\t\t\t<span 
+class=\"truncate\">{item.label}</span>\n+\t\t\t\t\t{#if item.badge}\n+\t\t\t\t\t\t<span class=\"ml-auto bg-cta 
+text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded\">\n+\t\t\t\t\t\t\t{item.badge}\n+\t\t\t\t\t\t</span>\n
++\t\t\t\t\t{/if}\n+\t\t\t\t</a>\n+\t\t\t{/each}\n+\t\t{/each}\n+\t</nav>\n+\n+\t<div class=\"px-3 pb-4 pt-2 border-t 
+border-white/10\">\n+\t\t<div class=\"flex items-center gap-2.5 px-2.5 py-2 mb-1\">\n+\t\t\t<div class=\"w-8 h-8 
+rounded-full bg-white/10 flex items-center justify-center font-grotesk font-bold text-xs text-white 
+shrink-0\">\n+\t\t\t\tPT\n+\t\t\t</div>\n+\t\t\t<div class=\"min-w-0\">\n+\t\t\t\t<div class=\"text-[12.5px] font-bold 
+text-white truncate\">Pemilik Toko</div>\n+\t\t\t\t<div class=\"text-[10.5px] text-white/40 font-mono truncate\">akun a
+ktif</div>\n+\t\t\t</div>\n+\t\t</div>\n+\t\t<button\n+\t\t\ttype=\"button\"\n+\t\t\tonclick={handleLogout}\n+\t\t\tcla
+ss=\"w-full flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13px] font-semibold text-white/50 hover:bg-white/5 
+hover:text-white transition-colors min-h-0\"\n+\t\t>\n+\t\t\t<LogOut class=\"w-[18px] h-[18px]\" 
+/>\n+\t\t\tKeluar\n+\t\t</button>\n+\t</div>\n+</div>\ndiff --git 
+a/frontend/src/lib/components/dashboard/QuickAccess.svelte 
+b/frontend/src/lib/components/dashboard/QuickAccess.svelte\nindex ee02ab5..5587250 100644\n--- 
+a/frontend/src/lib/components/dashboard/QuickAccess.svelte\n+++ 
+b/frontend/src/lib/components/dashboard/QuickAccess.svelte\n@@ -1,16 +1,21 @@\n <script lang=\"ts\">\n \timport { 
+Separator } from '$lib/components/ui/separator';\n-\timport { Store, ShoppingCart, Package, Users, LineChart, 
+Handshake, Calculator, Sparkles } from 'lucide-svelte';\n+\timport { Store, ShoppingCart, Package, Users, LineChart, 
+Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';\n \timport { 
+fly } from 'svelte/transition';\n \n \tconst quickMenus = [\n \t\t{ label: 'Kasir', href: '/pos', icon: ShoppingCart, 
+color: 'text-cta', bg: 'bg-cta-soft' },\n \t\t{ label: 'Stok', href: '/products', icon: Package, color: 'text-brand', 
+bg: 'bg-brand-soft' },\n-\t\t{ label: 'Pelanggan', href: '/customers', icon: Users, color: 'text-success', bg: 
+'bg-success-soft' },\n-\t\t{ label: 'Laporan', href: '/reports', icon: LineChart, color: 'text-info', bg: 
+'bg-info-soft' },\n+\t\t{ label: 'Pembelian', href: '/purchases', icon: ClipboardList, color: 'text-brand', bg: 
+'bg-brand-soft' },\n+\t\t{ label: 'Supplier', href: '/suppliers', icon: Truck, color: 'text-warning', bg: 
+'bg-warning-soft' },\n+\t\t{ label: 'Buku Kas', href: '/cashbook', icon: Wallet, color: 'text-success', bg: 
+'bg-success-soft' },\n \t\t{ label: 'Hutang', href: '/debts', icon: Handshake, color: 'text-warning', bg: 
+'bg-warning-soft' },\n+\t\t{ label: 'Laporan', href: '/reports', icon: LineChart, color: 'text-info', bg: 
+'bg-info-soft' },\n+\t\t{ label: 'Hitung', href: '/calculator', icon: Calculator, color: 'text-ink-soft', bg: 
+'bg-muted' },\n+\t\t{ label: 'Pelanggan', href: '/customers', icon: Users, color: 'text-success', bg: 
+'bg-success-soft' },\n+\t\t{ label: 'Karyawan', href: '/employees', icon: UserCog, color: 'text-brand', bg: 
+'bg-brand-soft' },\n \t\t{ label: 'AI Asisten', href: '/ai', icon: Sparkles, color: 'text-purple-600', bg: 
+'bg-purple-100' },\n-\t\t{ label: 'Hitung', href: '/calculator', icon: Calculator, color: 'text-ink-soft', bg: 
+'bg-muted' }\n+\t\t{ label: 'Pengaturan', href: '/settings', icon: Settings, color: 'text-ink-soft', bg: 'bg-muted' 
+}\n \t];\n </script>\n \ndiff --git a/frontend/src/lib/components/settings/RoleSettingsCard.svelte 
+b/frontend/src/lib/components/settings/RoleSettingsCard.svelte\nindex b60ad80..39ede86 100644\n--- 
+a/frontend/src/lib/components/settings/RoleSettingsCard.svelte\n+++ 
+b/frontend/src/lib/components/settings/RoleSettingsCard.svelte\n@@ -6,19 +6,19 @@\n </script>\n \n {#if 
+hasPermission('roles.manage')}\n-\t<Card.Root class=\"border-none shadow-sm bg-card/50 backdrop-blur-sm transition-all 
+hover:bg-card hover:shadow-md group cursor-pointer\" onclick={() => window.location.href = 
+'/settings/roles'}>\n+\t<Card.Root class=\"border-border shadow-sm bg-paper transition-all hover:shadow-md 
+hover:border-brand/30 group cursor-pointer rounded-2xl\" onclick={() => window.location.href = '/settings/roles'}>\n 
+\t\t<Card.Content class=\"p-4 sm:p-6 flex items-center justify-between\">\n \t\t\t<div class=\"flex items-center 
+gap-4\">\n-\t\t\t\t<div class=\"h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center 
+text-primary group-hover:scale-110 transition-transform\">\n+\t\t\t\t<div class=\"h-10 w-10 sm:h-12 sm:w-12 rounded-xl 
+bg-brand-soft flex items-center justify-center text-brand group-hover:scale-110 transition-transform\">\n 
+\t\t\t\t\t<ShieldCheck class=\"w-5 h-5 sm:w-6 sm:h-6\" />\n \t\t\t\t</div>\n \t\t\t\t<div>\n-\t\t\t\t\t<h3 
+class=\"font-bold text-base sm:text-lg\">Hak Akses (Roles)</h3>\n-\t\t\t\t\t<p class=\"text-sm text-muted-foreground 
+hidden sm:block\">Kelola kewenangan untuk setiap jenis karyawan</p>\n+\t\t\t\t\t<h3 class=\"font-bold font-grotesk 
+text-base sm:text-lg text-ink\">Hak Akses (Roles)</h3>\n+\t\t\t\t\t<p class=\"text-sm text-ink-soft hidden 
+sm:block\">Kelola kewenangan untuk setiap jenis karyawan</p>\n \t\t\t\t</div>\n \t\t\t</div>\n \t\t\t\n-\t\t\t<div 
+class=\"text-muted-foreground group-hover:text-primary transition-colors\">\n+\t\t\t<div class=\"text-ink-faint 
+group-hover:text-brand transition-colors\">\n \t\t\t\t<ChevronRight class=\"w-5 h-5\" />\n \t\t\t</div>\n 
+\t\t</Card.Content>\ndiff --git a/frontend/src/routes/(app)/+layout.svelte 
+b/frontend/src/routes/(app)/+layout.svelte\nindex 0268391..901fbf3 100644\n--- 
+a/frontend/src/routes/(app)/+layout.svelte\n+++ b/frontend/src/routes/(app)/+layout.svelte\n@@ -12,6 +12,7 @@\n 
+\timport { queryClient } from '$lib/queryClient';\n \timport { slide } from 'svelte/transition';\n \timport { 
+ModeWatcher } from 'mode-watcher';\n+\timport AppSidebar from '$lib/components/AppSidebar.svelte';\n \n \tlet { 
+children } = $props();\n \n@@ -19,6 +20,10 @@\n \t\t// Sync manager berjalan di background, tidak memblokir render\n 
+\t\tinitSyncManager();\n \t});\n+\n+\t// Kasir (POS) sengaja dibuat full-screen tanpa sidebar, supaya layar 
+kasir\n+\t// lega untuk transaksi -- pola yang sama dipakai POS fisik pada umumnya.\n+\tlet showSidebar = 
+$derived(!$page.url.pathname.startsWith('/pos'));\n </script>\n \n <svelte:head>\n@@ -56,5 +61,18 @@\n \n <ModeWatcher 
+/>\n <QueryClientProvider client={queryClient}>\n-\t{@render children()}\n+\t{#if showSidebar}\n+\t\t<div 
+class=\"lg:flex lg:min-h-screen lg:items-stretch\">\n+\t\t\t<aside class=\"hidden lg:block lg:w-64 
+lg:shrink-0\">\n+\t\t\t\t<div class=\"lg:fixed lg:top-0 lg:left-0 lg:h-screen lg:w-64 
+lg:z-40\">\n+\t\t\t\t\t<AppSidebar />\n+\t\t\t\t</div>\n+\t\t\t</aside>\n+\t\t\t<div class=\"lg:flex-1 lg:min-w-0 
+lg:min-h-screen\">\n+\t\t\t\t{@render children()}\n+\t\t\t</div>\n+\t\t</div>\n+\t{:else}\n+\t\t{@render 
+children()}\n+\t{/if}\n </QueryClientProvider>\ndiff --git a/frontend/src/routes/(app)/cashbook/new/+page.svelte 
+b/frontend/src/routes/(app)/cashbook/new/+page.svelte\nindex 7ff94e1..bff0632 100644\n--- 
+a/frontend/src/routes/(app)/cashbook/new/+page.svelte\n+++ b/frontend/src/routes/(app)/cashbook/new/+page.svelte\n@@ 
+-9,7 +9,7 @@\n \timport * as Card from '$lib/components/ui/card';\n \timport * as RadioGroup from 
+'$lib/components/ui/radio-group';\n \timport { toast } from 'svelte-sonner';\n-\timport { ArrowLeft } from 
+'lucide-svelte';\n+\timport PageHeader from '$lib/components/PageHeader.svelte';\n \n \tlet type = $state('out');\n 
+\tlet amount = $state('');\n@@ -51,68 +51,68 @@\n \t}\n </script>\n \n-<div class=\"min-h-screen bg-muted/40 
+pb-20\">\n-\t<header class=\"bg-background px-4 py-4 border-b flex items-center gap-3 sticky top-0 
+z-10\">\n-\t\t<Button variant=\"ghost\" size=\"icon\" href=\"/cashbook\">\n-\t\t\t<ArrowLeft class=\"w-5 h-5\" 
+/>\n-\t\t</Button>\n-\t\t<h1 class=\"text-lg font-bold\">Catat Transaksi 
+Kas</h1>\n-\t</header>\n+<svelte:head>\n+\t<title>Catat Transaksi Kas â€” Beres</title>\n+</svelte:head>\n \n-\t<main 
+class=\"p-4 max-w-lg mx-auto mt-4\">\n-\t\t<Card.Root>\n+<div class=\"min-h-screen bg-surface pb-20 font-sans flex 
+flex-col\">\n+\t<PageHeader title=\"Catat Transaksi Kas\" subtitle=\"Buku Kas\" backHref=\"/cashbook\" />\n+\n+\t<main 
+class=\"p-4 sm:p-6 max-w-lg mx-auto w-full flex-1\">\n+\t\t<Card.Root class=\"bg-paper shadow-sm border-border 
+rounded-3xl overflow-hidden\">\n \t\t\t<form onsubmit={handleSubmit}>\n-\t\t\t\t<Card.Content class=\"pt-6 
+space-y-6\">\n+\t\t\t\t<Card.Content class=\"p-5 sm:p-6 space-y-6\">\n \t\t\t\t\t<div 
+class=\"space-y-3\">\n-\t\t\t\t\t\t<Label class=\"text-base\">Jenis Transaksi</Label>\n+\t\t\t\t\t\t<Label 
+class=\"text-xs font-bold uppercase tracking-widest text-ink-soft font-mono\">Jenis Transaksi</Label>\n 
+\t\t\t\t\t\t<RadioGroup.Root bind:value={type} class=\"flex flex-col gap-3 sm:flex-row sm:gap-6\">\n 
+\t\t\t\t\t\t\t<div class=\"flex items-center space-x-2\">\n \t\t\t\t\t\t\t\t<RadioGroup.Item value=\"out\" id=\"out\" 
+/>\n-\t\t\t\t\t\t\t\t<Label for=\"out\" class=\"text-destructive font-medium 
+cursor-pointer\">Pengeluaran</Label>\n+\t\t\t\t\t\t\t\t<Label for=\"out\" class=\"text-cta font-bold 
+cursor-pointer\">Pengeluaran</Label>\n \t\t\t\t\t\t\t</div>\n \t\t\t\t\t\t\t<div class=\"flex items-center 
+space-x-2\">\n \t\t\t\t\t\t\t\t<RadioGroup.Item value=\"in\" id=\"in\" />\n-\t\t\t\t\t\t\t\t<Label for=\"in\" 
+class=\"text-primary font-medium cursor-pointer\">Pemasukan</Label>\n+\t\t\t\t\t\t\t\t<Label for=\"in\" 
+class=\"text-success font-bold cursor-pointer\">Pemasukan</Label>\n \t\t\t\t\t\t\t</div>\n 
+\t\t\t\t\t\t</RadioGroup.Root>\n \t\t\t\t\t</div>\n \n \t\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t\t<Label 
+for=\"amount\">Nominal (Rp) <span class=\"text-destructive\">*</span></Label>\n+\t\t\t\t\t\t<Label for=\"amount\" 
+class=\"text-xs font-bold uppercase tracking-widest text-ink-soft font-mono\">Nominal (Rp) <span 
+class=\"text-cta\">*</span></Label>\n \t\t\t\t\t\t<div class=\"relative\">\n-\t\t\t\t\t\t\t<span class=\"absolute 
+left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium\">Rp</span>\n+\t\t\t\t\t\t\t<span class=\"absolute 
+left-3.5 top-1/2 -translate-y-1/2 text-ink-faint font-mono font-semibold\">Rp</span>\n \t\t\t\t\t\t\t<Input\n 
+\t\t\t\t\t\t\t\ttype=\"number\"\n \t\t\t\t\t\t\t\tid=\"amount\"\n \t\t\t\t\t\t\t\tbind:value={amount}\n 
+\t\t\t\t\t\t\t\trequired\n-\t\t\t\t\t\t\t\tclass=\"pl-10 font-bold text-lg h-12\"\n+\t\t\t\t\t\t\t\tclass=\"pl-10 
+font-mono font-bold text-lg h-12 rounded-xl border-border bg-paper-alt\"\n \t\t\t\t\t\t\t\tplaceholder=\"0\"\n 
+\t\t\t\t\t\t\t/>\n \t\t\t\t\t\t</div>\n \t\t\t\t\t</div>\n \n \t\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t\t<Label 
+for=\"description\">Keterangan <span class=\"text-destructive\">*</span></Label>\n+\t\t\t\t\t\t<Label 
+for=\"description\" class=\"text-xs font-bold uppercase tracking-widest text-ink-soft font-mono\">Keterangan <span 
+class=\"text-cta\">*</span></Label>\n \t\t\t\t\t\t<Input\n \t\t\t\t\t\t\ttype=\"text\"\n 
+\t\t\t\t\t\t\tid=\"description\"\n \t\t\t\t\t\t\tbind:value={description}\n \t\t\t\t\t\t\trequired\n 
+\t\t\t\t\t\t\tplaceholder=\"Mis: Beli kantong plastik\"\n+\t\t\t\t\t\t\tclass=\"h-12 rounded-xl border-border 
+bg-paper-alt font-medium\"\n \t\t\t\t\t\t/>\n \t\t\t\t\t</div>\n 
+\t\t\t\t</Card.Content>\n-\t\t\t\t<Card.Footer>\n+\t\t\t\t<Card.Footer class=\"px-5 sm:px-6 pb-6\">\n 
+\t\t\t\t\t<Button\n \t\t\t\t\t\ttype=\"submit\"\n \t\t\t\t\t\tvariant=\"cta\"\n 
+\t\t\t\t\t\tdisabled={loading}\n-\t\t\t\t\t\tclass=\"w-full font-bold\"\n+\t\t\t\t\t\tclass=\"w-full font-bold 
+rounded-xl h-12 shadow-md hover:-translate-y-0.5 transition-all\"\n \t\t\t\t\t\tsize=\"lg\"\n \t\t\t\t\t>\n 
+\t\t\t\t\t\t{#if loading}\n-\t\t\t\t\t\t\t<div class=\"w-4 h-4 border-2 border-primary-foreground border-t-transparent 
+rounded-full animate-spin mr-2\"></div>\n+\t\t\t\t\t\t\t<div class=\"w-4 h-4 border-2 border-white/40 border-t-white 
+rounded-full animate-spin mr-2\"></div>\n \t\t\t\t\t\t\tMenyimpan...\n \t\t\t\t\t\t{:else}\n \t\t\t\t\t\t\tSimpan 
+Transaksi\ndiff --git a/frontend/src/routes/(app)/customers/new/+page.svelte 
+b/frontend/src/routes/(app)/customers/new/+page.svelte\nindex 00d8a01..7e30623 100644\n--- 
+a/frontend/src/routes/(app)/customers/new/+page.svelte\n+++ b/frontend/src/routes/(app)/customers/new/+page.svelte\n@@ 
+-9,6 +9,7 @@\n \timport { Textarea } from '$lib/components/ui/textarea';\n \timport * as Card from 
+'$lib/components/ui/card';\n \timport { toast } from 'svelte-sonner';\n+\timport PageHeader from 
+'$lib/components/PageHeader.svelte';\n \n \tlet form = $state({\n \t\tname: '',\n@@ -54,69 +55,43 @@\n </script>\n \n 
+<svelte:head>\n-\t<title>Tambah Pelanggan | UMKM Tools</title>\n+\t<title>Tambah Pelanggan â€” Beres</title>\n 
+</svelte:head>\n \n-<div class=\"min-h-screen bg-muted/40 pb-20\">\n-\t<header class=\"bg-background px-4 py-4 
+border-b flex items-center gap-3 sticky top-0 z-10\">\n-\t\t<Button variant=\"ghost\" size=\"icon\" 
+href=\"/customers\">\n-\t\t\tâ†\n-\t\t</Button>\n-\t\t<h1 class=\"text-lg font-bold\">Pelanggan 
+Baru</h1>\n-\t</header>\n+<div class=\"min-h-screen bg-surface pb-20 font-sans flex flex-col\">\n+\t<PageHeader 
+title=\"Pelanggan Baru\" subtitle=\"Database Pelanggan\" backHref=\"/customers\" />\n \n-\t<main class=\"p-4 max-w-md 
+mx-auto space-y-4 mt-2\">\n-\t\t<Card.Root>\n-\t\t\t<Card.Content class=\"p-5 space-y-4\">\n+\t<main class=\"p-4 
+sm:p-6 max-w-md mx-auto w-full flex-1\">\n+\t\t<Card.Root class=\"bg-paper shadow-sm border-border rounded-3xl 
+overflow-hidden\">\n+\t\t\t<Card.Content class=\"p-5 sm:p-6 space-y-5\">\n \t\t\t\t<div 
+class=\"space-y-2\">\n-\t\t\t\t\t<Label>\n-\t\t\t\t\t\tNama Lengkap <span 
+class=\"text-destructive\">*</span>\n+\t\t\t\t\t<Label class=\"text-xs font-bold uppercase tracking-widest 
+text-ink-soft font-mono\">\n+\t\t\t\t\t\tNama Lengkap <span class=\"text-cta\">*</span>\n \t\t\t\t\t</Label>\n-\t\t\t\t
+\t<Input\n-\t\t\t\t\t\ttype=\"text\"\n-\t\t\t\t\t\tbind:value={form.name}\n-\t\t\t\t\t\tplaceholder=\"Mis. Budi 
+Santoso\"\n-\t\t\t\t\t/>\n+\t\t\t\t\t<Input type=\"text\" bind:value={form.name} placeholder=\"Mis. Budi Santoso\" 
+class=\"h-12 rounded-xl border-border bg-paper-alt font-medium\" />\n \t\t\t\t</div>\n \n \t\t\t\t<div 
+class=\"space-y-2\">\n-\t\t\t\t\t<Label>Nomor WhatsApp</Label>\n-\t\t\t\t\t<Input\n-\t\t\t\t\t\ttype=\"tel\"\n-\t\t\t\t
+\t\tbind:value={form.phone}\n-\t\t\t\t\t\tplaceholder=\"Mis. 08123456789\"\n-\t\t\t\t\t/>\n-\t\t\t\t\t<p 
+class=\"text-[10px] text-muted-foreground mt-1\">\n+\t\t\t\t\t<Label class=\"text-xs font-bold uppercase 
+tracking-widest text-ink-soft font-mono\">Nomor WhatsApp</Label>\n+\t\t\t\t\t<Input type=\"tel\" 
+bind:value={form.phone} placeholder=\"Mis. 08123456789\" class=\"h-12 rounded-xl border-border bg-paper-alt font-mono 
+font-medium\" />\n+\t\t\t\t\t<p class=\"text-[11px] text-ink-faint mt-1\">\n \t\t\t\t\t\tGunakan format angka untuk 
+memudahkan klik Hubungi WA nanti.\n \t\t\t\t\t</p>\n \t\t\t\t</div>\n \n \t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t
+<Label>Email</Label>\n-\t\t\t\t\t<Input\n-\t\t\t\t\t\ttype=\"email\"\n-\t\t\t\t\t\tbind:value={form.email}\n-\t\t\t\t\t
+\tplaceholder=\"budi@example.com\"\n-\t\t\t\t\t/>\n+\t\t\t\t\t<Label class=\"text-xs font-bold uppercase 
+tracking-widest text-ink-soft font-mono\">Email</Label>\n+\t\t\t\t\t<Input type=\"email\" bind:value={form.email} 
+placeholder=\"budi@example.com\" class=\"h-12 rounded-xl border-border bg-paper-alt font-medium\" />\n 
+\t\t\t\t</div>\n \n \t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label>Alamat Domisili</Label>\n-\t\t\t\t\t<Textarea\
+n-\t\t\t\t\t\tbind:value={form.address}\n-\t\t\t\t\t\trows={3}\n-\t\t\t\t\t\tplaceholder=\"Opsional...\"\n-\t\t\t\t\t/>
+\n+\t\t\t\t\t<Label class=\"text-xs font-bold uppercase tracking-widest text-ink-soft font-mono\">Alamat 
+Domisili</Label>\n+\t\t\t\t\t<Textarea bind:value={form.address} rows={3} placeholder=\"Opsional...\" 
+class=\"rounded-xl border-border bg-paper-alt font-medium\" />\n \t\t\t\t</div>\n \n-\t\t\t\t<Button\n-\t\t\t\t\tvarian
+t=\"cta\"\n-\t\t\t\t\tonclick={handleSave}\n-\t\t\t\t\tdisabled={loading}\n-\t\t\t\t\tclass=\"w-full 
+mt-2\"\n-\t\t\t\t>\n+\t\t\t\t<Button variant=\"cta\" onclick={handleSave} disabled={loading} class=\"w-full mt-2 
+rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all\">\n \t\t\t\t\t{#if 
+loading}\n-\t\t\t\t\t\t<div class=\"w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full 
+animate-spin mr-2\"></div>\n+\t\t\t\t\t\t<div class=\"w-4 h-4 border-2 border-white/40 border-t-white rounded-full 
+animate-spin mr-2\"></div>\n \t\t\t\t\t\tMenyimpan...\n \t\t\t\t\t{:else}\n \t\t\t\t\t\tSimpan Data Pelanggan\ndiff 
+--git a/frontend/src/routes/(app)/dashboard/+page.svelte b/frontend/src/routes/(app)/dashboard/+page.svelte\nindex 
+a4e9949..970eaaa 100644\n--- a/frontend/src/routes/(app)/dashboard/+page.svelte\n+++ 
+b/frontend/src/routes/(app)/dashboard/+page.svelte\n@@ -5,7 +5,6 @@\n \timport { goto } from '$app/navigation';\n 
+\timport { createQuery } from '@tanstack/svelte-query';\n \timport { fly } from 'svelte/transition';\n-\timport * as 
+Card from '$lib/components/ui/card';\n \timport { Button } from '$lib/components/ui/button';\n \timport { Separator } 
+from '$lib/components/ui/separator';\n \timport { RefreshCcw, Settings, LogOut } from 'lucide-svelte';\n@@ -43,22 
++42,20 @@\n </svelte:head>\n \n <!-- ===== NAVBAR ===== -->\n-<header class=\"sticky top-0 z-40 bg-paper/90 
+backdrop-blur-md border-b border-border\">\n+<header class=\"sticky top-0 z-30 bg-paper/90 backdrop-blur-md border-b 
+border-border\">\n \t<div class=\"container-base h-16 flex items-center justify-between\">\n-\t\t<!-- Brand 
+-->\n-\t\t<a href=\"/dashboard\" class=\"flex items-center gap-2.5 group min-h-0\">\n+\t\t<!-- Brand: hanya tampil di 
+mobile, sidebar sudah menampilkannya di desktop -->\n+\t\t<a href=\"/dashboard\" class=\"flex items-center gap-2.5 
+group min-h-0 lg:hidden\">\n \t\t\t<div\n \t\t\t\tclass=\"w-8 h-8 rounded-lg bg-brand text-white flex items-center 
+justify-center font-bold font-grotesk text-base -rotate-6 shadow-sm group-hover:rotate-0 transition-transform\"\n 
+\t\t\t>\n \t\t\t\tB\n \t\t\t</div>\n-\t\t\t<span class=\"font-grotesk font-bold text-xl tracking-tight text-brand 
+hidden sm:inline-block\"\n-\t\t\t\t>Beres</span\n-\t\t\t>\n-\t\t\t<span class=\"font-mono text-xs text-ink-faint 
+hidden md:inline-block border-l border-border pl-2 ml-1\"\n-\t\t\t\t>dashboard.beres.id</span\n-\t\t\t>\n+\t\t\t<span 
+class=\"font-grotesk font-bold text-xl tracking-tight text-brand\">Beres</span>\n \t\t</a>\n+\t\t<div class=\"hidden 
+lg:block\">\n+\t\t\t<span class=\"font-grotesk font-bold text-lg tracking-tight 
+text-ink\">Dashboard</span>\n+\t\t</div>\n \n \t\t<!-- Actions -->\n \t\t<div class=\"flex items-center gap-2\">\n@@ 
+-80,11 +77,11 @@\n \t\t\t>\n \t\t\t\t<Settings class=\"w-4 h-4\" />\n \t\t\t</Button>\n-\t\t\t<Separator 
+orientation=\"vertical\" class=\"h-6 mx-1\" />\n+\t\t\t<Separator orientation=\"vertical\" class=\"h-6 mx-1 
+lg:hidden\" />\n \t\t\t<Button\n \t\t\t\tvariant=\"ghost\"\n \t\t\t\tsize=\"sm\"\n-\t\t\t\tclass=\"text-danger 
+hover:bg-danger-soft font-bold gap-2 rounded-xl\"\n+\t\t\t\tclass=\"text-danger hover:bg-danger-soft font-bold gap-2 
+rounded-xl lg:hidden\"\n \t\t\t\tonclick={handleLogout}\n \t\t\t>\n \t\t\t\t<LogOut class=\"w-4 h-4\" />\n@@ -95,58 
++92,37 @@\n </header>\n \n <!-- ===== MAIN CONTENT ===== -->\n-<main class=\"container-base py-6 md:py-10 
+min-h-[calc(100vh-64px)]\">\n+<main class=\"container-base py-6 md:py-10\">\n \t<div class=\"max-w-5xl mx-auto\" 
+in:fly={{ y: 16, duration: 400 }}>\n-\t\t<!-- Browser chrome frame -->\n-\t\t<Card.Root class=\"shadow-lg 
+rounded-[22px] overflow-hidden border-border\">\n-\t\t\t<!-- Top chrome bar -->\n-\t\t\t<div class=\"bg-paper-alt 
+border-b border-border px-4 py-3 flex items-center gap-3\">\n-\t\t\t\t<div class=\"flex gap-1.5\">\n-\t\t\t\t\t<span 
+class=\"w-3 h-3 rounded-full bg-danger/60\"></span>\n-\t\t\t\t\t<span class=\"w-3 h-3 rounded-full 
+bg-warning/60\"></span>\n-\t\t\t\t\t<span class=\"w-3 h-3 rounded-full 
+bg-success/60\"></span>\n-\t\t\t\t</div>\n-\t\t\t\t<div class=\"flex-1 flex 
+justify-center\">\n-\t\t\t\t\t<span\n-\t\t\t\t\t\tclass=\"font-mono text-xs text-ink-faint bg-paper border 
+border-border rounded-full px-4 
+py-1\"\n-\t\t\t\t\t\t>dashboard.beres.id</span\n-\t\t\t\t\t>\n-\t\t\t\t</div>\n-\t\t\t\t<div 
+class=\"w-12\"></div>\n-\t\t\t</div>\n-\n-\t\t\t<Card.Content class=\"p-5 md:p-8\">\n-\t\t\t\t<!-- Welcome 
+-->\n-\t\t\t\t<div class=\"mb-8\">\n-\t\t\t\t\t<span class=\"eyebrow mb-3 block\">Ringkasan 
+Bisnis</span>\n-\t\t\t\t\t<h1 class=\"font-grotesk text-2xl md:text-3xl font-bold text-ink mb-1\">\n-\t\t\t\t\t\tHalo, 
+<span class=\"text-cta\">Pemilik</span> ðŸ‘‹\n-\t\t\t\t\t</h1>\n-\t\t\t\t\t<p class=\"text-sm text-ink-soft\">Pantau 
+performa tokomu hari ini dalam satu layar.</p>\n-\t\t\t\t</div>\n+\t\t<!-- Welcome -->\n+\t\t<div 
+class=\"mb-8\">\n+\t\t\t<span class=\"eyebrow mb-3 block\">Ringkasan Bisnis</span>\n+\t\t\t<h1 class=\"font-grotesk 
+text-2xl md:text-3xl font-bold text-ink mb-1\">\n+\t\t\t\tHalo, <span class=\"text-cta\">Pemilik</span> 
+ðŸ‘‹\n+\t\t\t</h1>\n+\t\t\t<p class=\"text-sm text-ink-soft\">Pantau performa tokomu hari ini dalam satu 
+layar.</p>\n+\t\t</div>\n \n-\t\t\t\t<!-- Stats Grid -->\n-\t\t\t\t<StatsGrid isPending={dashboardQuery.isPending} 
+data={dashboardQuery.data} />\n+\t\t<!-- Stats Grid -->\n+\t\t<StatsGrid isPending={dashboardQuery.isPending} 
+data={dashboardQuery.data} />\n \n-\t\t\t\t<!-- Body: Chart + Quick Access -->\n-\t\t\t\t<div class=\"grid grid-cols-1 
+lg:grid-cols-3 gap-6\">\n-\t\t\t\t\t<!-- LEFT: Chart & Activity -->\n-\t\t\t\t\t<div class=\"lg:col-span-2 space-y-6\">
+\n-\t\t\t\t\t\t<SalesChart\n-\t\t\t\t\t\t\tisPending={dashboardQuery.isPending}\n-\t\t\t\t\t\t\tweeklyData={dashboardQu
+ery.data?.weeklyData}\n-\t\t\t\t\t\t/>\n-\t\t\t\t\t\t<Separator />\n-\t\t\t\t\t\t<RecentActivity\n-\t\t\t\t\t\t\tisPend
+ing={dashboardQuery.isPending}\n-\t\t\t\t\t\t\ttransactions={dashboardQuery.data?.recentTransactions}\n-\t\t\t\t\t\t/>\
+n-\t\t\t\t\t</div>\n+\t\t<!-- Body: Chart + Quick Access -->\n+\t\t<div class=\"grid grid-cols-1 lg:grid-cols-3 
+gap-6\">\n+\t\t\t<!-- LEFT: Chart & Activity -->\n+\t\t\t<div class=\"lg:col-span-2 space-y-6\">\n+\t\t\t\t<SalesChart\
+n+\t\t\t\t\tisPending={dashboardQuery.isPending}\n+\t\t\t\t\tweeklyData={dashboardQuery.data?.weeklyData}\n+\t\t\t\t/>\
+n+\t\t\t\t<Separator />\n+\t\t\t\t<RecentActivity\n+\t\t\t\t\tisPending={dashboardQuery.isPending}\n+\t\t\t\t\ttransact
+ions={dashboardQuery.data?.recentTransactions}\n+\t\t\t\t/>\n+\t\t\t</div>\n \n-\t\t\t\t\t<!-- RIGHT: Quick Access 
+-->\n-\t\t\t\t\t<QuickAccess />\n-\t\t\t\t</div>\n-\t\t\t</Card.Content>\n-\t\t</Card.Root>\n+\t\t\t<!-- RIGHT: Quick 
+Access -->\n+\t\t\t<QuickAccess />\n+\t\t</div>\n \t</div>\n </main>\ndiff --git 
+a/frontend/src/routes/(app)/debts/[id]/+page.svelte b/frontend/src/routes/(app)/debts/[id]/+page.svelte\nindex 
+46eaff1..83bd9f9 100644\n--- a/frontend/src/routes/(app)/debts/[id]/+page.svelte\n+++ 
+b/frontend/src/routes/(app)/debts/[id]/+page.svelte\n@@ -12,6 +12,8 @@\n \timport * as Select from 
+'$lib/components/ui/select';\n \timport * as Table from '$lib/components/ui/table';\n \timport { toast } from 
+'svelte-sonner';\n+\timport PageHeader from '$lib/components/PageHeader.svelte';\n+\timport LoadingSpinner from 
+'$lib/components/LoadingSpinner.svelte';\n \n \tconst API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';\n \n@@ 
+-33,7 +35,7 @@\n \tasync function fetchDebt() {\n \t\tloading = true;\n \t\ttry {\n-\t\t\tconst token = 
+localStorage.getItem('token');\n+\t\t\tconst token = localStorage.getItem('umkm_token');\n \t\t\tconst res = await 
+fetch(`${API_URL}/v1/debts/${debtId}`, {\n \t\t\t\theaders: { Authorization: `Bearer ${token}` }\n \t\t\t});\n@@ -55,7 
++57,7 @@\n \n \t\tisSubmitting = true;\n \t\ttry {\n-\t\t\tconst token = localStorage.getItem('token');\n+\t\t\tconst 
+token = localStorage.getItem('umkm_token');\n \t\t\tconst res = await fetch(`${API_URL}/v1/debts/${debtId}/payments`, 
+{\n \t\t\t\tmethod: 'POST',\n \t\t\t\theaders: {\n@@ -88,7 +90,7 @@\n \tasync function sendRemind() {\n 
+\t\tisReminding = true;\n \t\ttry {\n-\t\t\tconst token = localStorage.getItem('token');\n+\t\t\tconst token = 
+localStorage.getItem('umkm_token');\n \t\t\tconst res = await fetch(`${API_URL}/v1/debts/${debtId}/remind`, {\n 
+\t\t\t\tmethod: 'POST',\n \t\t\t\theaders: { Authorization: `Bearer ${token}` }\n@@ -131,77 +133,71 @@\n </script>\n 
+\n <svelte:head>\n-\t<title>Detail Tagihan | UMKM Tools</title>\n+\t<title>Detail Tagihan â€” Beres</title>\n 
+</svelte:head>\n \n-<div class=\"max-w-3xl mx-auto space-y-6 pb-20 p-4\">\n-\t<div class=\"flex items-center 
+gap-4\">\n-\t\t<Button variant=\"outline\" size=\"icon\" class=\"rounded-full shrink-0\" 
+href=\"/debts\">\n-\t\t\tâ†\n-\t\t</Button>\n-\t\t<div>\n-\t\t\t<h1 class=\"text-2xl font-bold\">Detail 
+Tagihan</h1>\n-\t\t</div>\n-\t</div>\n+<div class=\"min-h-screen bg-surface pb-20 font-sans flex 
+flex-col\">\n+\t<PageHeader title=\"Detail Tagihan\" subtitle=\"Hutang & Piutang\" backHref=\"/debts\" />\n+\n+\t<main 
+class=\"p-4 sm:p-6 max-w-3xl mx-auto w-full flex-1 space-y-6\">\n \n \t{#if loading}\n-\t\t<div class=\"flex 
+justify-center p-12\">\n-\t\t\t<div class=\"w-8 h-8 border-4 border-primary border-t-transparent rounded-full 
+animate-spin\"></div>\n-\t\t</div>\n+\t\t<LoadingSpinner message=\"Memuat data tagihan...\" />\n \t{:else if 
+error}\n-\t\t<div class=\"bg-destructive/15 text-destructive p-4 rounded-md border border-destructive/20\">\n+\t\t<div 
+class=\"bg-cta-soft text-cta p-4 rounded-xl border border-cta/20 font-bold\">\n \t\t\t{error}\n \t\t</div>\n \t{:else 
+if debt}\n \t\t<!-- Ringkasan Kartu -->\n-\t\t<Card.Root class=\"overflow-hidden\">\n-\t\t\t<div class=\"p-6 
+{debt.type === 'receivable' ? 'bg-primary/10' : 'bg-destructive/10'} border-b flex justify-between 
+items-start\">\n+\t\t<Card.Root class=\"overflow-hidden bg-paper shadow-sm border-border rounded-3xl\">\n+\t\t\t<div 
+class=\"p-6 {debt.type === 'receivable' ? 'bg-brand-soft' : 'bg-cta-soft'} border-b border-border flex justify-between 
+items-start\">\n \t\t\t\t<div>\n-\t\t\t\t\t<div class=\"text-xs font-bold {debt.type === 'receivable' ? 'text-primary' 
+: 'text-destructive'} mb-1 uppercase tracking-wide\">\n+\t\t\t\t\t<div class=\"text-xs font-bold {debt.type === 
+'receivable' ? 'text-brand' : 'text-cta'} mb-1 uppercase tracking-widest font-mono\">\n \t\t\t\t\t\t{debt.type === 
+'receivable' ? 'Piutang Pelanggan' : 'Hutang Supplier'}\n \t\t\t\t\t</div>\n-\t\t\t\t\t<h2 class=\"text-2xl 
+font-bold\">{debt.entity_name}</h2>\n+\t\t\t\t\t<h2 class=\"text-2xl font-bold font-grotesk 
+text-ink\">{debt.entity_name}</h2>\n \t\t\t\t\t{#if debt.entity_phone}\n-\t\t\t\t\t\t<div class=\"text-sm 
+text-muted-foreground mt-1\">{debt.entity_phone}</div>\n+\t\t\t\t\t\t<div class=\"text-sm text-ink-soft mt-1 
+font-mono\">{debt.entity_phone}</div>\n \t\t\t\t\t{/if}\n \t\t\t\t</div>\n \t\t\t\t<div>\n \t\t\t\t\t{#if debt.status 
+=== 'unpaid'}\n-\t\t\t\t\t\t<Badge variant=\"destructive\">BELUM LUNAS</Badge>\n+\t\t\t\t\t\t<Badge 
+variant=\"outline\" class=\"bg-cta-soft text-cta border-transparent font-bold\">BELUM LUNAS</Badge>\n \t\t\t\t\t{:else 
+if debt.status === 'partial'}\n-\t\t\t\t\t\t<Badge variant=\"outline\" class=\"bg-warning-soft text-warning 
+hover:bg-warning-soft border-transparent\">CICILAN</Badge>\n+\t\t\t\t\t\t<Badge variant=\"outline\" 
+class=\"bg-warning-soft text-warning-dark border-transparent font-bold\">CICILAN</Badge>\n \t\t\t\t\t{:else if 
+debt.status === 'paid'}\n-\t\t\t\t\t\t<Badge variant=\"outline\" class=\"bg-primary-soft text-primary 
+hover:bg-primary-soft border-transparent\">LUNAS</Badge>\n+\t\t\t\t\t\t<Badge variant=\"outline\" 
+class=\"bg-success-soft text-success-dark border-transparent font-bold\">LUNAS</Badge>\n \t\t\t\t\t{/if}\n 
+\t\t\t\t</div>\n \t\t\t</div>\n \n \t\t\t<Card.Content class=\"p-6 grid grid-cols-2 gap-6\">\n 
+\t\t\t\t<div>\n-\t\t\t\t\t<div class=\"text-xs text-muted-foreground mb-1 uppercase font-mono\">Total 
+Tagihan</div>\n-\t\t\t\t\t<div class=\"text-lg font-bold\">{formatRupiah(debt.amount)}</div>\n+\t\t\t\t\t<div 
+class=\"text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest\">Total Tagihan</div>\n+\t\t\t\t\t<div 
+class=\"text-lg font-bold font-mono text-ink\">{formatRupiah(debt.amount)}</div>\n \t\t\t\t</div>\n 
+\t\t\t\t<div>\n-\t\t\t\t\t<div class=\"text-xs text-muted-foreground mb-1 uppercase font-mono\">Sisa 
+Tagihan</div>\n-\t\t\t\t\t<div class=\"text-2xl font-black {debt.status === 'paid' ? 'text-primary' : 
+'text-destructive'}\">\n+\t\t\t\t\t<div class=\"text-[11px] text-ink-faint mb-1 uppercase font-mono 
+tracking-widest\">Sisa Tagihan</div>\n+\t\t\t\t\t<div class=\"text-2xl font-black font-mono {debt.status === 'paid' ? 
+'text-success-dark' : 'text-cta'}\">\n \t\t\t\t\t\t{formatRupiah(debt.remaining_amount)}\n \t\t\t\t\t</div>\n 
+\t\t\t\t</div>\n \t\t\t\t<div>\n-\t\t\t\t\t<div class=\"text-xs text-muted-foreground mb-1 uppercase font-mono\">Jatuh 
+Tempo</div>\n-\t\t\t\t\t<div class=\"text-sm font-medium\">{formatDateOnly(debt.due_date)}</div>\n+\t\t\t\t\t<div 
+class=\"text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest\">Jatuh Tempo</div>\n+\t\t\t\t\t<div 
+class=\"text-sm font-semibold text-ink\">{formatDateOnly(debt.due_date)}</div>\n \t\t\t\t</div>\n 
+\t\t\t\t<div>\n-\t\t\t\t\t<div class=\"text-xs text-muted-foreground mb-1 uppercase 
+font-mono\">Catatan</div>\n-\t\t\t\t\t<div class=\"text-sm\">{debt.notes || '-'}</div>\n+\t\t\t\t\t<div 
+class=\"text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest\">Catatan</div>\n+\t\t\t\t\t<div 
+class=\"text-sm text-ink\">{debt.notes || '-'}</div>\n \t\t\t\t</div>\n \t\t\t</Card.Content>\n \n-\t\t\t<div 
+class=\"p-4 bg-muted/50 border-t flex gap-3 flex-col sm:flex-row\">\n+\t\t\t<div class=\"p-4 bg-paper-alt border-t 
+border-border flex gap-3 flex-col sm:flex-row\">\n \t\t\t\t<Button\n \t\t\t\t\tonclick={() => (showPaymentModal = 
+true)}\n \t\t\t\t\tdisabled={debt.status === 
+'paid'}\n-\t\t\t\t\tclass=\"flex-1\"\n+\t\t\t\t\tvariant=\"cta\"\n+\t\t\t\t\tclass=\"flex-1 rounded-xl h-12 
+font-bold\"\n \t\t\t\t>\n \t\t\t\t\tCatat Pembayaran\n \t\t\t\t</Button>\n@@ -209,9 +205,9 @@\n 
+\t\t\t\t\tvariant=\"outline\"\n \t\t\t\t\tonclick={sendRemind}\n \t\t\t\t\tdisabled={debt.status === 'paid' || 
+!debt.entity_phone || isReminding}\n-\t\t\t\t\tclass=\"flex items-center gap-2\"\n+\t\t\t\t\tclass=\"flex items-center 
+gap-2 rounded-xl h-12 font-bold border-border\"\n \t\t\t\t>\n-\t\t\t\t\t<svg class=\"w-5 h-5 text-primary\" 
+fill=\"currentColor\" viewBox=\"0 0 24 24\">\n+\t\t\t\t\t<svg class=\"w-5 h-5 text-success\" fill=\"currentColor\" 
+viewBox=\"0 0 24 24\">\n \t\t\t\t\t\t<path d=\"M12.031 0C5.389 0 0 5.39 0 12.031c0 2.115.55 4.184 1.597 6.002L.15 
+23.473l5.59-1.465A11.966 11.966 0 0012.03 24c6.643 0 12.032-5.39 12.032-12.032S18.674 0 12.03 0h.001zm0 22c-1.782 
+0-3.526-.479-5.056-1.385l-.36-.214-3.766.988.995-3.67-.235-.373A9.972 9.972 0 012.03 12.031C2.03 6.505 6.505 2 12.03 
+2s10 4.505 10 10-4.495 10-10 10zm5.498-7.513c-.3-.151-1.78-.88-2.056-.98-.277-.101-.478-.152-.68.151-.202.304-.78 
+1.002-.956 1.203-.176.202-.352.227-.654.076a8.214 8.214 0 01-2.417-1.495 9.07 9.07 0 01-1.676-2.078c-.176-.303-.019-.46
+7.13-.618.136-.135.303-.353.455-.53.151-.176.202-.303.303-.504.101-.202.05-.38-.025-.531-.076-.151-.68-1.643-.933-2.25-
+.246-.593-.496-.512-.68-.52-.176-.008-.377-.01-.578-.01a1.11 1.11 0 00-.804.38c-.277.303-1.056 1.032-1.056 2.518 0 
+1.486 1.08 2.921 1.232 3.123.151.202 2.128 3.25 5.155 4.556 2.455 1.063 3.124.975 3.684.82 1.353-.377 2.383-.976 
+2.723-1.92.34-.945.34-1.753.24-1.92-.102-.168-.378-.269-.68-.42z\"/>\n \t\t\t\t\t</svg>\n \t\t\t\t\t{#if 
+isReminding}\n@@ -224,37 +220,38 @@\n \t\t</Card.Root>\n \n \t\t<!-- Riwayat Pembayaran -->\n-\t\t<h3 
+class=\"font-bold text-lg mt-8 mb-4\">Riwayat Pembayaran</h3>\n+\t\t<h3 class=\"font-bold font-grotesk text-lg mt-8 
+mb-4 text-ink\">Riwayat Pembayaran</h3>\n \n \t\t{#if debt.payments && debt.payments.length > 0}\n-\t\t\t<Card.Root 
+class=\"overflow-hidden\">\n+\t\t\t<Card.Root class=\"overflow-hidden bg-paper shadow-sm border-border 
+rounded-3xl\">\n \t\t\t\t<Table.Root>\n-\t\t\t\t\t<Table.Header 
+class=\"bg-muted/50\">\n-\t\t\t\t\t\t<Table.Row>\n-\t\t\t\t\t\t\t<Table.Head>Tanggal & Waktu</Table.Head>\n-\t\t\t\t\t\
+t\t<Table.Head>Metode</Table.Head>\n-\t\t\t\t\t\t\t<Table.Head>Nominal</Table.Head>\n-\t\t\t\t\t\t\t<Table.Head>Catatan
+</Table.Head>\n+\t\t\t\t\t<Table.Header class=\"bg-paper-alt\">\n+\t\t\t\t\t\t<Table.Row class=\"hover:bg-transparent 
+border-b-border\">\n+\t\t\t\t\t\t\t<Table.Head class=\"font-mono text-[11px] uppercase tracking-wider font-bold 
+text-ink-soft\">Tanggal &amp; Waktu</Table.Head>\n+\t\t\t\t\t\t\t<Table.Head class=\"font-mono text-[11px] uppercase 
+tracking-wider font-bold text-ink-soft\">Metode</Table.Head>\n+\t\t\t\t\t\t\t<Table.Head class=\"font-mono text-[11px] 
+uppercase tracking-wider font-bold text-ink-soft\">Nominal</Table.Head>\n+\t\t\t\t\t\t\t<Table.Head class=\"font-mono 
+text-[11px] uppercase tracking-wider font-bold text-ink-soft\">Catatan</Table.Head>\n \t\t\t\t\t\t</Table.Row>\n 
+\t\t\t\t\t</Table.Header>\n \t\t\t\t\t<Table.Body>\n \t\t\t\t\t\t{#each debt.payments as 
+pay}\n-\t\t\t\t\t\t\t<Table.Row>\n-\t\t\t\t\t\t\t\t<Table.Cell 
+class=\"text-muted-foreground\">{formatDate(pay.payment_date)}</Table.Cell>\n-\t\t\t\t\t\t\t\t<Table.Cell 
+class=\"uppercase text-xs font-bold\">{pay.payment_method}</Table.Cell>\n-\t\t\t\t\t\t\t\t<Table.Cell 
+class=\"font-bold text-primary\">{formatRupiah(pay.amount)}</Table.Cell>\n-\t\t\t\t\t\t\t\t<Table.Cell 
+class=\"text-muted-foreground\">{pay.notes || '-'}</Table.Cell>\n+\t\t\t\t\t\t\t<Table.Row class=\"hover:bg-muted/40 
+border-b-border/60\">\n+\t\t\t\t\t\t\t\t<Table.Cell 
+class=\"text-ink-soft\">{formatDate(pay.payment_date)}</Table.Cell>\n+\t\t\t\t\t\t\t\t<Table.Cell class=\"uppercase 
+text-xs font-bold text-ink\">{pay.payment_method}</Table.Cell>\n+\t\t\t\t\t\t\t\t<Table.Cell class=\"font-bold 
+font-mono text-success-dark\">{formatRupiah(pay.amount)}</Table.Cell>\n+\t\t\t\t\t\t\t\t<Table.Cell 
+class=\"text-ink-soft\">{pay.notes || '-'}</Table.Cell>\n \t\t\t\t\t\t\t</Table.Row>\n \t\t\t\t\t\t{/each}\n 
+\t\t\t\t\t</Table.Body>\n \t\t\t\t</Table.Root>\n \t\t\t</Card.Root>\n \t\t{:else}\n-\t\t\t<div class=\"text-center 
+py-8 bg-muted/20 border rounded-md border-dashed text-muted-foreground text-sm\">\n+\t\t\t<div class=\"text-center 
+py-10 bg-paper-alt border-2 border-dashed border-border/60 rounded-2xl text-ink-soft text-sm\">\n \t\t\t\tBelum ada 
+riwayat pembayaran untuk tagihan ini.\n \t\t\t</div>\n \t\t{/if}\n \t{/if}\n+\t</main>\n </div>\n \n <Dialog.Root 
+bind:open={showPaymentModal}>\n@@ -268,32 +265,32 @@\n \n \t\t{#if debt}\n \t\t\t<div class=\"space-y-4 
+py-4\">\n-\t\t\t\t<div class=\"p-3 bg-warning-soft rounded-md border border-warning mb-4\">\n-\t\t\t\t\t<div 
+class=\"text-xs text-warning uppercase font-bold mb-1\">Sisa Tagihan Maksimal</div>\n-\t\t\t\t\t<div class=\"text-lg 
+font-black text-warning\">{formatRupiah(debt.remaining_amount)}</div>\n+\t\t\t\t<div class=\"p-3.5 bg-warning-soft 
+rounded-xl border border-warning/30 mb-4\">\n+\t\t\t\t\t<div class=\"text-[11px] text-warning-dark uppercase font-mono 
+font-bold tracking-widest mb-1\">Sisa Tagihan Maksimal</div>\n+\t\t\t\t\t<div class=\"text-lg font-black font-mono 
+text-warning-dark\">{formatRupiah(debt.remaining_amount)}</div>\n \t\t\t\t</div>\n \n \t\t\t\t<div 
+class=\"space-y-2\">\n-\t\t\t\t\t<Label for=\"paymentAmount\">\n-\t\t\t\t\t\tNominal Pembayaran <span 
+class=\"text-destructive\">*</span>\n+\t\t\t\t\t<Label for=\"paymentAmount\" class=\"text-xs font-bold uppercase 
+tracking-widest text-ink-soft font-mono\">\n+\t\t\t\t\t\tNominal Pembayaran <span class=\"text-cta\">*</span>\n 
+\t\t\t\t\t</Label>\n \t\t\t\t\t<div class=\"relative\">\n-\t\t\t\t\t\t<span class=\"absolute left-3 top-1/2 
+-translate-y-1/2 text-muted-foreground font-bold\">Rp</span>\n+\t\t\t\t\t\t<span class=\"absolute left-3.5 top-1/2 
+-translate-y-1/2 text-ink-faint font-mono font-semibold\">Rp</span>\n \t\t\t\t\t\t<Input\n 
+\t\t\t\t\t\t\tid=\"paymentAmount\"\n \t\t\t\t\t\t\ttype=\"number\"\n \t\t\t\t\t\t\tmin=\"1\"\n 
+\t\t\t\t\t\t\tmax={debt.remaining_amount}\n \t\t\t\t\t\t\tbind:value={paymentAmount}\n-\t\t\t\t\t\t\tclass=\"pl-10 
+font-bold\"\n+\t\t\t\t\t\t\tclass=\"pl-10 font-mono font-bold h-12 rounded-xl border-border bg-paper-alt\"\n 
+\t\t\t\t\t\t/>\n \t\t\t\t\t</div>\n \t\t\t\t</div>\n \n \t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label 
+for=\"paymentMethod\">Metode</Label>\n+\t\t\t\t\t<Label for=\"paymentMethod\" class=\"text-xs font-bold uppercase 
+tracking-widest text-ink-soft font-mono\">Metode</Label>\n \t\t\t\t\t<Select.Root type=\"single\" 
+bind:value={paymentMethod}>\n-\t\t\t\t\t\t<Select.Trigger class=\"w-full\">\n+\t\t\t\t\t\t<Select.Trigger 
+class=\"w-full h-12 rounded-xl border-border bg-paper-alt\">\n \t\t\t\t\t\t\t{paymentMethod === 'cash' ? 'Tunai / 
+Cash' : paymentMethod === 'transfer' ? 'Transfer Bank' : 'QRIS / e-Wallet'}\n \t\t\t\t\t\t</Select.Trigger>\n 
+\t\t\t\t\t\t<Select.Content>\n@@ -305,26 +302,29 @@\n \t\t\t\t</div>\n \n \t\t\t\t<div 
+class=\"space-y-2\">\n-\t\t\t\t\t<Label for=\"paymentNotes\">Catatan</Label>\n+\t\t\t\t\t<Label for=\"paymentNotes\" 
+class=\"text-xs font-bold uppercase tracking-widest text-ink-soft font-mono\">Catatan</Label>\n \t\t\t\t\t<Input\n 
+\t\t\t\t\t\tid=\"paymentNotes\"\n \t\t\t\t\t\ttype=\"text\"\n \t\t\t\t\t\tbind:value={paymentNotes}\n 
+\t\t\t\t\t\tplaceholder=\"Misal: Cicilan pertama...\"\n+\t\t\t\t\t\tclass=\"h-12 rounded-xl border-border bg-paper-alt 
+font-medium\"\n \t\t\t\t\t/>\n \t\t\t\t</div>\n \t\t\t</div>\n \t\t\t\n \t\t\t<Dialog.Footer>\n-\t\t\t\t<Button 
+variant=\"outline\" onclick={() => (showPaymentModal = false)}>\n+\t\t\t\t<Button variant=\"outline\" onclick={() => 
+(showPaymentModal = false)} class=\"rounded-xl h-11 font-bold border-border\">\n \t\t\t\t\tBatal\n \t\t\t\t</Button>\n 
+\t\t\t\t<Button\n+\t\t\t\t\tvariant=\"cta\"\n \t\t\t\t\tonclick={submitPayment}\n \t\t\t\t\tdisabled={isSubmitting || 
+!paymentAmount}\n+\t\t\t\t\tclass=\"rounded-xl h-11 font-bold\"\n \t\t\t\t>\n \t\t\t\t\t{#if 
+isSubmitting}\n-\t\t\t\t\t\t<div class=\"w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full 
+animate-spin mr-2\"></div>\n+\t\t\t\t\t\t<div class=\"w-4 h-4 border-2 border-white/40 border-t-white rounded-full 
+animate-spin mr-2\"></div>\n \t\t\t\t\t\tMenyimpan...\n \t\t\t\t\t{:else}\n \t\t\t\t\t\tSimpan Pembayaran\ndiff --git 
+a/frontend/src/routes/(app)/debts/new/+page.svelte b/frontend/src/routes/(app)/debts/new/+page.svelte\nindex 
+73e49a4..59db4d8 100644\n--- a/frontend/src/routes/(app)/debts/new/+page.svelte\n+++ 
+b/frontend/src/routes/(app)/debts/new/+page.svelte\n@@ -8,6 +8,7 @@\n \timport * as Card from 
+'$lib/components/ui/card';\n \timport * as RadioGroup from '$lib/components/ui/radio-group';\n \timport { toast } from 
+'svelte-sonner';\n+\timport PageHeader from '$lib/components/PageHeader.svelte';\n \n \tconst API_URL = 
+env.PUBLIC_API_URL || 'http://localhost:3000';\n \n@@ -35,7 +36,7 @@\n \t\tisSubmitting = true;\n \n \t\ttry 
+{\n-\t\t\tconst token = localStorage.getItem('token');\n+\t\t\tconst token = localStorage.getItem('umkm_token');\n 
+\t\t\tconst res = await fetch(`${API_URL}/v1/debts`, {\n \t\t\t\tmethod: 'POST',\n \t\t\t\theaders: {\n@@ -64,120 
++65,107 @@\n </script>\n \n <svelte:head>\n-\t<title>Catat Hutang/Piutang | UMKM Tools</title>\n+\t<title>Catat 
+Hutang/Piutang â€” Beres</title>\n </svelte:head>\n \n-<div class=\"max-w-2xl mx-auto space-y-6 pb-20 p-4\">\n-\t<div 
+class=\"flex items-center gap-4\">\n-\t\t<Button variant=\"outline\" size=\"icon\" class=\"rounded-full shrink-0\" 
+href=\"/debts\">\n-\t\t\tâ†\n-\t\t</Button>\n-\t\t<div>\n-\t\t\t<h1 class=\"text-2xl font-bold\">Catat Hutang / 
+Piutang</h1>\n-\t\t\t<p class=\"text-muted-foreground text-sm mt-1\">Tambah data tagihan baru ke dalam 
+buku.</p>\n-\t\t</div>\n-\t</div>\n-\n-\t<Card.Root>\n-\t\t<Card.Content class=\"p-6 space-y-6\">\n-\t\t\t<div 
+class=\"space-y-4\">\n-\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label>\n-\t\t\t\t\t\tJenis Catatan <span 
+class=\"text-destructive\">*</span>\n-\t\t\t\t\t</Label>\n-\t\t\t\t\t<RadioGroup.Root bind:value={debt.type} 
+class=\"grid grid-cols-2 gap-3\">\n-\t\t\t\t\t\t<Label\n-\t\t\t\t\t\t\tfor=\"receivable\"\n-\t\t\t\t\t\t\tclass=\"flex 
+flex-col items-center justify-center gap-2 p-3 border rounded-md cursor-pointer transition 
+[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/10 
+[&:has([data-state=checked])]:text-primary\"\n-\t\t\t\t\t\t>\n-\t\t\t\t\t\t\t<RadioGroup.Item value=\"receivable\" 
+id=\"receivable\" class=\"sr-only\" />\n-\t\t\t\t\t\t\t<span class=\"text-center font-medium\">Piutang (Orang ngutang 
+ke 
+kita)</span>\n-\t\t\t\t\t\t</Label>\n-\t\t\t\t\t\t<Label\n-\t\t\t\t\t\t\tfor=\"payable\"\n-\t\t\t\t\t\t\tclass=\"flex 
+flex-col items-center justify-center gap-2 p-3 border rounded-md cursor-pointer transition 
+[&:has([data-state=checked])]:border-destructive [&:has([data-state=checked])]:bg-destructive/10 
+[&:has([data-state=checked])]:text-destructive\"\n-\t\t\t\t\t\t>\n-\t\t\t\t\t\t\t<RadioGroup.Item value=\"payable\" 
+id=\"payable\" class=\"sr-only\" />\n-\t\t\t\t\t\t\t<span class=\"text-center font-medium\">Hutang (Kita ngutang ke 
+supplier)</span>\n-\t\t\t\t\t\t</Label>\n-\t\t\t\t\t</RadioGroup.Root>\n-\t\t\t\t</div>\n+<div class=\"min-h-screen 
+bg-surface pb-20 font-sans flex flex-col\">\n+\t<PageHeader title=\"Catat Hutang / Piutang\" subtitle=\"Tambah data 
+tagihan baru\" backHref=\"/debts\" />\n \n-\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label 
+for=\"entityName\">\n-\t\t\t\t\t\t{debt.type === 'receivable' ? 'Nama Pelanggan' : 'Nama Supplier / 
+Pihak'}\n-\t\t\t\t\t\t<span class=\"text-destructive\">*</span>\n-\t\t\t\t\t</Label>\n-\t\t\t\t\t<Input\n-\t\t\t\t\t\ti
+d=\"entityName\"\n-\t\t\t\t\t\ttype=\"text\"\n-\t\t\t\t\t\tbind:value={debt.entity_name}\n-\t\t\t\t\t\tplaceholder=\"Mi
+s. Pak Budi\"\n-\t\t\t\t\t/>\n-\t\t\t\t</div>\n+\t<main class=\"p-4 sm:p-6 max-w-2xl mx-auto w-full 
+flex-1\">\n+\t\t<Card.Root class=\"bg-paper shadow-sm border-border rounded-3xl 
+overflow-hidden\">\n+\t\t\t<Card.Content class=\"p-5 sm:p-6 space-y-6\">\n+\t\t\t\t<div 
+class=\"space-y-4\">\n+\t\t\t\t\t<div class=\"space-y-2\">\n+\t\t\t\t\t\t<Label class=\"text-xs font-bold uppercase 
+tracking-widest text-ink-soft font-mono\">\n+\t\t\t\t\t\t\tJenis Catatan <span 
+class=\"text-cta\">*</span>\n+\t\t\t\t\t\t</Label>\n+\t\t\t\t\t\t<RadioGroup.Root bind:value={debt.type} class=\"grid 
+grid-cols-2 gap-3\">\n+\t\t\t\t\t\t\t<Label\n+\t\t\t\t\t\t\t\tfor=\"receivable\"\n+\t\t\t\t\t\t\t\tclass=\"flex 
+flex-col items-center justify-center gap-2 p-3.5 border-1.5 border-border rounded-xl cursor-pointer transition 
+[&:has([data-state=checked])]:border-brand [&:has([data-state=checked])]:bg-brand-soft 
+[&:has([data-state=checked])]:text-brand\"\n+\t\t\t\t\t\t\t>\n+\t\t\t\t\t\t\t\t<RadioGroup.Item value=\"receivable\" 
+id=\"receivable\" class=\"sr-only\" />\n+\t\t\t\t\t\t\t\t<span class=\"text-center font-bold text-sm\">Piutang (Orang 
+ngutang ke kita)</span>\n+\t\t\t\t\t\t\t</Label>\n+\t\t\t\t\t\t\t<Label\n+\t\t\t\t\t\t\t\tfor=\"payable\"\n+\t\t\t\t\t\
+t\t\tclass=\"flex flex-col items-center justify-center gap-2 p-3.5 border-1.5 border-border rounded-xl cursor-pointer 
+transition [&:has([data-state=checked])]:border-cta [&:has([data-state=checked])]:bg-cta-soft 
+[&:has([data-state=checked])]:text-cta\"\n+\t\t\t\t\t\t\t>\n+\t\t\t\t\t\t\t\t<RadioGroup.Item value=\"payable\" 
+id=\"payable\" class=\"sr-only\" />\n+\t\t\t\t\t\t\t\t<span class=\"text-center font-bold text-sm\">Hutang (Kita 
+ngutang ke supplier)</span>\n+\t\t\t\t\t\t\t</Label>\n+\t\t\t\t\t\t</RadioGroup.Root>\n+\t\t\t\t\t</div>\n 
+\n-\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label for=\"entityPhone\">No. WhatsApp (Opsional, untuk pengingat)</L
+abel>\n-\t\t\t\t\t<Input\n-\t\t\t\t\t\tid=\"entityPhone\"\n-\t\t\t\t\t\ttype=\"tel\"\n-\t\t\t\t\t\tbind:value={debt.ent
+ity_phone}\n-\t\t\t\t\t\tplaceholder=\"08123456789\"\n-\t\t\t\t\t/>\n-\t\t\t\t</div>\n+\t\t\t\t\t<div 
+class=\"space-y-2\">\n+\t\t\t\t\t\t<Label for=\"entityName\" class=\"text-xs font-bold uppercase tracking-widest 
+text-ink-soft font-mono\">\n+\t\t\t\t\t\t\t{debt.type === 'receivable' ? 'Nama Pelanggan' : 'Nama Supplier / 
+Pihak'}\n+\t\t\t\t\t\t\t<span class=\"text-cta\">*</span>\n+\t\t\t\t\t\t</Label>\n+\t\t\t\t\t\t<Input\n+\t\t\t\t\t\t\ti
+d=\"entityName\"\n+\t\t\t\t\t\t\ttype=\"text\"\n+\t\t\t\t\t\t\tbind:value={debt.entity_name}\n+\t\t\t\t\t\t\tplaceholde
+r=\"Mis. Pak Budi\"\n+\t\t\t\t\t\t\tclass=\"h-12 rounded-xl border-border bg-paper-alt 
+font-medium\"\n+\t\t\t\t\t\t/>\n+\t\t\t\t\t</div>\n \n-\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label 
+for=\"amount\">\n-\t\t\t\t\t\tTotal Nominal <span 
+class=\"text-destructive\">*</span>\n-\t\t\t\t\t</Label>\n-\t\t\t\t\t<div class=\"relative\">\n-\t\t\t\t\t\t<span 
+class=\"absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium\">Rp</span>\n+\t\t\t\t\t<div 
+class=\"space-y-2\">\n+\t\t\t\t\t\t<Label for=\"entityPhone\" class=\"text-xs font-bold uppercase tracking-widest 
+text-ink-soft font-mono\">No. WhatsApp (Opsional, untuk pengingat)</Label>\n \t\t\t\t\t\t<Input\n-\t\t\t\t\t\t\tid=\"am
+ount\"\n-\t\t\t\t\t\t\ttype=\"number\"\n-\t\t\t\t\t\t\tmin=\"0\"\n-\t\t\t\t\t\t\tbind:value={debt.amount}\n-\t\t\t\t\t\
+t\tclass=\"pl-9 font-bold text-lg\"\n-\t\t\t\t\t\t\tplaceholder=\"0\"\n+\t\t\t\t\t\t\tid=\"entityPhone\"\n+\t\t\t\t\t\t
+\ttype=\"tel\"\n+\t\t\t\t\t\t\tbind:value={debt.entity_phone}\n+\t\t\t\t\t\t\tplaceholder=\"08123456789\"\n+\t\t\t\t\t\
+t\tclass=\"h-12 rounded-xl border-border bg-paper-alt font-mono font-medium\"\n \t\t\t\t\t\t/>\n 
+\t\t\t\t\t</div>\n-\t\t\t\t</div>\n \n-\t\t\t\t<div class=\"space-y-2\">\n-\t\t\t\t\t<Label for=\"dueDate\">Tanggal 
+Jatuh Tempo (Opsional)</Label>\n-\t\t\t\t\t<Input\n-\t\t\t\t\t\tid=\"dueDate\"\n-\t\t\t\t\t\ttype=\"date\"\n-\t\t\t\t\t
+\tbind:value={debt.due_date}\n-\t\t\t\t\t/>\n+\t\t\t\t\t<div class=\"space-y-2\">\n+\t\t\t\t\t\t<Label for=\"amount\" 
+class=\"text-xs font-bold uppercase tracking-widest text-ink-soft font-mono\">\n+\t\t\t\t\t\t\tTotal Nominal <span 
+class=\"text-cta\">*</span>\n+\t\t\t\t\t\t</Label>\n+\t\t\t\t\t\t<div class=\"relative\">\n+\t\t\t\t\t\t\t<span 
+class=\"absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint font-mono font-semibold\">Rp</span>\n+\t\t\t\t\t\t\t<
+Input\n+\t\t\t\t\t\t\t\tid=\"amount\"\n+\t\t\t\t\t\t\t\ttype=\"number\"\n+\t\t\t\t\t\t\t\tmin=\"0\"\n+\t\t\t\t\t\t\t\tb
+ind:value={debt.amount}\n+\t\t\t\t\t\t\t\tclass=\"pl-9 font-mono font-bold text-lg h-12 rounded-xl border-border bg-pap
+er-alt\"\n+\t\t\t\t\t\t\t\tplaceholder=\"0\"\n+\t\t\t\t\t\t\t/>\n+\t\t\t\t\t\t</div>\n+\t\t\t\t\t</div>\n+\n+\t\t\t\t\t
+<div class=\"space-y-2\">\n+\t\t\t\t\t\t<Label for=\"dueDate\" class=\"text-xs font-bold uppercase tracking-widest 
+text-ink-soft font-mono\">Tanggal Jatuh Tempo (Opsional)</Label>\n+\t\t\t\t\t\t<Input id=\"dueDate\" type=\"date\" 
+bind:value={debt.due_date} class=\"h-12 rounded-xl border-border bg-paper-alt font-medium\" 
+/>\n+\t\t\t\t\t</div>\n+\n+\t\t\t\t\t<div class=\"space-y-2\">\n+\t\t\t\t\t\t<Label for=\"notes\" class=\"text-xs 
+font-bold uppercase tracking-widest text-ink-soft font-mono\">Catatan Tambahan 
+(Opsional)</Label>\n+\t\t\t\t\t\t<Textarea id=\"notes\" bind:value={debt.notes} rows={3} placeholder=\"Misal: Bon nota 
+no. 1234\" class=\"rounded-xl border-\n<truncated 42832 bytes>\n\nNOTE: The output was truncated because it was too 
+long. Use a more targeted query or a smaller range to get the information you need."}
+
+
