@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { Separator } from '$lib/components/ui/separator';
-	import { Store, ShoppingCart, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
+	import { Store, ShoppingCart, Receipt, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 
 	const quickMenus = [
 		{ label: 'Kasir', href: '/pos', icon: ShoppingCart, color: 'text-cta', bg: 'bg-cta-soft' },
+		{ label: 'Penjualan', href: '/penjualan', icon: Receipt, color: 'text-cta', bg: 'bg-cta-soft' },
 		{ label: 'Stok', href: '/products', icon: Package, color: 'text-brand', bg: 'bg-brand-soft' },
 		{ label: 'Pembelian', href: '/purchases', icon: ClipboardList, color: 'text-brand', bg: 'bg-brand-soft' },
 		{ label: 'Supplier', href: '/suppliers', icon: Truck, color: 'text-warning', bg: 'bg-warning-soft' },

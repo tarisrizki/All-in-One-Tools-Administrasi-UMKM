@@ -42,71 +42,77 @@ async function main() {
 
 		// 4. Inject Kategori
 		console.log('Menginjeksi kategori...');
-		await db.delete(categories).where(eq(categories.businessId, businessId));
-		const [cat1, cat2] = await db.insert(categories).values([
-			{ businessId, name: 'Minuman Kopi', description: 'Kopi susu, espresso, dll' },
-			{ businessId, name: 'Makanan Ringan', description: 'Camilan dan gorengan' }
-		]).returning({ id: categories.id });
+		let cats = await db.select().from(categories).where(eq(categories.businessId, businessId));
+		if (cats.length === 0) {
+			await db.insert(categories).values([
+				{ businessId, name: 'Minuman Kopi', description: 'Kopi susu, espresso, dll' },
+				{ businessId, name: 'Makanan Ringan', description: 'Camilan dan gorengan' }
+			]);
+			cats = await db.select().from(categories).where(eq(categories.businessId, businessId));
+		}
+		const cat1 = cats.find(c => c.name === 'Minuman Kopi') || cats[0];
+		const cat2 = cats.find(c => c.name === 'Makanan Ringan') || cats[0];
 
-		// 5. Inject Produk
-		console.log('Menginjeksi produk...');
-		await db.delete(products).where(eq(products.businessId, businessId));
-		await db.insert(products).values([
-			{
-				businessId,
-				categoryId: cat1.id,
-				sku: 'KP-001',
-				name: 'Kopi Susu Gula Aren',
-				description: 'Kopi susu manis dengan gula aren asli',
-				price: '18000',
-				cost: '10000',
-				stock: 50,
-				minStock: 10,
-				unit: 'Cup',
-				barcode: '8991234567890'
-			},
-			{
-				businessId,
-				categoryId: cat1.id,
-				sku: 'KP-002',
-				name: 'Americano Dingin',
-				description: 'Espresso dengan es batu',
-				price: '15000',
-				cost: '8000',
-				stock: 100,
-				minStock: 20,
-				unit: 'Cup'
-			},
-			{
-				businessId,
-				categoryId: cat2.id,
-				sku: 'MK-001',
-				name: 'Kentang Goreng',
-				description: 'Kentang goreng renyah',
-				price: '12000',
-				cost: '6000',
-				stock: 30,
-				minStock: 5,
-				unit: 'Porsi'
-			}
-		]);
+		if (cat1 && cat2) {
+			// 5. Inject Produk
+			console.log('Menginjeksi produk...');
+			await db.insert(products).values([
+				{
+					businessId,
+					categoryId: cat1.id,
+					sku: `KP-${Date.now().toString().slice(-4)}`,
+					name: 'Kopi Susu Gula Aren',
+					description: 'Kopi susu manis dengan gula aren asli',
+					price: '18000',
+					cost: '10000',
+					stock: 50,
+					minStock: 10,
+					unit: 'Cup',
+					barcode: `899${Date.now().toString().slice(-8)}`
+				},
+				{
+					businessId,
+					categoryId: cat1.id,
+					sku: `KP-${Date.now().toString().slice(-4)}A`,
+					name: 'Americano Dingin',
+					description: 'Espresso dengan es batu',
+					price: '15000',
+					cost: '8000',
+					stock: 100,
+					minStock: 20,
+					unit: 'Cup',
+					barcode: `899${(Date.now() + 1).toString().slice(-8)}`
+				},
+				{
+					businessId,
+					categoryId: cat2.id,
+					sku: `MK-${Date.now().toString().slice(-4)}`,
+					name: 'Kentang Goreng',
+					description: 'Kentang goreng renyah',
+					price: '12000',
+					cost: '6000',
+					stock: 30,
+					minStock: 5,
+					unit: 'Porsi',
+					barcode: `899${(Date.now() + 2).toString().slice(-8)}`
+				}
+			]).onConflictDoNothing();
+		}
 
 		// 6. Inject Customers
 		console.log('Menginjeksi pelanggan...');
-		await db.delete(customers).where(eq(customers.businessId, businessId));
 		await db.insert(customers).values([
-			{ businessId, name: 'Budi Santoso', phone: '081234567890', points: 1500, status: 'active' },
-			{ businessId, name: 'Siti Aminah', phone: '089876543210', points: 500, status: 'active' },
-			{ businessId, name: 'Andi Pratama', phone: '085611223344', points: 0, status: 'active' }
-		]);
+			{ businessId, name: 'Budi Santoso', phone: `0812${Date.now().toString().slice(-8)}`, loyaltyPoints: 1500, createdBy: demoUser.id },
+			{ businessId, name: 'Siti Aminah', phone: `0898${Date.now().toString().slice(-8)}`, loyaltyPoints: 500, createdBy: demoUser.id },
+			{ businessId, name: 'Andi Pratama', phone: `0856${Date.now().toString().slice(-8)}`, loyaltyPoints: 0, createdBy: demoUser.id }
+		]).onConflictDoNothing();
 
 		// 7. Inject Suppliers
 		console.log('Menginjeksi supplier...');
-		await db.delete(suppliers).where(eq(suppliers.businessId, businessId));
 		await db.insert(suppliers).values([
-			{ businessId, name: 'Distributor Kopi Nusantara', phone: '02199887766', address: 'Jl. Sudirman No. 10', status: 'active' },
-			{ businessId, name: 'Toko Kemasan Plastik', phone: '02155443322', address: 'Pasar Baru', status: 'active' }
-		]);
+			{ businessId, name: 'Distributor Kopi Nusantara', phone: `02199${Date.now().toString().slice(-6)}`, address: 'Jl. Sudirman No. 10', createdBy: demoUser.id },
+			{ businessId, name: 'Toko Kemasan Plastik', phone: `02155${Date.now().toString().slice(-6)}`, address: 'Pasar Baru', createdBy: demoUser.id }
+		]).onConflictDoNothing();
 
 		console.log('✅ Demo data berhasil diinjeksi!');
 		process.exit(0);

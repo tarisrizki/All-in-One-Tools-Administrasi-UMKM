@@ -30,6 +30,73 @@ const saleSchema = z.object({
 export default async function salesRoutes(app: FastifyInstance) {
 	app.addHook("preValidation", app.authenticate);
 
+	// Riwayat transaksi -- sebelumnya tidak ada endpoint list sama sekali,
+	// jadi struk yang sudah ditutup di POS tidak bisa dicari/dilihat lagi.
+	app.get("/", { preHandler: [app.requirePermission('pos.read')] }, async (request, reply) => {
+		try {
+			const { businessId } = request.user;
+			const { search, from, to, page = '1', limit = '20' } = request.query as {
+				search?: string; from?: string; to?: string; page?: string; limit?: string;
+			};
+			const { customers } = await import('../../db/schema.js');
+			const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+			const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+			const offset = (pageNum - 1) * limitNum;
+
+			const conditions = [eq(sales.businessId, businessId)];
+			if (search) {
+				conditions.push(
+					sql`(${sales.invoiceNumber} ILIKE ${'%' + search + '%'} OR ${customers.name} ILIKE ${'%' + search + '%'})`
+				);
+			}
+			if (from) conditions.push(sql`${sales.createdAt} >= ${from}`);
+			if (to) conditions.push(sql`${sales.createdAt} <= ${to}`);
+
+			const rows = await db
+				.select({
+					id: sales.id,
+					invoiceNumber: sales.invoiceNumber,
+					grandTotal: sales.grandTotal,
+					status: sales.status,
+					createdAt: sales.createdAt,
+					customerName: customers.name,
+				})
+				.from(sales)
+				.leftJoin(customers, eq(sales.customerId, customers.id))
+				.where(and(...conditions))
+				.orderBy(sql`${sales.createdAt} DESC`)
+				.limit(limitNum)
+				.offset(offset);
+
+			// Ambil metode pembayaran utama tiap transaksi dalam satu query terpisah (ringan, dibatasi oleh saleId yang sudah difilter).
+			const saleIds = rows.map((r) => r.id);
+			let methodMap: Record<string, string> = {};
+			if (saleIds.length > 0) {
+				const payRows = await db
+					.select({ saleId: payments.saleId, method: payments.method })
+					.from(payments)
+					.where(sql`${payments.saleId} IN ${saleIds}`);
+				for (const p of payRows) {
+					if (!methodMap[p.saleId]) methodMap[p.saleId] = p.method;
+				}
+			}
+
+			const totalRes = await db
+				.select({ count: sql<number>`count(*)::int` })
+				.from(sales)
+				.leftJoin(customers, eq(sales.customerId, customers.id))
+				.where(and(...conditions));
+
+			return reply.send({
+				success: true,
+				data: rows.map((r) => ({ ...r, paymentMethod: methodMap[r.id] || '-' })),
+				pagination: { page: pageNum, limit: limitNum, total: totalRes[0]?.count || 0 }
+			});
+		} catch (err: any) {
+			return reply.status(500).send({ success: false, error: { message: err.message || "Gagal mengambil riwayat transaksi" } });
+		}
+	});
+
 	app.post("/", { preHandler: [app.requirePermission('pos.write')] }, async (request, reply) => {
 		try {
 			const { businessId, userId } = request.user;

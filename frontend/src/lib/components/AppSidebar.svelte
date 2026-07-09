@@ -6,6 +6,7 @@
 	import {
 		LayoutDashboard,
 		ShoppingCart,
+		Receipt,
 		Package,
 		ClipboardList,
 		Truck,
@@ -38,6 +39,7 @@
 		{
 			label: 'Transaksi',
 			items: [
+				{ href: '/penjualan', label: 'Penjualan', icon: Receipt },
 				{ href: '/products', label: 'Produk & Stok', icon: Package },
 				{ href: '/purchases', label: 'Pembelian (PO)', icon: ClipboardList },
 				{ href: '/suppliers', label: 'Supplier', icon: Truck }

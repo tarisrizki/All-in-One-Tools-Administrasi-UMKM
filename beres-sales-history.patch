@@ -1,0 +1,287 @@
+diff --git a/backend/src/modules/sales/routes.ts b/backend/src/modules/sales/routes.ts
+index 32813c1..5bb78d2 100644
+--- a/backend/src/modules/sales/routes.ts
++++ b/backend/src/modules/sales/routes.ts
+@@ -30,6 +30,73 @@ const saleSchema = z.object({
+ export default async function salesRoutes(app: FastifyInstance) {
+ 	app.addHook("preValidation", app.authenticate);
+ 
++	// Riwayat transaksi -- sebelumnya tidak ada endpoint list sama sekali,
++	// jadi struk yang sudah ditutup di POS tidak bisa dicari/dilihat lagi.
++	app.get("/", { preHandler: [app.requirePermission('pos.read')] }, async (request, reply) => {
++		try {
++			const { businessId } = request.user;
++			const { search, from, to, page = '1', limit = '20' } = request.query as {
++				search?: string; from?: string; to?: string; page?: string; limit?: string;
++			};
++			const { customers } = await import('../../db/schema.js');
++			const pageNum = Math.max(parseInt(page, 10) || 1, 1);
++			const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
++			const offset = (pageNum - 1) * limitNum;
++
++			const conditions = [eq(sales.businessId, businessId)];
++			if (search) {
++				conditions.push(
++					sql`(${sales.invoiceNumber} ILIKE ${'%' + search + '%'} OR ${customers.name} ILIKE ${'%' + search + '%'})`
++				);
++			}
++			if (from) conditions.push(sql`${sales.createdAt} >= ${from}`);
++			if (to) conditions.push(sql`${sales.createdAt} <= ${to}`);
++
++			const rows = await db
++				.select({
++					id: sales.id,
++					invoiceNumber: sales.invoiceNumber,
++					grandTotal: sales.grandTotal,
++					status: sales.status,
++					createdAt: sales.createdAt,
++					customerName: customers.name,
++				})
++				.from(sales)
++				.leftJoin(customers, eq(sales.customerId, customers.id))
++				.where(and(...conditions))
++				.orderBy(sql`${sales.createdAt} DESC`)
++				.limit(limitNum)
++				.offset(offset);
++
++			// Ambil metode pembayaran utama tiap transaksi dalam satu query terpisah (ringan, dibatasi oleh saleId yang sudah difilter).
++			const saleIds = rows.map((r) => r.id);
++			let methodMap: Record<string, string> = {};
++			if (saleIds.length > 0) {
++				const payRows = await db
++					.select({ saleId: payments.saleId, method: payments.method })
++					.from(payments)
++					.where(sql`${payments.saleId} IN ${saleIds}`);
++				for (const p of payRows) {
++					if (!methodMap[p.saleId]) methodMap[p.saleId] = p.method;
++				}
++			}
++
++			const totalRes = await db
++				.select({ count: sql<number>`count(*)::int` })
++				.from(sales)
++				.leftJoin(customers, eq(sales.customerId, customers.id))
++				.where(and(...conditions));
++
++			return reply.send({
++				success: true,
++				data: rows.map((r) => ({ ...r, paymentMethod: methodMap[r.id] || '-' })),
++				pagination: { page: pageNum, limit: limitNum, total: totalRes[0]?.count || 0 }
++			});
++		} catch (err: any) {
++			return reply.status(500).send({ success: false, error: { message: err.message || "Gagal mengambil riwayat transaksi" } });
++		}
++	});
++
+ 	app.post("/", { preHandler: [app.requirePermission('pos.write')] }, async (request, reply) => {
+ 		try {
+ 			const { businessId, userId } = request.user;
+diff --git a/frontend/src/lib/components/AppSidebar.svelte b/frontend/src/lib/components/AppSidebar.svelte
+index 0b06be4..321f8f1 100644
+--- a/frontend/src/lib/components/AppSidebar.svelte
++++ b/frontend/src/lib/components/AppSidebar.svelte
+@@ -5,6 +5,7 @@
+ 	import {
+ 		LayoutDashboard,
+ 		ShoppingCart,
++		Receipt,
+ 		Package,
+ 		ClipboardList,
+ 		Truck,
+@@ -36,6 +37,7 @@
+ 		{
+ 			label: 'Transaksi',
+ 			items: [
++				{ href: '/penjualan', label: 'Penjualan', icon: Receipt },
+ 				{ href: '/products', label: 'Produk & Stok', icon: Package },
+ 				{ href: '/purchases', label: 'Pembelian (PO)', icon: ClipboardList },
+ 				{ href: '/suppliers', label: 'Supplier', icon: Truck }
+diff --git a/frontend/src/lib/components/dashboard/QuickAccess.svelte b/frontend/src/lib/components/dashboard/QuickAccess.svelte
+index 5587250..efb2dd0 100644
+--- a/frontend/src/lib/components/dashboard/QuickAccess.svelte
++++ b/frontend/src/lib/components/dashboard/QuickAccess.svelte
+@@ -1,10 +1,11 @@
+ <script lang="ts">
+ 	import { Separator } from '$lib/components/ui/separator';
+-	import { Store, ShoppingCart, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
++	import { Store, ShoppingCart, Receipt, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
+ 	import { fly } from 'svelte/transition';
+ 
+ 	const quickMenus = [
+ 		{ label: 'Kasir', href: '/pos', icon: ShoppingCart, color: 'text-cta', bg: 'bg-cta-soft' },
++		{ label: 'Penjualan', href: '/penjualan', icon: Receipt, color: 'text-cta', bg: 'bg-cta-soft' },
+ 		{ label: 'Stok', href: '/products', icon: Package, color: 'text-brand', bg: 'bg-brand-soft' },
+ 		{ label: 'Pembelian', href: '/purchases', icon: ClipboardList, color: 'text-brand', bg: 'bg-brand-soft' },
+ 		{ label: 'Supplier', href: '/suppliers', icon: Truck, color: 'text-warning', bg: 'bg-warning-soft' },
+diff --git a/frontend/src/routes/(app)/penjualan/+page.svelte b/frontend/src/routes/(app)/penjualan/+page.svelte
+new file mode 100644
+index 0000000..211b554
+--- /dev/null
++++ b/frontend/src/routes/(app)/penjualan/+page.svelte
+@@ -0,0 +1,166 @@
++<script lang="ts">
++	import { env } from '$env/dynamic/public';
++	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
++	import { onMount } from 'svelte';
++	import { authState } from '$lib/stores/auth.svelte';
++	import { Button } from '$lib/components/ui/button';
++	import { Input } from '$lib/components/ui/input';
++	import * as Table from '$lib/components/ui/table';
++	import { Badge } from '$lib/components/ui/badge';
++	import { Search, Receipt, FileText } from 'lucide-svelte';
++	import PageHeader from '$lib/components/PageHeader.svelte';
++	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
++	import EmptyState from '$lib/components/EmptyState.svelte';
++	import ReceiptModal from '$lib/components/pos/ReceiptModal.svelte';
++	import { formatRupiah, formatDate } from '$lib/utils/format';
++
++	let sales = $state<any[]>([]);
++	let loading = $state(true);
++	let search = $state('');
++	let page = $state(1);
++	let totalPages = $state(1);
++
++	let activeSaleId = $state<string | null>(null);
++	let showReceipt = $state(false);
++
++	let searchTimer: ReturnType<typeof setTimeout>;
++
++	async function fetchSales() {
++		loading = true;
++		try {
++			const params = new URLSearchParams({ page: String(page), limit: '20' });
++			if (search.trim()) params.set('search', search.trim());
++			const res = await fetch(`${API_URL}/v1/sales?${params}`, {
++				headers: { Authorization: `Bearer ${authState.token}` }
++			});
++			const json = await res.json();
++			if (json.success) {
++				sales = json.data;
++				totalPages = Math.max(Math.ceil((json.pagination?.total || 0) / 20), 1);
++			}
++		} catch (e) {
++			console.error(e);
++		} finally {
++			loading = false;
++		}
++	}
++
++	function onSearchInput() {
++		clearTimeout(searchTimer);
++		searchTimer = setTimeout(() => {
++			page = 1;
++			fetchSales();
++		}, 300);
++	}
++
++	function openReceipt(id: string) {
++		activeSaleId = id;
++		showReceipt = true;
++	}
++
++	onMount(fetchSales);
++</script>
++
++<svelte:head>
++	<title>Riwayat Penjualan — Beres</title>
++</svelte:head>
++
++<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
++	<PageHeader title="Riwayat Penjualan" subtitle="Semua Transaksi Kasir" />
++
++	<main class="p-4 sm:p-6 container-base mt-4 flex-1">
++		<div class="mb-4 max-w-sm">
++			<div class="relative">
++				<Search class="w-4 h-4 text-ink-faint absolute left-3.5 top-1/2 -translate-y-1/2" />
++				<Input
++					bind:value={search}
++					oninput={onSearchInput}
++					placeholder="Cari no. invoice atau nama pelanggan..."
++					class="pl-10 h-11 rounded-xl border-border bg-paper"
++				/>
++			</div>
++		</div>
++
++		{#if loading}
++			<LoadingSpinner message="Memuat riwayat transaksi..." />
++		{:else if sales.length === 0}
++			<EmptyState
++				icon={Receipt}
++				title="Belum Ada Transaksi"
++				description="Transaksi yang selesai lewat Kasir (POS) akan muncul di sini, lengkap dengan invoice, kwitansi, nota, dan surat jalan."
++				actionHref="/pos"
++				actionLabel="Buka Kasir"
++			/>
++		{:else}
++			<div class="rounded-2xl border border-border bg-paper overflow-hidden">
++				<div class="overflow-x-auto">
++					<Table.Root>
++						<Table.Header>
++							<Table.Row class="bg-paper-alt hover:bg-paper-alt border-b-border">
++								<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">No. Invoice</Table.Head>
++								<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Pelanggan</Table.Head>
++								<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Tanggal</Table.Head>
++								<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Metode</Table.Head>
++								<Table.Head class="text-right font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Total</Table.Head>
++								<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Status</Table.Head>
++								<Table.Head class="text-right font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Dokumen</Table.Head>
++							</Table.Row>
++						</Table.Header>
++						<Table.Body>
++							{#each sales as sale}
++								<Table.Row class="hover:bg-muted/40 border-b-border/60">
++									<Table.Cell class="font-bold font-mono text-ink">{sale.invoiceNumber}</Table.Cell>
++									<Table.Cell class="text-ink">{sale.customerName || 'Pelanggan Umum'}</Table.Cell>
++									<Table.Cell class="text-ink-soft">{formatDate(sale.createdAt)}</Table.Cell>
++									<Table.Cell>
++										<Badge variant="outline" class="bg-brand-soft text-brand border-transparent font-bold uppercase text-[10px]">
++											{sale.paymentMethod}
++										</Badge>
++									</Table.Cell>
++									<Table.Cell class="text-right font-bold font-mono text-ink">{formatRupiah(sale.grandTotal)}</Table.Cell>
++									<Table.Cell>
++										<Badge variant="outline" class="bg-success-soft text-success-dark border-transparent font-bold uppercase text-[10px]">
++											{sale.status === 'paid' ? 'Lunas' : sale.status}
++										</Badge>
++									</Table.Cell>
++									<Table.Cell class="text-right">
++										<Button
++											variant="ghost"
++											size="sm"
++											class="text-brand font-bold rounded-lg gap-1.5"
++											onclick={() => openReceipt(sale.id)}
++										>
++											<FileText class="w-3.5 h-3.5" />
++											Lihat
++										</Button>
++									</Table.Cell>
++								</Table.Row>
++							{/each}
++						</Table.Body>
++					</Table.Root>
++				</div>
++			</div>
++
++			{#if totalPages > 1}
++				<div class="flex items-center justify-center gap-3 mt-6">
++					<Button variant="outline" size="sm" disabled={page <= 1} onclick={() => { page--; fetchSales(); }} class="rounded-lg border-border">
++						Sebelumnya
++					</Button>
++					<span class="text-xs font-mono text-ink-soft">Halaman {page} / {totalPages}</span>
++					<Button variant="outline" size="sm" disabled={page >= totalPages} onclick={() => { page++; fetchSales(); }} class="rounded-lg border-border">
++						Berikutnya
++					</Button>
++				</div>
++			{/if}
++		{/if}
++	</main>
++</div>
++
++{#if showReceipt && activeSaleId}
++	<ReceiptModal
++		open={showReceipt}
++		transactionId={activeSaleId}
++		onClose={() => (showReceipt = false)}
++		onNewTransaction={() => (showReceipt = false)}
++	/>
++{/if}
