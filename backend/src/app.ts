@@ -1,5 +1,6 @@
 import Fastify, { FastifyError } from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import config from "./config/index.js";
 
 // Import route modules
@@ -50,6 +51,16 @@ const __dirname = path.dirname(__filename);
 await app.register(cors, {
 	origin: config.cors.origin,
 	credentials: true,
+});
+// Dipasang sekarang -- sebelumnya @fastify/rate-limit terinstal tapi tidak
+// pernah didaftarkan, jadi API tidak punya proteksi sama sekali dari brute
+// force / spam request. Default cukup longgar untuk pemakaian normal (POS
+// scan barcode berulang, polling dashboard, dll); endpoint login dibatasi
+// lebih ketat lagi di modules/auth/routes.ts.
+await app.register(rateLimit, {
+	max: 300,
+	timeWindow: "1 minute",
+	allowList: (req) => req.url.startsWith("/v1/health"),
 });
 await app.register(authPlugin);
 await app.register(midtransPlugin);

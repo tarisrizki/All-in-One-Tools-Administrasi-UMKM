@@ -17,7 +17,11 @@ const loginSchema = z.object({
 });
 
 export default async function authRoutes(app: FastifyInstance) {
-	app.post("/register", async (request, reply) => {
+	app.post("/register", {
+		config: {
+			rateLimit: { max: 5, timeWindow: "1 minute" }
+		}
+	}, async (request, reply) => {
 		const { phone, password, businessName } = registerSchema.parse(request.body);
 		try {
 			const data = await db.transaction(async (tx) => {
@@ -72,7 +76,13 @@ export default async function authRoutes(app: FastifyInstance) {
 		}
 	});
 
-	app.post("/login", async (request, reply) => {
+	// Login dibatasi lebih ketat dari default global -- ini titik paling rawan
+	// dicoba brute-force (tebak nomor HP + password).
+	app.post("/login", {
+		config: {
+			rateLimit: { max: 8, timeWindow: "1 minute" }
+		}
+	}, async (request, reply) => {
 		try {
 			const { phone, password } = loginSchema.parse(request.body);
 			
