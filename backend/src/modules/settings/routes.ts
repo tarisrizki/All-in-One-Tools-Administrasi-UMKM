@@ -24,9 +24,13 @@ export default async function settingsRoutes(app: FastifyInstance) {
 				return reply.status(400).send({ success: false, error: { message: "File tidak ditemukan" } });
 			}
 
+			// .svg sengaja tidak diizinkan: file SVG bisa menyisipkan <script> atau
+			// event handler (onload dll) dan berpotensi stored-XSS kalau file yang
+			// diunggah pengguna nanti dibuka langsung di browser. PNG/JPG cukup
+			// untuk kebutuhan stempel/tanda-tangan/logo di sini.
 			const ext = path.extname(data.filename).toLowerCase();
-			if (!['.png', '.jpg', '.jpeg', '.svg'].includes(ext)) {
-				return reply.status(400).send({ success: false, error: { message: "Format tidak didukung" } });
+			if (!['.png', '.jpg', '.jpeg'].includes(ext)) {
+				return reply.status(400).send({ success: false, error: { message: "Format tidak didukung. Gunakan PNG atau JPG." } });
 			}
 
 			const typeField = data.fields.type;

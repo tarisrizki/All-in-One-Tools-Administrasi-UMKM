@@ -3,6 +3,7 @@ import fastifyJwt from '@fastify/jwt';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from './drizzle.js';
 import * as schema from '../db/schema.js';
+import config from '../config/index.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -28,7 +29,10 @@ declare module '@fastify/jwt' {
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'super-secret-key-change-in-production',
+    secret: config.jwt.secret,
+    sign: {
+      expiresIn: config.jwt.accessTokenExpiry,
+    },
   });
 
 	fastify.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
