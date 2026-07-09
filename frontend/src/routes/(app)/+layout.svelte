@@ -13,12 +13,23 @@
 	import { slide } from 'svelte/transition';
 	import { ModeWatcher } from 'mode-watcher';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import { paletteState } from '$lib/stores/commandPalette.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		// Sync manager berjalan di background, tidak memblokir render
 		initSyncManager();
+
+		function onKeydown(e: KeyboardEvent) {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+				e.preventDefault();
+				paletteState.open = !paletteState.open;
+			}
+		}
+		window.addEventListener('keydown', onKeydown);
+		return () => window.removeEventListener('keydown', onKeydown);
 	});
 
 	// Kasir (POS) sengaja dibuat full-screen tanpa sidebar, supaya layar kasir
@@ -31,6 +42,8 @@
 	<title>Beres — All-in-One Tools Administrasi UMKM</title>
 
 </svelte:head>
+
+<CommandPalette bind:open={paletteState.open} />
 
 <Toaster position="top-center" richColors />
 

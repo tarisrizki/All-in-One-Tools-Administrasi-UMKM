@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { logout } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
+	import { openPalette } from '$lib/stores/commandPalette.svelte';
 	import {
 		LayoutDashboard,
 		ShoppingCart,
@@ -17,6 +18,7 @@
 		Sparkles,
 		Settings,
 		LogOut,
+		Search,
 		X
 	} from 'lucide-svelte';
 
@@ -101,6 +103,15 @@
 	</div>
 
 	<nav class="flex-1 overflow-y-auto px-3 pb-4">
+		<button
+			type="button"
+			onclick={openPalette}
+			class="w-full flex items-center gap-2.5 px-3 py-2.5 mb-3 rounded-lg text-[13px] font-semibold text-white/45 bg-white/5 hover:bg-white/10 hover:text-white/70 transition-colors min-h-0"
+		>
+			<Search class="w-[15px] h-[15px] shrink-0" />
+			<span class="flex-1 text-left">Cari...</span>
+			<kbd class="font-mono text-[10px] border border-white/15 rounded px-1.5 py-0.5 text-white/40">⌘K</kbd>
+		</button>
 		{#each groups as group}
 			<div class="px-2.5 pt-4 pb-1.5 font-mono text-[10px] uppercase tracking-widest text-white/35">
 				{group.label}

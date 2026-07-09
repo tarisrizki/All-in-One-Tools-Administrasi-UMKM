@@ -3,6 +3,7 @@
 	import { TrendingUp, AlertTriangle } from 'lucide-svelte';
 	import { formatRupiah } from '$lib/utils/format';
 	import { fade } from 'svelte/transition';
+	import { countUp } from '$lib/utils/countUp';
 
 	let {
 		isPending,
@@ -15,7 +16,7 @@
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
 	<!-- Penjualan Hari Ini -->
-	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow">
+	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow card-hover">
 		<Card.Content class="p-4">
 			<p class="text-[11px] font-semibold text-ink-soft mb-2 uppercase tracking-wider font-mono">
 				Penjualan Hari Ini
@@ -23,9 +24,11 @@
 			{#if isPending}
 				<div class="h-6 w-24 bg-border/50 rounded animate-pulse"></div>
 			{:else}
-				<p class="font-mono font-bold text-lg md:text-xl text-ink" transition:fade>
-					{formatRupiah(data?.todaySales || 0)}
-				</p>
+				<p
+					class="font-mono font-bold text-lg md:text-xl text-ink"
+					transition:fade
+					use:countUp={{ value: data?.todaySales || 0, format: formatRupiah }}
+				></p>
 				<p class="text-[10px] font-bold text-success mt-1 flex items-center gap-0.5">
 					<TrendingUp class="w-3 h-3" /> 12% dari kemarin
 				</p>
@@ -34,7 +37,7 @@
 	</Card.Root>
 
 	<!-- Total Transaksi -->
-	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow">
+	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow card-hover">
 		<Card.Content class="p-4">
 			<p class="text-[11px] font-semibold text-ink-soft mb-2 uppercase tracking-wider font-mono">
 				Total Transaksi
@@ -42,16 +45,18 @@
 			{#if isPending}
 				<div class="h-6 w-12 bg-border/50 rounded animate-pulse"></div>
 			{:else}
-				<p class="font-mono font-bold text-lg md:text-xl text-ink" transition:fade>
-					{data?.todayTransactions || 0}
-				</p>
+				<p
+					class="font-mono font-bold text-lg md:text-xl text-ink"
+					transition:fade
+					use:countUp={{ value: data?.todayTransactions || 0 }}
+				></p>
 				<p class="text-[10px] text-ink-faint mt-1 font-mono">transaksi hari ini</p>
 			{/if}
 		</Card.Content>
 	</Card.Root>
 
 	<!-- Stok Menipis -->
-	<Card.Root class="border-warning/30 bg-warning-soft shadow-sm">
+	<Card.Root class="border-warning/30 bg-warning-soft shadow-sm card-hover">
 		<Card.Content class="p-4">
 			<p class="text-[11px] font-semibold text-warning-dark mb-2 uppercase tracking-wider font-mono">
 				Stok Menipis
@@ -67,7 +72,7 @@
 	</Card.Root>
 
 	<!-- Untung Bersih -->
-	<Card.Root class="border-success/30 bg-success-soft shadow-sm">
+	<Card.Root class="border-success/30 bg-success-soft shadow-sm card-hover">
 		<Card.Content class="p-4">
 			<p
 				class="text-[11px] font-semibold text-success-dark mb-2 uppercase tracking-wider font-mono"
@@ -77,9 +82,11 @@
 			{#if isPending}
 				<div class="h-6 w-28 bg-success/20 rounded animate-pulse"></div>
 			{:else}
-				<p class="font-mono font-bold text-lg md:text-xl text-success-dark" transition:fade>
-					{formatRupiah(data?.estimatedProfit || 0)}
-				</p>
+				<p
+					class="font-mono font-bold text-lg md:text-xl text-success-dark"
+					transition:fade
+					use:countUp={{ value: data?.estimatedProfit || 0, format: formatRupiah }}
+				></p>
 			{/if}
 		</Card.Content>
 	</Card.Root>
