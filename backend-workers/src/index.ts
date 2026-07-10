@@ -1,4 +1,5 @@
-import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { apiReference } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { healthRoute } from './modules/health';
@@ -21,7 +22,7 @@ import { aiRoute } from './modules/ai';
 import { getSupabase } from './utils/supabase';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
-const app = new Hono<{ Bindings: any }>();
+const app = new OpenAPIHono<{ Bindings: any }>();
 
 app.use('*', logger());
 app.use('*', async (c, next) => {
@@ -36,6 +37,27 @@ app.use('*', async (c, next) => {
   })(c, next);
 });
 app.use('*', rateLimitMiddleware);
+
+// OpenAPI Documentation
+app.doc('/openapi.json', {
+  openapi: '3.0.0',
+  info: {
+    title: 'Beres UMKM API',
+    version: '1.0.0',
+    description: 'API Dokumentasi untuk All-in-One Tools Administrasi UMKM',
+  },
+});
+
+app.get(
+  '/docs',
+  apiReference({
+    theme: 'kepler',
+    layout: 'modern',
+    spec: {
+      url: '/openapi.json',
+    },
+  })
+);
 
 // Global error handler
 app.onError((err, c) => {
