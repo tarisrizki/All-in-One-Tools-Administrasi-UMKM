@@ -35,7 +35,7 @@ settingsRoute.post('/upload', requirePermission('settings.manage'), async (c) =>
     const typeField = body['type'] as string;
     const type = typeField || 'stamp';
 
-    if (!['stamp', 'signature', 'logo'].includes(type)) {
+    if (!['stamp', 'signature', 'logo', 'qris'].includes(type)) {
       return c.json({ success: false, error: { message: "Tipe tidak valid" } }, 400);
     }
 
@@ -102,6 +102,21 @@ settingsRoute.get('/usage', authMiddleware, async (c) => {
     });
   } catch (e) {
     return c.json({ success: false, error: { message: "Gagal mengambil data pemakaian" } }, 500);
+  }
+});
+
+settingsRoute.get('/qris', authMiddleware, async (c) => {
+  const supabase = getSupabase(c.env);
+  const businessId = c.get('businessId');
+  
+  try {
+    const { data: biz, error } = await supabase.from('businesses').select('settings').eq('id', businessId).single();
+    if (error || !biz) throw new Error("Bisnis tidak ditemukan");
+    
+    const settings = biz.settings || {};
+    return c.json({ success: true, data: { qrisUrl: settings.qrisUrl || null } });
+  } catch (e: any) {
+    return c.json({ success: false, error: { message: e.message || "Gagal mengambil data QRIS" } }, 500);
   }
 });
 

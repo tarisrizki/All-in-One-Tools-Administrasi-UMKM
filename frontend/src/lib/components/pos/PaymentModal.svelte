@@ -63,25 +63,14 @@
 	$effect(() => {
 		if (hasQris && !qrisUrl && !qrisLoading) {
 			qrisLoading = true;
-			// Call Midtrans backend to get snap/qris URL
-			const qrisPayment = payments.find((p) => p.method === 'qris');
-			const amount = qrisPayment ? Number(qrisPayment.amount) : finalTotal;
-			
-			apiClient(`/sales/qris-token`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${authState.token}`
-				},
-				body: JSON.stringify({
-					amount,
-					orderId: uuidv4()
-				})
+			apiClient<{ success: boolean; data: { qrisUrl: string | null } }>(`/settings/qris`, {
+				headers: { Authorization: `Bearer ${authState.token}` }
 			})
-			.then(res => res.json())
-			.then(data => {
-				if (data.success && data.data) {
-					qrisUrl = data.data.redirect_url;
+			.then(res => {
+				if (res.success && res.data && res.data.qrisUrl) {
+					qrisUrl = res.data.qrisUrl;
+				} else {
+					qrisUrl = '';
 				}
 			})
 			.catch(console.error)
@@ -300,13 +289,13 @@
 				</Button>
 			</div>
 
-			<!-- QRIS Simulation / Real Midtrans -->
+			<!-- QRIS Static -->
 			{#if hasQris}
 				<div
 					class="bg-muted p-4 rounded-2xl flex flex-col items-center justify-center space-y-4 border border-dashed border-border/50"
 				>
 					<p class="font-bold text-sm text-ink font-mono uppercase tracking-widest">
-						Scan QRIS (Midtrans)
+						Scan QRIS
 					</p>
 					
 					{#if qrisLoading}
@@ -314,15 +303,15 @@
 							<div class="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
 						</div>
 					{:else if qrisUrl}
-						<a href={qrisUrl} target="_blank" rel="noreferrer" class="text-brand hover:underline font-bold text-sm text-center">
-							Buka Halaman Midtrans Snap
-						</a>
+						<div class="relative w-48 h-48 bg-white p-2 rounded-xl shadow-sm border border-border">
+							<img src={qrisUrl} alt="QRIS Toko" class="w-full h-full object-contain rounded-lg" />
+						</div>
 					{:else}
 						<div
-							class="w-40 h-40 bg-white border-2 border-dashed border-brand/40 flex items-center justify-center rounded-xl shadow-inner"
+							class="w-40 h-40 bg-white border-2 border-dashed border-brand/40 flex items-center justify-center rounded-xl shadow-inner p-4 text-center"
 						>
-							<span class="text-ink-soft text-xs text-center font-semibold"
-								>QR Code Dummy<br />Gagal memuat Midtrans</span
+							<span class="text-ink-soft text-xs font-semibold"
+								>QRIS belum diatur.<br/>Harap unggah di Pengaturan.</span
 							>
 						</div>
 					{/if}
@@ -333,14 +322,14 @@
 							class="rounded-full bg-brand hover:bg-brand-dark"
 							onclick={() => (qrisSimulated = true)}
 						>
-							Simulasikan Pembayaran Berhasil
+							Verifikasi Pembayaran Diterima
 						</Button>
 					{:else}
 						<p
 							class="text-success font-bold text-sm bg-success/10 px-3 py-1.5 rounded-full flex items-center gap-2"
 						>
 							<span class="w-2 h-2 rounded-full bg-success"></span>
-							Pembayaran Berhasil
+							Pembayaran Diterima
 						</p>
 					{/if}
 				</div>

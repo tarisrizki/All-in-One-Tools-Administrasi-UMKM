@@ -7,6 +7,7 @@
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import StoreProfileCard from '$lib/components/settings/StoreProfileCard.svelte';
+	import QrisCard from '$lib/components/settings/QrisCard.svelte';
 	import AppModeCard from '$lib/components/settings/AppModeCard.svelte';
 	import PrinterCard from '$lib/components/settings/PrinterCard.svelte';
 	import DocumentCard from '$lib/components/settings/DocumentCard.svelte';
@@ -30,6 +31,7 @@
 
 	<main class="p-4 sm:p-6 space-y-6 container-base mt-4 flex-1">
 		<StoreProfileCard />
+		<QrisCard />
 		<AppModeCard />
 		<PrinterCard />
 
