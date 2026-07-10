@@ -94,7 +94,7 @@ export default {
           debtsRes
         ] = await Promise.all([
           supabase.from('roles').select('*').eq('business_id', businessId),
-          supabase.from('employees').select('*').eq('business_id', businessId),
+          supabase.from('users').select('*').eq('business_id', businessId),
           supabase.from('categories').select('*').eq('business_id', businessId),
           supabase.from('products').select('*, product_stock(*)').eq('business_id', businessId),
           supabase.from('customers').select('*').eq('business_id', businessId),
