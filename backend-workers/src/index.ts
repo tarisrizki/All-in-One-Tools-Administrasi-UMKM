@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { healthRoute } from './modules/health';
 import { categoriesRoute } from './modules/categories';
+import { warehousesRoute } from './modules/warehouses';
 
 const app = new Hono();
 
@@ -22,5 +23,6 @@ app.onError((err, c) => {
 // Route registration
 app.route('/health', healthRoute);
 app.route('/categories', categoriesRoute);
+app.route('/warehouses', warehousesRoute);
 
 export default app;

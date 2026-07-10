@@ -1,5 +1,6 @@
 import { verify } from 'hono/jwt';
 import type { Context, Next } from 'hono';
+import { getSupabase } from '../utils/supabase';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header('Authorization');
@@ -35,4 +36,46 @@ export const authMiddleware = async (c: Context, next: Next) => {
     console.error("JWT Verification failed:", err.message);
     return c.json({ success: false, error: { message: 'Sesi tidak valid atau telah kedaluwarsa' } }, 401);
   }
+};
+
+export const requirePermission = (requiredPermission: string) => {
+  return async (c: Context, next: Next) => {
+    try {
+      const roleId = c.get('roleId');
+      if (!roleId) return c.json({ success: false, error: { message: 'Tidak ada informasi peran' } }, 401);
+
+      const supabase = getSupabase(c.env);
+      const { data, error } = await supabase
+        .from('roles')
+        .select('permissions')
+        .eq('id', roleId)
+        .single();
+
+      if (error || !data) {
+        return c.json({ success: false, error: { message: 'Role tidak ditemukan' } }, 403);
+      }
+
+      const perms: string[] = Array.isArray(data.permissions) ? data.permissions : [];
+      
+      // Admin / Owner override
+      if (perms.includes("*")) {
+        return await next();
+      }
+
+      // Exact match
+      if (perms.includes(requiredPermission)) {
+        return await next();
+      }
+
+      // Prefix match (e.g., required: "settings.manage", has: "settings")
+      const baseModule = requiredPermission.split(".")[0];
+      if (perms.includes(baseModule)) {
+        return await next();
+      }
+
+      return c.json({ success: false, error: { message: `Akses ditolak: membutuhkan izin '${requiredPermission}'` } }, 403);
+    } catch (err) {
+      return c.json({ success: false, error: { message: 'Terjadi kesalahan saat memeriksa izin' } }, 500);
+    }
+  };
 };
