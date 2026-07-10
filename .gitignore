@@ -60,3 +60,4 @@ prompt.md
 .dev.vars
 .wrangler/
 **/*.env*
+!**/.env.example
