@@ -67,6 +67,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260710.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/bwip-js": "^3.2.3",
     "typescript": "^7.0.2",
     "wrangler": "^4.110.0"
   }

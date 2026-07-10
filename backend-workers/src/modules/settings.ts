@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
-import { randomUUID } from 'crypto';
 
 type Variables = { businessId: string; userId: string; roleId: string };
 export const settingsRoute = new Hono<{ Bindings: any, Variables: Variables }>();

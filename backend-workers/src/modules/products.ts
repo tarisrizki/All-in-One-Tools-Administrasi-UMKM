@@ -169,7 +169,7 @@ productsRoute.get('/:id/barcode', requirePermission('products.read'), async (c) 
     });
     
     c.header('Content-Type', 'image/png');
-    return c.body(buffer);
+    return c.body(buffer as any);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal generate barcode" } }, 400);
   }
@@ -200,7 +200,7 @@ productsRoute.get('/:id/qrcode', requirePermission('products.read'), async (c) =
     });
     
     c.header('Content-Type', 'image/png');
-    return c.body(buffer);
+    return c.body(buffer as any);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal generate QR Code" } }, 400);
   }
