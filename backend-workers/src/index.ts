@@ -51,4 +51,11 @@ app.route('/roles', rolesRoute);
 app.route('/settings', settingsRoute);
 app.route('/sync', syncRoute);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(event: any, env: any, ctx: any) {
+    console.log(`Cron trigger (backup/cleanup) fired at ${new Date().toISOString()}`);
+    // Supabase handles backups automatically (PITR/Daily), so this cron can be used 
+    // for scheduled cleanup tasks or triggering external backup workflows.
+  }
+};
