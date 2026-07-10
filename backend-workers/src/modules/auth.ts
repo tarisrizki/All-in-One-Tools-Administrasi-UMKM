@@ -1,10 +1,10 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { sign } from 'hono/jwt';
 import { authMiddleware } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
 const registerSchema = z.object({
   phone: z.string().regex(/^(08|628|\+628)\d{6,14}$/, "Nomor HP harus berupa nomor Indonesia yang valid"),
@@ -18,14 +18,125 @@ const loginSchema = z.object({
   password: z.string().min(6).max(255),
 });
 
-type Variables = { businessId: string; userId: string; roleId: string };
-export const authRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+const authResponseSchema = z.object({
+  token: z.string(),
+  userId: z.string().uuid(),
+  businessId: z.string().uuid(),
+  appMode: z.string(),
+  permissions: z.array(z.string()).optional(),
+});
 
-authRoute.post('/register', async (c) => {
+const meResponseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  phone: z.string(),
+  businessName: z.string().nullable().optional(),
+  businessSettings: z.record(z.string(), z.any()).nullable().optional(),
+  roleName: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+});
+
+const registerRoute = createRoute({
+  method: 'post',
+  path: '/register',
+  description: 'Mendaftarkan pengguna dan bisnis baru',
+  request: {
+    body: {
+      content: { 'application/json': { schema: registerSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(authResponseSchema) } },
+      description: 'Pendaftaran berhasil',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Input tidak valid / Bot terdeteksi / HP terdaftar',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const loginRoute = createRoute({
+  method: 'post',
+  path: '/login',
+  description: 'Masuk ke aplikasi',
+  request: {
+    body: {
+      content: { 'application/json': { schema: loginSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(authResponseSchema) } },
+      description: 'Login berhasil',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Input tidak valid',
+    },
+    401: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Kredensial salah',
+    },
+  },
+});
+
+const meRoute = createRoute({
+  method: 'get',
+  path: '/me',
+  description: 'Mendapatkan data pengguna saat ini',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(meResponseSchema) } },
+      description: 'Data pengguna',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Gagal mengambil data',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Pengguna tidak ditemukan',
+    }
+  },
+});
+
+const refreshRoute = createRoute({
+  method: 'post',
+  path: '/refresh',
+  description: 'Refresh token',
+  responses: {
+    501: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Belum diimplementasi',
+    },
+  },
+});
+
+const logoutRoute = createRoute({
+  method: 'post',
+  path: '/logout',
+  description: 'Logout dari aplikasi',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: MessageSuccessSchema } },
+      description: 'Logout berhasil',
+    },
+  },
+});
+
+type Variables = { businessId: string; userId: string; roleId: string };
+export const authRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
+
+authRoute.openapi(registerRoute, async (c) => {
   const supabase = getSupabase(c.env);
   try {
-    const body = await c.req.json();
-    const { phone, password, businessName, cfTurnstileResponse } = registerSchema.parse(body);
+    const { phone, password, businessName, cfTurnstileResponse } = c.req.valid('json');
 
     const turnstileSecret = c.env.TURNSTILE_SECRET_KEY;
     if (!turnstileSecret) {
@@ -103,11 +214,10 @@ authRoute.post('/register', async (c) => {
   }
 });
 
-authRoute.post('/login', async (c) => {
+authRoute.openapi(loginRoute, async (c) => {
   const supabase = getSupabase(c.env);
   try {
-    const body = await c.req.json();
-    const { phone, password } = loginSchema.parse(body);
+    const { phone, password } = c.req.valid('json');
 
     const { data: user } = await supabase.from('users').select('*, businesses(settings), roles(permissions)').eq('phone', phone).single();
     if (!user) {
@@ -129,14 +239,15 @@ authRoute.post('/login', async (c) => {
     const appMode = (user as any).businesses?.settings?.appMode || 'full';
     const permissions = (user as any).roles?.permissions || [];
 
-    return c.json({ success: true, data: { token, userId: user.id, businessId: user.business_id, appMode, permissions } });
+    return c.json({ success: true, data: { token, userId: user.id, businessId: user.business_id, appMode, permissions } }, 200);
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal masuk");
     return c.json({ success: false, error: { code: "LOGIN_FAILED", message } }, 400);
   }
 });
 
-authRoute.get('/me', authMiddleware, async (c) => {
+authRoute.get('/me', authMiddleware);
+authRoute.openapi(meRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const userId = c.get('userId');
 
@@ -159,16 +270,16 @@ authRoute.get('/me', authMiddleware, async (c) => {
       permissions: (user as any).roles?.permissions
     };
 
-    return c.json({ success: true, data: keysToCamel(formattedData) });
+    return c.json({ success: true, data: keysToCamel(formattedData) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { code: "FETCH_ME_FAILED", message: "Terjadi kesalahan" } }, 400);
   }
 });
 
-authRoute.post('/refresh', async (c) => {
+authRoute.openapi(refreshRoute, async (c) => {
   return c.json({ success: false, error: { code: "NOT_IMPLEMENTED", message: "Refresh token belum diimplementasi" } }, 501);
 });
 
-authRoute.post('/logout', async (c) => {
+authRoute.openapi(logoutRoute, async (c) => {
   return c.json({ success: true, message: "Logout berhasil, hapus token di client" }, 200);
 });
