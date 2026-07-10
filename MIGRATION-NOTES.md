@@ -13,6 +13,9 @@ Folder `backend` lama telah dihapus (diremove dari source control, Phase 8) untu
 git checkout <commit-sebelum-penghapusan> -- backend/
 ```
 
+## Modul yang Direduksi/Ditunda
+- **Artificial Intelligence (`ai.ts`)**: Modul yang bertugas memberikan ringkasan pintar (dengan Google Generative AI) secara sengaja **belum dimigrasikan** ke Workers pada MVP ini untuk merampingkan arsitektur serta menghemat *overhead* biaya/limitasi eksekusi LLM. Apabila fitur ini ingin dihidupkan kembali kelak, disarankan untuk mengintegrasikan library AI di siklus *update* selanjutnya.
+
 ## Referensi & Bantuan
 - **Variabel Lingkungan (Environment Variables)**: Silakan lihat `.env.example` di dalam `frontend/` dan `backend-workers/` untuk mengonfigurasi proyek.
 - Jika terdapat masalah di produksi, pastikan `PUBLIC_API_URL` di frontend menunjuk pada endpoint Workers, dan rahasia Supabase/Cloudflare telah terpasang dengan aman melalui `wrangler secret put`.
