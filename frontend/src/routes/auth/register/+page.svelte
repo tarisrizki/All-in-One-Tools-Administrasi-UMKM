@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { setAuth } from '$lib/stores/auth.svelte';
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -14,9 +15,10 @@
 	let step = $state(1);
 
 	const registerSchema = z.object({
-		phone: z.string().min(10, 'Nomor HP minimal 10 angka').regex(/^[0-9]+$/, 'Hanya boleh berisi angka'),
+		phone: z.string().regex(/^(08|628|\+628)\d{6,14}$/, 'Format nomor HP tidak valid (misal: 08...)'),
 		password: z.string().min(6, 'Kata sandi minimal 6 karakter'),
-		businessName: z.string().min(3, 'Nama Usaha minimal 3 karakter')
+		businessName: z.string().min(3, 'Nama Usaha minimal 3 karakter'),
+		cfTurnstileResponse: z.string().min(1, 'Selesaikan verifikasi keamanan')
 	});
 	type RegisterSchema = z.infer<typeof registerSchema>;
 
@@ -25,7 +27,7 @@
 
 	const { form, errors, enhance, validateForm } = superForm<RegisterSchema>(
 		// @ts-expect-error zod version mismatch with superforms adapter
-		defaults({ phone: '', password: '', businessName: '' }, zod(registerSchema as any)),
+		defaults({ phone: '', password: '', businessName: '', cfTurnstileResponse: '' }, zod(registerSchema as any)),
 		{
 			SPA: true,
 			validators: zod(registerSchema as any) as any,
@@ -61,16 +63,26 @@
 	async function nextStep(e: Event) {
 		e.preventDefault();
 		// Partial validation before step 2
-		if ($form.phone.length >= 10 && $form.password.length >= 6) {
+		if ($form.phone.match(/^(08|628|\+628)\d{6,14}$/) && $form.password.length >= 6) {
 			step = 2;
 			errorMsg = '';
 			// We can initialize businessName so the second step validation doesn't immediately fail
 			if (!$form.businessName) $form.businessName = 'Toko Baru'; 
 		} else {
-			errorMsg = 'Nomor HP minimal 10 angka & Kata sandi minimal 6 karakter';
+			errorMsg = 'Format nomor HP tidak valid & Kata sandi minimal 6 karakter';
 		}
 	}
+
+	onMount(() => {
+		(window as any).onTurnstileSuccess = (token: string) => {
+			$form.cfTurnstileResponse = token;
+		};
+	});
 </script>
+
+<svelte:head>
+	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-primary p-4 font-sans relative overflow-hidden">
 	<!-- Decorative Background Elements -->
@@ -169,6 +181,14 @@
 						/>
 						{#if $errors.businessName}
 							<p class="text-xs text-destructive font-bold">{$errors.businessName}</p>
+						{/if}
+					</div>
+
+					<div class="flex flex-col items-center justify-center mt-4">
+						<!-- Gunakan testing key Cloudflare 1x00000000000000000000AA jika VITE_TURNSTILE_SITE_KEY belum diatur -->
+						<div class="cf-turnstile" data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} data-callback="onTurnstileSuccess"></div>
+						{#if $errors.cfTurnstileResponse}
+							<p class="text-xs text-destructive font-bold text-center mt-2">{$errors.cfTurnstileResponse}</p>
 						{/if}
 					</div>
 
