@@ -9,6 +9,7 @@ import { employeesRoute } from './modules/employees';
 import { customersRoute } from './modules/customers';
 import { productsRoute } from './modules/products';
 import { salesRoute } from './modules/sales';
+import { cashbookRoute } from './modules/cashbook';
 
 const app = new Hono();
 
@@ -34,5 +35,6 @@ app.route('/employees', employeesRoute);
 app.route('/customers', customersRoute);
 app.route('/products', productsRoute);
 app.route('/sales', salesRoute);
+app.route('/cashbook', cashbookRoute);
 
 export default app;
