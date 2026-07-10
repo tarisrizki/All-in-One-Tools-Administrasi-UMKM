@@ -1,20 +1,128 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const customerSchema = z.object({
-  name: z.string().min(1, 'Nama pelanggan wajib diisi').max(255),
-  phone: z.string().max(30).nullable().optional(),
-  email: z.string().max(255).nullable().optional(),
-  address: z.string().nullable().optional(),
+  name: z.string().min(1, 'Nama pelanggan wajib diisi').max(255).openapi({ example: 'Budi Santoso' }),
+  phone: z.string().max(30).nullable().optional().openapi({ example: '08123456789' }),
+  email: z.string().max(255).nullable().optional().openapi({ example: 'budi@example.com' }),
+  address: z.string().nullable().optional().openapi({ example: 'Jl. Merdeka No 3' }),
 });
 
-type Variables = { businessId: string; userId: string; roleId: string };
-export const customersRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+const customerResponseSchema = z.object({
+  id: z.string().uuid(),
+  businessId: z.string().uuid(),
+  name: z.string(),
+  phone: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  createdBy: z.string().uuid().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  totalSpent: z.number().optional(),
+  tier: z.string().optional(),
+});
 
-customersRoute.use('*', authMiddleware);
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar pelanggan',
+  request: {
+    query: z.object({
+      search: z.string().optional().openapi({ example: 'budi' })
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(customerResponseSchema)) } },
+      description: 'Daftar pelanggan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const getByIdRoute = createRoute({
+  method: 'get',
+  path: '/{id}',
+  description: 'Mendapatkan detail pelanggan',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(customerResponseSchema) } },
+      description: 'Data pelanggan',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Pelanggan tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  }
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat pelanggan baru (maksimal 2000)',
+  request: {
+    body: {
+      content: { 'application/json': { schema: customerSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(customerResponseSchema) } },
+      description: 'Pelanggan berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+    403: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Kuota pelanggan terpenuhi',
+    },
+  },
+});
+
+const updateRouteDef = createRoute({
+  method: 'put',
+  path: '/{id}',
+  description: 'Mengubah data pelanggan',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    }),
+    body: {
+      content: { 'application/json': { schema: customerSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(customerResponseSchema) } },
+      description: 'Pelanggan berhasil diubah',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Pelanggan tidak ditemukan',
+    }
+  },
+});
 
 const calculateTier = (totalSpent: number) => {
   if (totalSpent >= 5000000) return 'Gold';
@@ -22,10 +130,16 @@ const calculateTier = (totalSpent: number) => {
   return 'Reguler';
 };
 
-customersRoute.get('/', requirePermission('customers.read'), async (c) => {
+type Variables = { businessId: string; userId: string; roleId: string };
+export const customersRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
+
+customersRoute.use('*', authMiddleware);
+
+customersRoute.get('/', requirePermission('customers.read'));
+customersRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const search = c.req.query('search');
+  const { search } = c.req.valid('query');
 
   try {
     let query = supabase
@@ -67,17 +181,18 @@ customersRoute.get('/', requirePermission('customers.read'), async (c) => {
       };
     });
 
-    return c.json({ success: true, data: keysToCamel(result) });
+    return c.json({ success: true, data: keysToCamel(result) }, 200);
   } catch (err: any) {
     console.error("Customers GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil daftar pelanggan" } }, 500);
   }
 });
 
-customersRoute.get('/:id', requirePermission('customers.read'), async (c) => {
+customersRoute.get('/:id', requirePermission('customers.read'));
+customersRoute.openapi(getByIdRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     const { data: customer, error: customerError } = await supabase
@@ -107,21 +222,21 @@ customersRoute.get('/:id', requirePermission('customers.read'), async (c) => {
       tier: calculateTier(totalSpent)
     };
 
-    return c.json({ success: true, data: keysToCamel(result) });
+    return c.json({ success: true, data: keysToCamel(result) }, 200);
   } catch (err: any) {
     console.error("Customer GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil pelanggan" } }, 500);
   }
 });
 
-customersRoute.post('/', requirePermission('customers.write'), async (c) => {
+customersRoute.post('/', requirePermission('customers.write'));
+customersRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = customerSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     // Validate quota: max 2000 customers
     const { count: customerCount, error: countError } = await supabase
@@ -154,14 +269,14 @@ customersRoute.post('/', requirePermission('customers.write'), async (c) => {
   }
 });
 
-customersRoute.put('/:id', requirePermission('customers.write'), async (c) => {
+customersRoute.put('/:id', requirePermission('customers.write'));
+customersRoute.openapi(updateRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
-    const body = await c.req.json();
-    const dataObj = customerSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     const { data, error } = await supabase
       .from('customers')
@@ -180,7 +295,7 @@ customersRoute.put('/:id', requirePermission('customers.write'), async (c) => {
       return c.json({ success: false, error: { message: "Pelanggan tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) });
+    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
