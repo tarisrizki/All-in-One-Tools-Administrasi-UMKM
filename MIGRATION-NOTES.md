@@ -5,7 +5,7 @@
 2. **Database**: PostgreSQL lokal yang dijalankan melalui Docker telah digantikan oleh **Supabase**. Modul-modul backend berkomunikasi dengan Supabase secara langsung menggunakan Supabase JS Client (`@supabase/supabase-js`) atau REST API.
 3. **Autentikasi**: Proses autentikasi tetap menggunakan JWT (via `hono/jwt`) tetapi sekarang beroperasi di edge network (Cloudflare).
 4. **Penyimpanan Aset**: Modul pengaturan/logo dan aset lainnya yang sebelumnya diunggah ke *local disk* (`uploads/`) sekarang menggunakan **Supabase Storage**.
-5. **Cadangan Data (Backup)**: Supabase paket *Free Tier* **tidak menyediakan** Point-in-Time Recovery (PITR) maupun *Daily Backups* otomatis (hanya tersedia di paket Pro). Oleh karena itu, *Cron Trigger* di Cloudflare Workers (`index.ts` & `wrangler.toml`) disiapkan sebagai mekanisme *fallback* untuk mengekspor atau membackup data ke penyimpanan pihak ketiga sesuai kebutuhan UMKM.
+5. **Cadangan Data (Backup)**: Supabase paket *Free Tier* **tidak menyediakan** Point-in-Time Recovery (PITR) maupun *Daily Backups* otomatis (hanya tersedia di paket Pro). Oleh karena itu, *Cron Trigger* di Cloudflare Workers (`index.ts` & `wrangler.toml`) disiapkan sebagai mekanisme *fallback* untuk mengekspor atau membackup data ke penyimpanan pihak ketiga sesuai kebutuhan UMKM. **Catatan Penting**: Sebelum *cron backup* pertama kali berjalan, Anda diwajibkan untuk membuat *bucket* bernama `backups` secara manual di menu Storage Supabase Anda dan pastikan statusnya *private* (bukan *public*).
 
 ## Status Backend Lama
 Folder `backend` lama telah dihapus (diremove dari source control, Phase 8) untuk menghindari utang teknis dan duplikasi. Jika diperlukan sewaktu-waktu, dapat direstore menggunakan histori Git:

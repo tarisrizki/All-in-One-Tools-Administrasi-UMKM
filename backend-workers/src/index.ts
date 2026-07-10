@@ -104,14 +104,18 @@ export default {
         const filename = `${businessId}/${dateStr}-backup.json.gz`;
         
         // Upload to Supabase Storage
-        await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('backups')
           .upload(filename, compressedBlob, {
             contentType: 'application/gzip',
             upsert: true
           });
 
-        console.log(`Selesai backup: ${filename}`);
+        if (uploadError) {
+          console.error(`Gagal upload backup ${filename}:`, uploadError);
+        } else {
+          console.log(`Selesai backup: ${filename}`);
+        }
 
         // 3. Retention Policy: Delete backups older than 7 days
         const { data: existingFiles } = await supabase.storage.from('backups').list(businessId);
