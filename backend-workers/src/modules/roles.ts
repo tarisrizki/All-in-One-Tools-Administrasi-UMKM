@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
 const roleSchema = z.object({
   name: z.string().min(1, "Nama role wajib diisi").max(50),
@@ -10,12 +10,106 @@ const roleSchema = z.object({
   permissions: z.array(z.string())
 });
 
+const roleResponseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  permissions: z.array(z.string()),
+}).passthrough();
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar role',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(roleResponseSchema)) } },
+      description: 'Daftar role',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat role baru',
+  request: {
+    body: {
+      content: { 'application/json': { schema: roleSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(roleResponseSchema) } },
+      description: 'Role dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Input tidak valid',
+    },
+  },
+});
+
+const updateRoute = createRoute({
+  method: 'put',
+  path: '/{id}',
+  description: 'Mengubah role',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+    body: {
+      content: { 'application/json': { schema: roleSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(roleResponseSchema) } },
+      description: 'Role diubah',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Role bawaan tidak bisa diubah',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Role tidak ditemukan',
+    },
+  },
+});
+
+const deleteRoute = createRoute({
+  method: 'delete',
+  path: '/{id}',
+  description: 'Menghapus role',
+  request: {
+    params: z.object({ id: z.string().uuid() }),
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: MessageSuccessSchema } },
+      description: 'Role dihapus',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Role tidak bisa dihapus',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Role tidak ditemukan',
+    },
+  },
+});
+
 type Variables = { businessId: string; userId: string; roleId: string };
-export const rolesRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const rolesRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 rolesRoute.use('*', authMiddleware);
 
-rolesRoute.get('/', requirePermission('roles.manage'), async (c) => {
+rolesRoute.get('/', requirePermission('roles.manage'));
+rolesRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -29,19 +123,19 @@ rolesRoute.get('/', requirePermission('roles.manage'), async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(data || []) });
+    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil role" } }, 500);
   }
 });
 
-rolesRoute.post('/', requirePermission('roles.manage'), async (c) => {
+rolesRoute.post('/', requirePermission('roles.manage'));
+rolesRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = roleSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     const { data: newRole, error } = await supabase
       .from('roles')
@@ -62,14 +156,14 @@ rolesRoute.post('/', requirePermission('roles.manage'), async (c) => {
   }
 });
 
-rolesRoute.put('/:id', requirePermission('roles.manage'), async (c) => {
+rolesRoute.put('/:id', requirePermission('roles.manage'));
+rolesRoute.openapi(updateRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
-    const body = await c.req.json();
-    const dataObj = roleSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     const { data: roleToUpdate } = await supabase.from('roles').select('name').eq('id', id).eq('business_id', businessId).single();
     if (!roleToUpdate) return c.json({ success: false, error: { message: "Role tidak ditemukan" } }, 404);
@@ -91,16 +185,17 @@ rolesRoute.put('/:id', requirePermission('roles.manage'), async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(updatedRole) });
+    return c.json({ success: true, data: keysToCamel(updatedRole) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengubah role" } }, 400);
   }
 });
 
-rolesRoute.delete('/:id', requirePermission('roles.manage'), async (c) => {
+rolesRoute.delete('/:id', requirePermission('roles.manage'));
+rolesRoute.openapi(deleteRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     const { data: roleToDelete } = await supabase.from('roles').select('name').eq('id', id).eq('business_id', businessId).single();
@@ -116,7 +211,7 @@ rolesRoute.delete('/:id', requirePermission('roles.manage'), async (c) => {
 
     await supabase.from('roles').delete().eq('id', id).eq('business_id', businessId);
 
-    return c.json({ success: true, message: "Role berhasil dihapus" });
+    return c.json({ success: true, message: "Role berhasil dihapus" }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menghapus role" } }, 400);
   }
