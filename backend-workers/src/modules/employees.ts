@@ -1,27 +1,117 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const employeeCreateSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi').max(255),
-  phone: z.string().min(1, 'Nomor HP wajib diisi').max(30),
-  password: z.string().min(6, 'Password minimal 6 karakter').max(255),
-  role_id: z.string().uuid('Role ID tidak valid'),
+  name: z.string().min(1, 'Nama wajib diisi').max(255).openapi({ example: 'Andi' }),
+  phone: z.string().min(1, 'Nomor HP wajib diisi').max(30).openapi({ example: '08123456789' }),
+  password: z.string().min(6, 'Password minimal 6 karakter').max(255).openapi({ example: 'rahasia123' }),
+  role_id: z.string().uuid('Role ID tidak valid').openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
 });
 
 const employeeUpdateStatusSchema = z.object({
-  is_active: z.boolean(),
+  is_active: z.boolean().openapi({ example: false }),
+});
+
+const employeeResponseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  phone: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+});
+
+const employeeCreateResponseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  phone: z.string().nullable().optional(),
+});
+
+const employeeStatusResponseSchema = z.object({
+  id: z.string().uuid(),
+  isActive: z.boolean(),
+});
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar karyawan milik bisnis',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(employeeResponseSchema)) } },
+      description: 'Daftar karyawan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat akun karyawan baru (maksimal 20)',
+  request: {
+    body: {
+      content: { 'application/json': { schema: employeeCreateSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(employeeCreateResponseSchema) } },
+      description: 'Karyawan berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input atau nomor HP sudah terdaftar',
+    },
+    403: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Kuota karyawan terpenuhi',
+    }
+  },
+});
+
+const updateStatusRouteDef = createRoute({
+  method: 'put',
+  path: '/{id}/status',
+  description: 'Mengubah status aktif karyawan',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    }),
+    body: {
+      content: { 'application/json': { schema: employeeUpdateStatusSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(employeeStatusResponseSchema) } },
+      description: 'Status karyawan berhasil diubah',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input atau menonaktifkan akun sendiri',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Karyawan tidak ditemukan',
+    }
+  },
 });
 
 type Variables = { businessId: string; userId: string; roleId: string };
-export const employeesRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const employeesRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 employeesRoute.use('*', authMiddleware, requirePermission('employees'));
 
-employeesRoute.get('/', async (c) => {
+employeesRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -48,20 +138,19 @@ employeesRoute.get('/', async (c) => {
       role_name: user.roles?.name
     }));
 
-    return c.json({ success: true, data: keysToCamel(formattedData) });
+    return c.json({ success: true, data: keysToCamel(formattedData) }, 200);
   } catch (err: any) {
     console.error("Employees GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil daftar karyawan" } }, 500);
   }
 });
 
-employeesRoute.post('/', async (c) => {
+employeesRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = employeeCreateSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     // Validate quota: max 20 employees
     const { count: employeeCount, error: countError } = await supabase
@@ -106,15 +195,14 @@ employeesRoute.post('/', async (c) => {
   }
 });
 
-employeesRoute.put('/:id/status', async (c) => {
+employeesRoute.openapi(updateStatusRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
-    const body = await c.req.json();
-    const dataObj = employeeUpdateStatusSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     if (id === userId) {
       return c.json({ success: false, error: { message: "Tidak dapat menonaktifkan akun sendiri" } }, 400);
@@ -134,7 +222,7 @@ employeesRoute.put('/:id/status', async (c) => {
       return c.json({ success: false, error: { message: "Karyawan tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) });
+    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
