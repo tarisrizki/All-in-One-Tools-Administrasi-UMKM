@@ -1,0 +1,136 @@
+diff --git a/backend/src/scripts/check-db.ts b/backend/src/scripts/check-db.ts
+index f94351a..24bedc6 100644
+--- a/backend/src/scripts/check-db.ts
++++ b/backend/src/scripts/check-db.ts
+@@ -1,7 +1,7 @@
+ import 'dotenv/config';
+ import { db } from '../plugins/drizzle.js';
+ import { sql } from 'drizzle-orm';
+-import { users, roles, products, customers, purchases, sales } from '../db/schema.js';
++import { users, roles, products, customers, purchaseOrders, sales } from '../db/schema.js';
+ 
+ async function run() {
+ 	try {
+@@ -15,7 +15,7 @@ async function run() {
+ 
+ 		const p = await db.select({ count: sql`count(*)` }).from(products);
+ 		const c = await db.select({ count: sql`count(*)` }).from(customers);
+-		const pu = await db.select({ count: sql`count(*)` }).from(purchases);
++		const pu = await db.select({ count: sql`count(*)` }).from(purchaseOrders);
+ 		const s = await db.select({ count: sql`count(*)` }).from(sales);
+ 		
+ 		console.log("PRODUCTS:", p[0].count);
+diff --git a/backend/src/scripts/seed-demo.ts b/backend/src/scripts/seed-demo.ts
+index d60d964..a08aaae 100644
+--- a/backend/src/scripts/seed-demo.ts
++++ b/backend/src/scripts/seed-demo.ts
+@@ -1,8 +1,7 @@
+ import 'dotenv/config';
+ import { db } from '../plugins/drizzle.js';
+-import { users, roles, businesses, warehouses, categories, products, customers, suppliers } from '../db/schema.js';
++import { users, roles, businesses, warehouses, categories, products, customers, suppliers, productStock } from '../db/schema.js';
+ import { eq } from 'drizzle-orm';
+-import { v4 as uuidv4 } from 'uuid';
+ 
+ async function main() {
+ 	try {
+@@ -54,18 +53,18 @@ async function main() {
+ 		const cat2 = cats.find(c => c.name === 'Makanan Ringan') || cats[0];
+ 
+ 		if (cat1 && cat2) {
+-			// 5. Inject Produk
++			// 5. Inject Produk (harga & stok memakai nama kolom asli: sellPrice/costPrice,
++			// stok disimpan terpisah di tabel productStock -- bukan kolom langsung di products)
+ 			console.log('Menginjeksi produk...');
+-			await db.insert(products).values([
++			const insertedProducts = await db.insert(products).values([
+ 				{
+ 					businessId,
+ 					categoryId: cat1.id,
+ 					sku: `KP-${Date.now().toString().slice(-4)}`,
+ 					name: 'Kopi Susu Gula Aren',
+ 					description: 'Kopi susu manis dengan gula aren asli',
+-					price: '18000',
+-					cost: '10000',
+-					stock: 50,
++					sellPrice: '18000',
++					costPrice: '10000',
+ 					minStock: 10,
+ 					unit: 'Cup',
+ 					barcode: `899${Date.now().toString().slice(-8)}`
+@@ -76,9 +75,8 @@ async function main() {
+ 					sku: `KP-${Date.now().toString().slice(-4)}A`,
+ 					name: 'Americano Dingin',
+ 					description: 'Espresso dengan es batu',
+-					price: '15000',
+-					cost: '8000',
+-					stock: 100,
++					sellPrice: '15000',
++					costPrice: '8000',
+ 					minStock: 20,
+ 					unit: 'Cup',
+ 					barcode: `899${(Date.now() + 1).toString().slice(-8)}`
+@@ -89,14 +87,24 @@ async function main() {
+ 					sku: `MK-${Date.now().toString().slice(-4)}`,
+ 					name: 'Kentang Goreng',
+ 					description: 'Kentang goreng renyah',
+-					price: '12000',
+-					cost: '6000',
+-					stock: 30,
++					sellPrice: '12000',
++					costPrice: '6000',
+ 					minStock: 5,
+ 					unit: 'Porsi',
+ 					barcode: `899${(Date.now() + 2).toString().slice(-8)}`
+ 				}
+-			]).onConflictDoNothing();
++			]).onConflictDoNothing().returning({ id: products.id });
++
++			const stockByProduct = [50, 100, 30];
++			if (insertedProducts.length > 0 && defaultWarehouseId) {
++				await db.insert(productStock).values(
++					insertedProducts.map((p, i) => ({
++						productId: p.id,
++						warehouseId: defaultWarehouseId,
++						quantity: stockByProduct[i] ?? 20
++					}))
++				).onConflictDoNothing();
++			}
+ 		}
+ 
+ 		// 6. Inject Customers
+@@ -107,11 +115,11 @@ async function main() {
+ 			{ businessId, name: 'Andi Pratama', phone: `0856${Date.now().toString().slice(-8)}`, loyaltyPoints: 0, createdBy: demoUser.id }
+ 		]).onConflictDoNothing();
+ 
+-		// 7. Inject Suppliers
++		// 7. Inject Suppliers (tabel suppliers tidak punya kolom createdBy)
+ 		console.log('Menginjeksi supplier...');
+ 		await db.insert(suppliers).values([
+-			{ businessId, name: 'Distributor Kopi Nusantara', phone: `02199${Date.now().toString().slice(-6)}`, address: 'Jl. Sudirman No. 10', createdBy: demoUser.id },
+-			{ businessId, name: 'Toko Kemasan Plastik', phone: `02155${Date.now().toString().slice(-6)}`, address: 'Pasar Baru', createdBy: demoUser.id }
++			{ businessId, name: 'Distributor Kopi Nusantara', phone: `02199${Date.now().toString().slice(-6)}`, address: 'Jl. Sudirman No. 10' },
++			{ businessId, name: 'Toko Kemasan Plastik', phone: `02155${Date.now().toString().slice(-6)}`, address: 'Pasar Baru' }
+ 		]).onConflictDoNothing();
+ 
+ 		console.log('✅ Demo data berhasil diinjeksi!');
+diff --git a/frontend/src/lib/components/CommandPalette.svelte b/frontend/src/lib/components/CommandPalette.svelte
+index b1725ba..f73c399 100644
+--- a/frontend/src/lib/components/CommandPalette.svelte
++++ b/frontend/src/lib/components/CommandPalette.svelte
+@@ -3,6 +3,7 @@
+ 	import {
+ 		LayoutDashboard,
+ 		ShoppingCart,
++		Receipt,
+ 		Package,
+ 		ClipboardList,
+ 		Truck,
+@@ -28,6 +29,7 @@
+ 	const NAV_ITEMS: Item[] = [
+ 		{ href: '/dashboard', label: 'Dashboard', group: 'Navigasi', icon: LayoutDashboard },
+ 		{ href: '/pos', label: 'Kasir (POS)', group: 'Navigasi', icon: ShoppingCart, keywords: 'jual transaksi' },
++		{ href: '/penjualan', label: 'Penjualan', group: 'Navigasi', icon: Receipt, keywords: 'riwayat invoice kwitansi nota struk' },
+ 		{ href: '/products', label: 'Produk & Stok', group: 'Navigasi', icon: Package, keywords: 'barang stok' },
+ 		{ href: '/purchases', label: 'Pembelian (PO)', group: 'Navigasi', icon: ClipboardList },
+ 		{ href: '/suppliers', label: 'Supplier', group: 'Navigasi', icon: Truck },

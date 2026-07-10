@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
-	import { apiFetch } from '$lib/api';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Card from '$lib/components/ui/card';
@@ -13,8 +12,7 @@
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 
-	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-	import EmptyState from '$lib/components/EmptyState.svelte';
+	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 
 	let activeTab = $state<'payable' | 'receivable'>('receivable');
 	let debts = $state<any[]>([]);
@@ -29,15 +27,19 @@
 	async function fetchDebts() {
 		loading = true;
 		try {
-			const json = await apiFetch<any>(`/v1/debts?type=${activeTab}`);
+			const token = localStorage.getItem('umkm_token');
+			const res = await fetch(`${API_URL}/v1/debts?type=${activeTab}`, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			const json = await res.json();
 			if (json.success) {
 				debts = json.data;
 				error = '';
 			} else {
 				error = json.error?.message || 'Gagal memuat data';
 			}
-		} catch (err: any) {
-			error = err.message || 'Gagal mengambil data hutang/piutang';
+		} catch {
+			error = 'Gagal mengambil data hutang/piutang';
 		} finally {
 			loading = false;
 		}

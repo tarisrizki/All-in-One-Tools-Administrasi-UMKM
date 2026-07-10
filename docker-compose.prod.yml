@@ -2,13 +2,6 @@
 # All-in-One Tools Administrasi UMKM
 # Docker Compose — Production Environment
 # ============================================
-#
-# PENTING sebelum deploy pertama kali: buat file .env di folder ini (sebelah
-# docker-compose.prod.yml) berisi minimal JWT_SECRET, POSTGRES_PASSWORD, dan
-# CORS_ORIGIN -- lihat .env.example. Compose ini SENGAJA tidak punya nilai
-# default untuk secret (${VAR:?...}) supaya deploy GAGAL JELAS kalau lupa
-# diisi, daripada diam-diam jalan pakai secret bawaan yang sudah ke-commit
-# di repo publik ini (siapa saja yang baca repo ini tahu nilainya).
 
 services:
   # --- Frontend (SvelteKit) ---
@@ -21,7 +14,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:3001}
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:3000}
     ports:
       - "8080:8080"
     depends_on:
@@ -36,25 +29,23 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - PORT=3001
+      - PORT=3000
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=${POSTGRES_DB:-umkm_db}
       - DB_USER=${POSTGRES_USER:-umkm_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:?Wajib diisi di .env -- jangan pakai default}
-      - JWT_SECRET=${JWT_SECRET:?Wajib diisi di .env -- generate dengan: openssl rand -base64 48}
-      - CORS_ORIGIN=${CORS_ORIGIN:?Wajib diisi di .env, contoh: https://app.tokokamu.com}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-umkm_pass}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-for-prod-change-me}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:8080}
     ports:
-      - "3001:3001"
+      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      redis:
+        condition: service_healthy
 
   # --- PostgreSQL ---
   postgres:
@@ -64,7 +55,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-umkm_db}
       POSTGRES_USER: ${POSTGRES_USER:-umkm_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Wajib diisi di .env -- jangan pakai default}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-umkm_pass}
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata_prod:/var/lib/postgresql/data
       - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
@@ -74,5 +67,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: umkm-redis-prod
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata_prod:
+  redisdata_prod:

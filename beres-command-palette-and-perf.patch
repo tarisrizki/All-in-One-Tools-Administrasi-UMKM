@@ -1,0 +1,423 @@
+diff --git a/frontend/src/lib/components/AppSidebar.svelte b/frontend/src/lib/components/AppSidebar.svelte
+index 0b06be4..f562c48 100644
+--- a/frontend/src/lib/components/AppSidebar.svelte
++++ b/frontend/src/lib/components/AppSidebar.svelte
+@@ -2,6 +2,7 @@
+ 	import { page } from '$app/stores';
+ 	import { logout } from '$lib/stores/auth.svelte';
+ 	import { goto } from '$app/navigation';
++	import { openPalette } from '$lib/stores/commandPalette.svelte';
+ 	import {
+ 		LayoutDashboard,
+ 		ShoppingCart,
+@@ -17,6 +18,7 @@
+ 		Sparkles,
+ 		Settings,
+ 		LogOut,
++		Search,
+ 		X
+ 	} from 'lucide-svelte';
+ 
+@@ -101,6 +103,15 @@
+ 	</div>
+ 
+ 	<nav class="flex-1 overflow-y-auto px-3 pb-4">
++		<button
++			type="button"
++			onclick={openPalette}
++			class="w-full flex items-center gap-2.5 px-3 py-2.5 mb-3 rounded-lg text-[13px] font-semibold text-white/45 bg-white/5 hover:bg-white/10 hover:text-white/70 transition-colors min-h-0"
++		>
++			<Search class="w-[15px] h-[15px] shrink-0" />
++			<span class="flex-1 text-left">Cari...</span>
++			<kbd class="font-mono text-[10px] border border-white/15 rounded px-1.5 py-0.5 text-white/40">⌘K</kbd>
++		</button>
+ 		{#each groups as group}
+ 			<div class="px-2.5 pt-4 pb-1.5 font-mono text-[10px] uppercase tracking-widest text-white/35">
+ 				{group.label}
+diff --git a/frontend/src/lib/components/CommandPalette.svelte b/frontend/src/lib/components/CommandPalette.svelte
+new file mode 100644
+index 0000000..b1725ba
+--- /dev/null
++++ b/frontend/src/lib/components/CommandPalette.svelte
+@@ -0,0 +1,178 @@
++<script lang="ts">
++	import { goto } from '$app/navigation';
++	import {
++		LayoutDashboard,
++		ShoppingCart,
++		Package,
++		ClipboardList,
++		Truck,
++		Wallet,
++		Handshake,
++		LineChart,
++		Calculator,
++		Users,
++		UserCog,
++		Sparkles,
++		Settings,
++		Search,
++		PlusCircle,
++		CornerDownLeft,
++		ArrowUp,
++		ArrowDown
++	} from 'lucide-svelte';
++
++	let { open = $bindable(false) }: { open?: boolean } = $props();
++
++	type Item = { href: string; label: string; group: string; icon: any; keywords?: string };
++
++	const NAV_ITEMS: Item[] = [
++		{ href: '/dashboard', label: 'Dashboard', group: 'Navigasi', icon: LayoutDashboard },
++		{ href: '/pos', label: 'Kasir (POS)', group: 'Navigasi', icon: ShoppingCart, keywords: 'jual transaksi' },
++		{ href: '/products', label: 'Produk & Stok', group: 'Navigasi', icon: Package, keywords: 'barang stok' },
++		{ href: '/purchases', label: 'Pembelian (PO)', group: 'Navigasi', icon: ClipboardList },
++		{ href: '/suppliers', label: 'Supplier', group: 'Navigasi', icon: Truck },
++		{ href: '/cashbook', label: 'Buku Kas', group: 'Navigasi', icon: Wallet, keywords: 'kas uang' },
++		{ href: '/debts', label: 'Hutang & Piutang', group: 'Navigasi', icon: Handshake, keywords: 'tagihan' },
++		{ href: '/reports', label: 'Laporan', group: 'Navigasi', icon: LineChart },
++		{ href: '/calculator', label: 'Kalkulator', group: 'Navigasi', icon: Calculator, keywords: 'margin bep roi' },
++		{ href: '/customers', label: 'Pelanggan', group: 'Navigasi', icon: Users },
++		{ href: '/employees', label: 'Karyawan', group: 'Navigasi', icon: UserCog, keywords: 'staff pegawai' },
++		{ href: '/ai', label: 'Asisten AI', group: 'Navigasi', icon: Sparkles },
++		{ href: '/settings', label: 'Pengaturan', group: 'Navigasi', icon: Settings },
++		{ href: '/pos', label: 'Transaksi Baru', group: 'Aksi Cepat', icon: PlusCircle, keywords: 'kasir jual' },
++		{ href: '/products/new', label: 'Tambah Produk', group: 'Aksi Cepat', icon: PlusCircle },
++		{ href: '/customers/new', label: 'Tambah Pelanggan', group: 'Aksi Cepat', icon: PlusCircle },
++		{ href: '/cashbook/new', label: 'Catat Transaksi Kas', group: 'Aksi Cepat', icon: PlusCircle },
++		{ href: '/debts/new', label: 'Catat Hutang / Piutang', group: 'Aksi Cepat', icon: PlusCircle },
++		{ href: '/purchases/new', label: 'Buat PO Baru', group: 'Aksi Cepat', icon: PlusCircle }
++	];
++
++	let query = $state('');
++	let activeIndex = $state(0);
++	let inputEl = $state<HTMLInputElement | null>(null);
++
++	let filtered = $derived.by(() => {
++		const q = query.trim().toLowerCase();
++		if (!q) return NAV_ITEMS;
++		return NAV_ITEMS.filter(
++			(item) =>
++				item.label.toLowerCase().includes(q) ||
++				item.keywords?.toLowerCase().includes(q) ||
++				item.group.toLowerCase().includes(q)
++		);
++	});
++
++	let groupedFiltered = $derived.by(() => {
++		const groups: { label: string; items: Item[] }[] = [];
++		for (const item of filtered) {
++			let g = groups.find((g) => g.label === item.group);
++			if (!g) {
++				g = { label: item.group, items: [] };
++				groups.push(g);
++			}
++			g.items.push(item);
++		}
++		return groups;
++	});
++
++	function flatList(): Item[] {
++		return groupedFiltered.flatMap((g) => g.items);
++	}
++
++	function select(item: Item) {
++		open = false;
++		query = '';
++		goto(item.href);
++	}
++
++	function handleKeydown(e: KeyboardEvent) {
++		const list = flatList();
++		if (e.key === 'ArrowDown') {
++			e.preventDefault();
++			activeIndex = Math.min(activeIndex + 1, list.length - 1);
++		} else if (e.key === 'ArrowUp') {
++			e.preventDefault();
++			activeIndex = Math.max(activeIndex - 1, 0);
++		} else if (e.key === 'Enter') {
++			e.preventDefault();
++			if (list[activeIndex]) select(list[activeIndex]);
++		} else if (e.key === 'Escape') {
++			open = false;
++		}
++	}
++
++	// Reset selection whenever the filtered list changes so the highlight never points nowhere.
++	$effect(() => {
++		filtered;
++		activeIndex = 0;
++	});
++
++	// Autofocus the input the instant the palette opens.
++	$effect(() => {
++		if (open && inputEl) {
++			inputEl.focus();
++		} else if (!open) {
++			query = '';
++		}
++	});
++
++	let flatIdx = 0;
++</script>
++
++{#if open}
++	<div
++		class="fixed inset-0 z-[200] flex items-start justify-center pt-[12vh] px-4 bg-ink/40 backdrop-blur-[2px]"
++		onclick={(e) => { if (e.target === e.currentTarget) open = false; }}
++		role="presentation"
++	>
++		<div class="w-full max-w-xl bg-paper rounded-2xl shadow-2xl border border-border overflow-hidden">
++			<div class="flex items-center gap-3 px-4 border-b border-border">
++				<Search class="w-[18px] h-[18px] text-ink-faint shrink-0" />
++				<input
++					bind:this={inputEl}
++					bind:value={query}
++					onkeydown={handleKeydown}
++					type="text"
++					placeholder="Cari halaman atau aksi... (produk, kasir, hutang...)"
++					class="flex-1 h-14 bg-transparent outline-none text-[15px] text-ink placeholder:text-ink-faint min-h-0"
++					autocomplete="off"
++					spellcheck="false"
++				/>
++				<kbd class="hidden sm:inline-block font-mono text-[10px] text-ink-faint border border-border rounded px-1.5 py-0.5">ESC</kbd>
++			</div>
++
++			<div class="max-h-[50vh] overflow-y-auto py-2">
++				{#if groupedFiltered.length === 0}
++					<p class="text-center text-sm text-ink-soft py-10">Tidak ada hasil untuk "{query}"</p>
++				{/if}
++				{#each groupedFiltered as group}
++					<div class="px-2 pt-2 pb-1 font-mono text-[10px] uppercase tracking-widest text-ink-faint">
++						{group.label}
++					</div>
++					{#each group.items as item}
++						{@const idx = flatList().indexOf(item)}
++						<button
++							type="button"
++							onclick={() => select(item)}
++							onmouseenter={() => (activeIndex = idx)}
++							class="w-full flex items-center gap-3 px-4 py-2.5 mx-0 text-left transition-colors min-h-0
++								{idx === activeIndex ? 'bg-brand-soft text-brand' : 'text-ink hover:bg-paper-alt'}"
++						>
++							<item.icon class="w-4 h-4 shrink-0 {idx === activeIndex ? 'text-brand' : 'text-ink-faint'}" />
++							<span class="text-[14px] font-semibold truncate">{item.label}</span>
++							{#if idx === activeIndex}
++								<CornerDownLeft class="w-3.5 h-3.5 ml-auto text-brand shrink-0" />
++							{/if}
++						</button>
++					{/each}
++				{/each}
++			</div>
++
++			<div class="hidden sm:flex items-center gap-4 px-4 py-2.5 border-t border-border bg-paper-alt text-[11px] text-ink-faint font-mono">
++				<span class="flex items-center gap-1"><ArrowUp class="w-3 h-3" /><ArrowDown class="w-3 h-3" /> navigasi</span>
++				<span class="flex items-center gap-1"><CornerDownLeft class="w-3 h-3" /> pilih</span>
++				<span class="ml-auto">Beres</span>
++			</div>
++		</div>
++	</div>
++{/if}
+diff --git a/frontend/src/lib/components/dashboard/StatsGrid.svelte b/frontend/src/lib/components/dashboard/StatsGrid.svelte
+index 68db986..ffa115f 100644
+--- a/frontend/src/lib/components/dashboard/StatsGrid.svelte
++++ b/frontend/src/lib/components/dashboard/StatsGrid.svelte
+@@ -3,6 +3,7 @@
+ 	import { TrendingUp, AlertTriangle } from 'lucide-svelte';
+ 	import { formatRupiah } from '$lib/utils/format';
+ 	import { fade } from 'svelte/transition';
++	import { countUp } from '$lib/utils/countUp';
+ 
+ 	let {
+ 		isPending,
+@@ -15,7 +16,7 @@
+ 
+ <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
+ 	<!-- Penjualan Hari Ini -->
+-	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow">
++	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow card-hover">
+ 		<Card.Content class="p-4">
+ 			<p class="text-[11px] font-semibold text-ink-soft mb-2 uppercase tracking-wider font-mono">
+ 				Penjualan Hari Ini
+@@ -23,9 +24,11 @@
+ 			{#if isPending}
+ 				<div class="h-6 w-24 bg-border/50 rounded animate-pulse"></div>
+ 			{:else}
+-				<p class="font-mono font-bold text-lg md:text-xl text-ink" transition:fade>
+-					{formatRupiah(data?.todaySales || 0)}
+-				</p>
++				<p
++					class="font-mono font-bold text-lg md:text-xl text-ink"
++					transition:fade
++					use:countUp={{ value: data?.todaySales || 0, format: formatRupiah }}
++				></p>
+ 				<p class="text-[10px] font-bold text-success mt-1 flex items-center gap-0.5">
+ 					<TrendingUp class="w-3 h-3" /> 12% dari kemarin
+ 				</p>
+@@ -34,7 +37,7 @@
+ 	</Card.Root>
+ 
+ 	<!-- Total Transaksi -->
+-	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow">
++	<Card.Root class="border-border shadow-sm hover:shadow-md transition-shadow card-hover">
+ 		<Card.Content class="p-4">
+ 			<p class="text-[11px] font-semibold text-ink-soft mb-2 uppercase tracking-wider font-mono">
+ 				Total Transaksi
+@@ -42,16 +45,18 @@
+ 			{#if isPending}
+ 				<div class="h-6 w-12 bg-border/50 rounded animate-pulse"></div>
+ 			{:else}
+-				<p class="font-mono font-bold text-lg md:text-xl text-ink" transition:fade>
+-					{data?.todayTransactions || 0}
+-				</p>
++				<p
++					class="font-mono font-bold text-lg md:text-xl text-ink"
++					transition:fade
++					use:countUp={{ value: data?.todayTransactions || 0 }}
++				></p>
+ 				<p class="text-[10px] text-ink-faint mt-1 font-mono">transaksi hari ini</p>
+ 			{/if}
+ 		</Card.Content>
+ 	</Card.Root>
+ 
+ 	<!-- Stok Menipis -->
+-	<Card.Root class="border-warning/30 bg-warning-soft shadow-sm">
++	<Card.Root class="border-warning/30 bg-warning-soft shadow-sm card-hover">
+ 		<Card.Content class="p-4">
+ 			<p class="text-[11px] font-semibold text-warning-dark mb-2 uppercase tracking-wider font-mono">
+ 				Stok Menipis
+@@ -67,7 +72,7 @@
+ 	</Card.Root>
+ 
+ 	<!-- Untung Bersih -->
+-	<Card.Root class="border-success/30 bg-success-soft shadow-sm">
++	<Card.Root class="border-success/30 bg-success-soft shadow-sm card-hover">
+ 		<Card.Content class="p-4">
+ 			<p
+ 				class="text-[11px] font-semibold text-success-dark mb-2 uppercase tracking-wider font-mono"
+@@ -77,9 +82,11 @@
+ 			{#if isPending}
+ 				<div class="h-6 w-28 bg-success/20 rounded animate-pulse"></div>
+ 			{:else}
+-				<p class="font-mono font-bold text-lg md:text-xl text-success-dark" transition:fade>
+-					{formatRupiah(data?.estimatedProfit || 0)}
+-				</p>
++				<p
++					class="font-mono font-bold text-lg md:text-xl text-success-dark"
++					transition:fade
++					use:countUp={{ value: data?.estimatedProfit || 0, format: formatRupiah }}
++				></p>
+ 			{/if}
+ 		</Card.Content>
+ 	</Card.Root>
+diff --git a/frontend/src/lib/stores/commandPalette.svelte.ts b/frontend/src/lib/stores/commandPalette.svelte.ts
+new file mode 100644
+index 0000000..623578a
+--- /dev/null
++++ b/frontend/src/lib/stores/commandPalette.svelte.ts
+@@ -0,0 +1,8 @@
++// Tiny shared reactive state so any component (sidebar button, keyboard
++// shortcut, future "help" menu, etc.) can open the command palette without
++// prop-drilling through the layout.
++export const paletteState = $state({ open: false });
++
++export function openPalette() {
++	paletteState.open = true;
++}
+diff --git a/frontend/src/lib/utils/countUp.ts b/frontend/src/lib/utils/countUp.ts
+new file mode 100644
+index 0000000..7428ccb
+--- /dev/null
++++ b/frontend/src/lib/utils/countUp.ts
+@@ -0,0 +1,54 @@
++/**
++ * Svelte action: animates a number counting up from 0 (or its previous value)
++ * to the target value whenever it changes. Pure requestAnimationFrame, no
++ * dependencies, ~400ms so it stays snappy and never blocks interaction.
++ *
++ * Usage: <span use:countUp={{ value: 1245000, format: formatRupiah }}></span>
++ */
++export function countUp(
++	node: HTMLElement,
++	params: { value: number; format?: (n: number) => string; duration?: number }
++) {
++	let current = 0;
++	let raf: number;
++
++	function run(target: number, duration: number, format: (n: number) => string) {
++		cancelAnimationFrame(raf);
++		const start = current;
++		const delta = target - start;
++		const startTime = performance.now();
++
++		if (delta === 0) {
++			node.textContent = format(target);
++			return;
++		}
++
++		function tick(now: number) {
++			const progress = Math.min((now - startTime) / duration, 1);
++			// ease-out cubic: fast start, gentle settle -- feels quick, not jumpy
++			const eased = 1 - Math.pow(1 - progress, 3);
++			current = start + delta * eased;
++			node.textContent = format(Math.round(current));
++			if (progress < 1) {
++				raf = requestAnimationFrame(tick);
++			} else {
++				current = target;
++				node.textContent = format(target);
++			}
++		}
++		raf = requestAnimationFrame(tick);
++	}
++
++	const fmt = params.format ?? ((n: number) => String(n));
++	run(params.value, params.duration ?? 500, fmt);
++
++	return {
++		update(newParams: typeof params) {
++			const fmt = newParams.format ?? ((n: number) => String(n));
++			run(newParams.value, newParams.duration ?? 500, fmt);
++		},
++		destroy() {
++			cancelAnimationFrame(raf);
++		}
++	};
++}
+diff --git a/frontend/src/routes/(app)/+layout.svelte b/frontend/src/routes/(app)/+layout.svelte
+index 901fbf3..d395a7a 100644
+--- a/frontend/src/routes/(app)/+layout.svelte
++++ b/frontend/src/routes/(app)/+layout.svelte
+@@ -13,12 +13,23 @@
+ 	import { slide } from 'svelte/transition';
+ 	import { ModeWatcher } from 'mode-watcher';
+ 	import AppSidebar from '$lib/components/AppSidebar.svelte';
++	import CommandPalette from '$lib/components/CommandPalette.svelte';
++	import { paletteState } from '$lib/stores/commandPalette.svelte';
+ 
+ 	let { children } = $props();
+ 
+ 	onMount(() => {
+ 		// Sync manager berjalan di background, tidak memblokir render
+ 		initSyncManager();
++
++		function onKeydown(e: KeyboardEvent) {
++			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
++				e.preventDefault();
++				paletteState.open = !paletteState.open;
++			}
++		}
++		window.addEventListener('keydown', onKeydown);
++		return () => window.removeEventListener('keydown', onKeydown);
+ 	});
+ 
+ 	// Kasir (POS) sengaja dibuat full-screen tanpa sidebar, supaya layar kasir
+@@ -32,6 +43,8 @@
+ 
+ </svelte:head>
+ 
++<CommandPalette bind:open={paletteState.open} />
++
+ <Toaster position="top-center" richColors />
+ 
+ {#if !syncState.isOnline}

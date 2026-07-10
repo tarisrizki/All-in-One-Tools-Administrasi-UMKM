@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import { authState } from '$lib/stores/auth.svelte';
-	import { apiFetch } from '$lib/api';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import * as Table from '$lib/components/ui/table';
@@ -28,14 +27,21 @@
 	async function fetchPurchases() {
 		loading = true;
 		try {
-			const json = await apiFetch<any>('/v1/purchase-orders');
+			const token = localStorage.getItem('umkm_token');
+			const res = await fetch(
+				`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/purchase-orders`,
+				{
+					headers: { Authorization: `Bearer ${token}` }
+				}
+			);
+			const json = await res.json();
 			if (json.success) {
 				purchases = json.data;
 			} else {
 				error = json.error.message;
 			}
-		} catch (err: any) {
-			error = err.message || 'Gagal menghubungi server';
+		} catch (err) {
+			error = 'Gagal menghubungi server';
 		} finally {
 			loading = false;
 		}
@@ -46,10 +52,19 @@
 
 		isSubmitting = true;
 		try {
-			const json = await apiFetch<any>(`/v1/purchase-orders/${selectedPo.id}/status`, {
-				method: 'PATCH',
-				body: JSON.stringify({ status: newStatus })
-			});
+			const token = localStorage.getItem('umkm_token');
+			const res = await fetch(
+				`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/purchase-orders/${selectedPo.id}/status`,
+				{
+					method: 'PATCH',
+					headers: {
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ status: newStatus })
+				}
+			);
+			const json = await res.json();
 			if (json.success) {
 				toast.success('Status berhasil diupdate');
 				showStatusModal = false;
@@ -57,8 +72,8 @@
 			} else {
 				toast.error(json.error.message);
 			}
-		} catch (err: any) {
-			toast.error(err.message || 'Gagal mengupdate status PO');
+		} catch (err) {
+			toast.error('Gagal mengupdate status PO');
 		} finally {
 			isSubmitting = false;
 		}

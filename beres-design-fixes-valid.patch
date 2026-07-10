@@ -1,0 +1,884 @@
+diff --git a/frontend/src/lib/components/AppSidebar.svelte b/frontend/src/lib/components/AppSidebar.svelte
+new file mode 100644
+index 0000000..0b06be4
+--- /dev/null
++++ b/frontend/src/lib/components/AppSidebar.svelte
+@@ -0,0 +1,147 @@
++<script lang="ts">
++	import { page } from '$app/stores';
++	import { logout } from '$lib/stores/auth.svelte';
++	import { goto } from '$app/navigation';
++	import {
++		LayoutDashboard,
++		ShoppingCart,
++		Package,
++		ClipboardList,
++		Truck,
++		Wallet,
++		Handshake,
++		LineChart,
++		Calculator,
++		Users,
++		UserCog,
++		Sparkles,
++		Settings,
++		LogOut,
++		X
++	} from 'lucide-svelte';
++
++	let { onNavigate }: { onNavigate?: () => void } = $props();
++
++	type NavItem = { href: string; label: string; icon: any; badge?: string };
++	type NavGroup = { label: string; items: NavItem[] };
++
++	const groups: NavGroup[] = [
++		{
++			label: 'Utama',
++			items: [
++				{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
++				{ href: '/pos', label: 'Kasir (POS)', icon: ShoppingCart }
++			]
++		},
++		{
++			label: 'Transaksi',
++			items: [
++				{ href: '/products', label: 'Produk & Stok', icon: Package },
++				{ href: '/purchases', label: 'Pembelian (PO)', icon: ClipboardList },
++				{ href: '/suppliers', label: 'Supplier', icon: Truck }
++			]
++		},
++		{
++			label: 'Keuangan',
++			items: [
++				{ href: '/cashbook', label: 'Buku Kas', icon: Wallet },
++				{ href: '/debts', label: 'Hutang & Piutang', icon: Handshake },
++				{ href: '/reports', label: 'Laporan', icon: LineChart },
++				{ href: '/calculator', label: 'Kalkulator', icon: Calculator }
++			]
++		},
++		{
++			label: 'Pelanggan & Tim',
++			items: [
++				{ href: '/customers', label: 'Pelanggan', icon: Users },
++				{ href: '/employees', label: 'Karyawan', icon: UserCog }
++			]
++		},
++		{
++			label: 'Lainnya',
++			items: [
++				{ href: '/ai', label: 'Asisten AI', icon: Sparkles, badge: 'AI' },
++				{ href: '/settings', label: 'Pengaturan', icon: Settings }
++			]
++		}
++	];
++
++	function isActive(href: string): boolean {
++		const path = $page.url.pathname;
++		if (href === '/dashboard') return path === '/dashboard';
++		return path === href || path.startsWith(href + '/');
++	}
++
++	function handleLogout() {
++		logout();
++		goto('/auth/login');
++	}
++</script>
++
++<div class="flex h-full flex-col bg-paper-dark text-white/80">
++	<div class="flex items-center justify-between px-5 pt-6 pb-5">
++		<a href="/dashboard" class="flex items-center gap-2.5 min-h-0" onclick={onNavigate}>
++			<div
++				class="w-8 h-8 rounded-lg bg-cta text-white flex items-center justify-center font-bold font-grotesk text-sm -rotate-6 shadow-sm shrink-0"
++			>
++				B
++			</div>
++			<span class="font-grotesk font-bold text-lg tracking-tight text-white">Beres</span>
++		</a>
++		{#if onNavigate}
++			<button
++				type="button"
++				onclick={onNavigate}
++				class="lg:hidden text-white/50 hover:text-white p-1 min-h-0"
++				aria-label="Tutup menu"
++			>
++				<X class="w-5 h-5" />
++			</button>
++		{/if}
++	</div>
++
++	<nav class="flex-1 overflow-y-auto px-3 pb-4">
++		{#each groups as group}
++			<div class="px-2.5 pt-4 pb-1.5 font-mono text-[10px] uppercase tracking-widest text-white/35">
++				{group.label}
++			</div>
++			{#each group.items as item}
++				{@const active = isActive(item.href)}
++				<a
++					href={item.href}
++					onclick={onNavigate}
++					class="group flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-semibold transition-colors min-h-0
++						{active ? 'bg-cta/15 text-white' : 'text-white/65 hover:bg-white/5 hover:text-white'}"
++				>
++					<item.icon class="w-[18px] h-[18px] shrink-0 {active ? 'text-cta' : 'text-white/40 group-hover:text-white/70'}" />
++					<span class="truncate">{item.label}</span>
++					{#if item.badge}
++						<span class="ml-auto bg-cta text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded">
++							{item.badge}
++						</span>
++					{/if}
++				</a>
++			{/each}
++		{/each}
++	</nav>
++
++	<div class="px-3 pb-4 pt-2 border-t border-white/10">
++		<div class="flex items-center gap-2.5 px-2.5 py-2 mb-1">
++			<div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-grotesk font-bold text-xs text-white shrink-0">
++				PT
++			</div>
++			<div class="min-w-0">
++				<div class="text-[12.5px] font-bold text-white truncate">Pemilik Toko</div>
++				<div class="text-[10.5px] text-white/40 font-mono truncate">akun aktif</div>
++			</div>
++		</div>
++		<button
++			type="button"
++			onclick={handleLogout}
++			class="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13px] font-semibold text-white/50 hover:bg-white/5 hover:text-white transition-colors min-h-0"
++		>
++			<LogOut class="w-[18px] h-[18px]" />
++			Keluar
++		</button>
++	</div>
++</div>
+diff --git a/frontend/src/lib/components/dashboard/QuickAccess.svelte b/frontend/src/lib/components/dashboard/QuickAccess.svelte
+index ee02ab5..5587250 100644
+--- a/frontend/src/lib/components/dashboard/QuickAccess.svelte
++++ b/frontend/src/lib/components/dashboard/QuickAccess.svelte
+@@ -1,16 +1,21 @@
+ <script lang="ts">
+ 	import { Separator } from '$lib/components/ui/separator';
+-	import { Store, ShoppingCart, Package, Users, LineChart, Handshake, Calculator, Sparkles } from 'lucide-svelte';
++	import { Store, ShoppingCart, Package, Users, LineChart, Handshake, Calculator, Sparkles, ClipboardList, Truck, Wallet, UserCog, Settings } from 'lucide-svelte';
+ 	import { fly } from 'svelte/transition';
+ 
+ 	const quickMenus = [
+ 		{ label: 'Kasir', href: '/pos', icon: ShoppingCart, color: 'text-cta', bg: 'bg-cta-soft' },
+ 		{ label: 'Stok', href: '/products', icon: Package, color: 'text-brand', bg: 'bg-brand-soft' },
+-		{ label: 'Pelanggan', href: '/customers', icon: Users, color: 'text-success', bg: 'bg-success-soft' },
+-		{ label: 'Laporan', href: '/reports', icon: LineChart, color: 'text-info', bg: 'bg-info-soft' },
++		{ label: 'Pembelian', href: '/purchases', icon: ClipboardList, color: 'text-brand', bg: 'bg-brand-soft' },
++		{ label: 'Supplier', href: '/suppliers', icon: Truck, color: 'text-warning', bg: 'bg-warning-soft' },
++		{ label: 'Buku Kas', href: '/cashbook', icon: Wallet, color: 'text-success', bg: 'bg-success-soft' },
+ 		{ label: 'Hutang', href: '/debts', icon: Handshake, color: 'text-warning', bg: 'bg-warning-soft' },
++		{ label: 'Laporan', href: '/reports', icon: LineChart, color: 'text-info', bg: 'bg-info-soft' },
++		{ label: 'Hitung', href: '/calculator', icon: Calculator, color: 'text-ink-soft', bg: 'bg-muted' },
++		{ label: 'Pelanggan', href: '/customers', icon: Users, color: 'text-success', bg: 'bg-success-soft' },
++		{ label: 'Karyawan', href: '/employees', icon: UserCog, color: 'text-brand', bg: 'bg-brand-soft' },
+ 		{ label: 'AI Asisten', href: '/ai', icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-100' },
+-		{ label: 'Hitung', href: '/calculator', icon: Calculator, color: 'text-ink-soft', bg: 'bg-muted' }
++		{ label: 'Pengaturan', href: '/settings', icon: Settings, color: 'text-ink-soft', bg: 'bg-muted' }
+ 	];
+ </script>
+ 
+diff --git a/frontend/src/lib/components/settings/RoleSettingsCard.svelte b/frontend/src/lib/components/settings/RoleSettingsCard.svelte
+index b60ad80..39ede86 100644
+--- a/frontend/src/lib/components/settings/RoleSettingsCard.svelte
++++ b/frontend/src/lib/components/settings/RoleSettingsCard.svelte
+@@ -6,19 +6,19 @@
+ </script>
+ 
+ {#if hasPermission('roles.manage')}
+-	<Card.Root class="border-none shadow-sm bg-card/50 backdrop-blur-sm transition-all hover:bg-card hover:shadow-md group cursor-pointer" onclick={() => window.location.href = '/settings/roles'}>
++	<Card.Root class="border-border shadow-sm bg-paper transition-all hover:shadow-md hover:border-brand/30 group cursor-pointer rounded-2xl" onclick={() => window.location.href = '/settings/roles'}>
+ 		<Card.Content class="p-4 sm:p-6 flex items-center justify-between">
+ 			<div class="flex items-center gap-4">
+-				<div class="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
++				<div class="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-brand-soft flex items-center justify-center text-brand group-hover:scale-110 transition-transform">
+ 					<ShieldCheck class="w-5 h-5 sm:w-6 sm:h-6" />
+ 				</div>
+ 				<div>
+-					<h3 class="font-bold text-base sm:text-lg">Hak Akses (Roles)</h3>
+-					<p class="text-sm text-muted-foreground hidden sm:block">Kelola kewenangan untuk setiap jenis karyawan</p>
++					<h3 class="font-bold font-grotesk text-base sm:text-lg text-ink">Hak Akses (Roles)</h3>
++					<p class="text-sm text-ink-soft hidden sm:block">Kelola kewenangan untuk setiap jenis karyawan</p>
+ 				</div>
+ 			</div>
+ 			
+-			<div class="text-muted-foreground group-hover:text-primary transition-colors">
++			<div class="text-ink-faint group-hover:text-brand transition-colors">
+ 				<ChevronRight class="w-5 h-5" />
+ 			</div>
+ 		</Card.Content>
+diff --git a/frontend/src/routes/(app)/+layout.svelte b/frontend/src/routes/(app)/+layout.svelte
+index 0268391..901fbf3 100644
+--- a/frontend/src/routes/(app)/+layout.svelte
++++ b/frontend/src/routes/(app)/+layout.svelte
+@@ -12,6 +12,7 @@
+ 	import { queryClient } from '$lib/queryClient';
+ 	import { slide } from 'svelte/transition';
+ 	import { ModeWatcher } from 'mode-watcher';
++	import AppSidebar from '$lib/components/AppSidebar.svelte';
+ 
+ 	let { children } = $props();
+ 
+@@ -19,6 +20,10 @@
+ 		// Sync manager berjalan di background, tidak memblokir render
+ 		initSyncManager();
+ 	});
++
++	// Kasir (POS) sengaja dibuat full-screen tanpa sidebar, supaya layar kasir
++	// lega untuk transaksi -- pola yang sama dipakai POS fisik pada umumnya.
++	let showSidebar = $derived(!$page.url.pathname.startsWith('/pos'));
+ </script>
+ 
+ <svelte:head>
+@@ -56,5 +61,18 @@
+ 
+ <ModeWatcher />
+ <QueryClientProvider client={queryClient}>
+-	{@render children()}
++	{#if showSidebar}
++		<div class="lg:flex lg:min-h-screen lg:items-stretch">
++			<aside class="hidden lg:block lg:w-64 lg:shrink-0">
++				<div class="lg:fixed lg:top-0 lg:left-0 lg:h-screen lg:w-64 lg:z-40">
++					<AppSidebar />
++				</div>
++			</aside>
++			<div class="lg:flex-1 lg:min-w-0 lg:min-h-screen">
++				{@render children()}
++			</div>
++		</div>
++	{:else}
++		{@render children()}
++	{/if}
+ </QueryClientProvider>
+diff --git a/frontend/src/routes/(app)/cashbook/new/+page.svelte b/frontend/src/routes/(app)/cashbook/new/+page.svelte
+index 7ff94e1..bff0632 100644
+--- a/frontend/src/routes/(app)/cashbook/new/+page.svelte
++++ b/frontend/src/routes/(app)/cashbook/new/+page.svelte
+@@ -9,7 +9,7 @@
+ 	import * as Card from '$lib/components/ui/card';
+ 	import * as RadioGroup from '$lib/components/ui/radio-group';
+ 	import { toast } from 'svelte-sonner';
+-	import { ArrowLeft } from 'lucide-svelte';
++	import PageHeader from '$lib/components/PageHeader.svelte';
+ 
+ 	let type = $state('out');
+ 	let amount = $state('');
+@@ -51,68 +51,68 @@
+ 	}
+ </script>
+ 
+-<div class="min-h-screen bg-muted/40 pb-20">
+-	<header class="bg-background px-4 py-4 border-b flex items-center gap-3 sticky top-0 z-10">
+-		<Button variant="ghost" size="icon" href="/cashbook">
+-			<ArrowLeft class="w-5 h-5" />
+-		</Button>
+-		<h1 class="text-lg font-bold">Catat Transaksi Kas</h1>
+-	</header>
++<svelte:head>
++	<title>Catat Transaksi Kas — Beres</title>
++</svelte:head>
+ 
+-	<main class="p-4 max-w-lg mx-auto mt-4">
+-		<Card.Root>
++<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
++	<PageHeader title="Catat Transaksi Kas" subtitle="Buku Kas" backHref="/cashbook" />
++
++	<main class="p-4 sm:p-6 max-w-lg mx-auto w-full flex-1">
++		<Card.Root class="bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
+ 			<form onsubmit={handleSubmit}>
+-				<Card.Content class="pt-6 space-y-6">
++				<Card.Content class="p-5 sm:p-6 space-y-6">
+ 					<div class="space-y-3">
+-						<Label class="text-base">Jenis Transaksi</Label>
++						<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Jenis Transaksi</Label>
+ 						<RadioGroup.Root bind:value={type} class="flex flex-col gap-3 sm:flex-row sm:gap-6">
+ 							<div class="flex items-center space-x-2">
+ 								<RadioGroup.Item value="out" id="out" />
+-								<Label for="out" class="text-destructive font-medium cursor-pointer">Pengeluaran</Label>
++								<Label for="out" class="text-cta font-bold cursor-pointer">Pengeluaran</Label>
+ 							</div>
+ 							<div class="flex items-center space-x-2">
+ 								<RadioGroup.Item value="in" id="in" />
+-								<Label for="in" class="text-primary font-medium cursor-pointer">Pemasukan</Label>
++								<Label for="in" class="text-success font-bold cursor-pointer">Pemasukan</Label>
+ 							</div>
+ 						</RadioGroup.Root>
+ 					</div>
+ 
+ 					<div class="space-y-2">
+-						<Label for="amount">Nominal (Rp) <span class="text-destructive">*</span></Label>
++						<Label for="amount" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Nominal (Rp) <span class="text-cta">*</span></Label>
+ 						<div class="relative">
+-							<span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Rp</span>
++							<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint font-mono font-semibold">Rp</span>
+ 							<Input
+ 								type="number"
+ 								id="amount"
+ 								bind:value={amount}
+ 								required
+-								class="pl-10 font-bold text-lg h-12"
++								class="pl-10 font-mono font-bold text-lg h-12 rounded-xl border-border bg-paper-alt"
+ 								placeholder="0"
+ 							/>
+ 						</div>
+ 					</div>
+ 
+ 					<div class="space-y-2">
+-						<Label for="description">Keterangan <span class="text-destructive">*</span></Label>
++						<Label for="description" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Keterangan <span class="text-cta">*</span></Label>
+ 						<Input
+ 							type="text"
+ 							id="description"
+ 							bind:value={description}
+ 							required
+ 							placeholder="Mis: Beli kantong plastik"
++							class="h-12 rounded-xl border-border bg-paper-alt font-medium"
+ 						/>
+ 					</div>
+ 				</Card.Content>
+-				<Card.Footer>
++				<Card.Footer class="px-5 sm:px-6 pb-6">
+ 					<Button
+ 						type="submit"
+ 						variant="cta"
+ 						disabled={loading}
+-						class="w-full font-bold"
++						class="w-full font-bold rounded-xl h-12 shadow-md hover:-translate-y-0.5 transition-all"
+ 						size="lg"
+ 					>
+ 						{#if loading}
+-							<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
++							<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
+ 							Menyimpan...
+ 						{:else}
+ 							Simpan Transaksi
+diff --git a/frontend/src/routes/(app)/customers/new/+page.svelte b/frontend/src/routes/(app)/customers/new/+page.svelte
+index 00d8a01..7e30623 100644
+--- a/frontend/src/routes/(app)/customers/new/+page.svelte
++++ b/frontend/src/routes/(app)/customers/new/+page.svelte
+@@ -9,6 +9,7 @@
+ 	import { Textarea } from '$lib/components/ui/textarea';
+ 	import * as Card from '$lib/components/ui/card';
+ 	import { toast } from 'svelte-sonner';
++	import PageHeader from '$lib/components/PageHeader.svelte';
+ 
+ 	let form = $state({
+ 		name: '',
+@@ -54,69 +55,43 @@
+ </script>
+ 
+ <svelte:head>
+-	<title>Tambah Pelanggan | UMKM Tools</title>
++	<title>Tambah Pelanggan — Beres</title>
+ </svelte:head>
+ 
+-<div class="min-h-screen bg-muted/40 pb-20">
+-	<header class="bg-background px-4 py-4 border-b flex items-center gap-3 sticky top-0 z-10">
+-		<Button variant="ghost" size="icon" href="/customers">
+-			←
+-		</Button>
+-		<h1 class="text-lg font-bold">Pelanggan Baru</h1>
+-	</header>
++<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
++	<PageHeader title="Pelanggan Baru" subtitle="Database Pelanggan" backHref="/customers" />
+ 
+-	<main class="p-4 max-w-md mx-auto space-y-4 mt-2">
+-		<Card.Root>
+-			<Card.Content class="p-5 space-y-4">
++	<main class="p-4 sm:p-6 max-w-md mx-auto w-full flex-1">
++		<Card.Root class="bg-paper shadow-sm border-border rounded-3xl overflow-hidden">
++			<Card.Content class="p-5 sm:p-6 space-y-5">
+ 				<div class="space-y-2">
+-					<Label>
+-						Nama Lengkap <span class="text-destructive">*</span>
++					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
++						Nama Lengkap <span class="text-cta">*</span>
+ 					</Label>
+-					<Input
+-						type="text"
+-						bind:value={form.name}
+-						placeholder="Mis. Budi Santoso"
+-					/>
++					<Input type="text" bind:value={form.name} placeholder="Mis. Budi Santoso" class="h-12 rounded-xl border-border bg-paper-alt font-medium" />
+ 				</div>
+ 
+ 				<div class="space-y-2">
+-					<Label>Nomor WhatsApp</Label>
+-					<Input
+-						type="tel"
+-						bind:value={form.phone}
+-						placeholder="Mis. 08123456789"
+-					/>
+-					<p class="text-[10px] text-muted-foreground mt-1">
++					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Nomor WhatsApp</Label>
++					<Input type="tel" bind:value={form.phone} placeholder="Mis. 08123456789" class="h-12 rounded-xl border-border bg-paper-alt font-mono font-medium" />
++					<p class="text-[11px] text-ink-faint mt-1">
+ 						Gunakan format angka untuk memudahkan klik Hubungi WA nanti.
+ 					</p>
+ 				</div>
+ 
+ 				<div class="space-y-2">
+-					<Label>Email</Label>
+-					<Input
+-						type="email"
+-						bind:value={form.email}
+-						placeholder="budi@example.com"
+-					/>
++					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Email</Label>
++					<Input type="email" bind:value={form.email} placeholder="budi@example.com" class="h-12 rounded-xl border-border bg-paper-alt font-medium" />
+ 				</div>
+ 
+ 				<div class="space-y-2">
+-					<Label>Alamat Domisili</Label>
+-					<Textarea
+-						bind:value={form.address}
+-						rows={3}
+-						placeholder="Opsional..."
+-					/>
++					<Label class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Alamat Domisili</Label>
++					<Textarea bind:value={form.address} rows={3} placeholder="Opsional..." class="rounded-xl border-border bg-paper-alt font-medium" />
+ 				</div>
+ 
+-				<Button
+-					variant="cta"
+-					onclick={handleSave}
+-					disabled={loading}
+-					class="w-full mt-2"
+-				>
++				<Button variant="cta" onclick={handleSave} disabled={loading} class="w-full mt-2 rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all">
+ 					{#if loading}
+-						<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
++						<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
+ 						Menyimpan...
+ 					{:else}
+ 						Simpan Data Pelanggan
+diff --git a/frontend/src/routes/(app)/dashboard/+page.svelte b/frontend/src/routes/(app)/dashboard/+page.svelte
+index a4e9949..970eaaa 100644
+--- a/frontend/src/routes/(app)/dashboard/+page.svelte
++++ b/frontend/src/routes/(app)/dashboard/+page.svelte
+@@ -5,7 +5,6 @@
+ 	import { goto } from '$app/navigation';
+ 	import { createQuery } from '@tanstack/svelte-query';
+ 	import { fly } from 'svelte/transition';
+-	import * as Card from '$lib/components/ui/card';
+ 	import { Button } from '$lib/components/ui/button';
+ 	import { Separator } from '$lib/components/ui/separator';
+ 	import { RefreshCcw, Settings, LogOut } from 'lucide-svelte';
+@@ -43,22 +42,20 @@
+ </svelte:head>
+ 
+ <!-- ===== NAVBAR ===== -->
+-<header class="sticky top-0 z-40 bg-paper/90 backdrop-blur-md border-b border-border">
++<header class="sticky top-0 z-30 bg-paper/90 backdrop-blur-md border-b border-border">
+ 	<div class="container-base h-16 flex items-center justify-between">
+-		<!-- Brand -->
+-		<a href="/dashboard" class="flex items-center gap-2.5 group min-h-0">
++		<!-- Brand: hanya tampil di mobile, sidebar sudah menampilkannya di desktop -->
++		<a href="/dashboard" class="flex items-center gap-2.5 group min-h-0 lg:hidden">
+ 			<div
+ 				class="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center font-bold font-grotesk text-base -rotate-6 shadow-sm group-hover:rotate-0 transition-transform"
+ 			>
+ 				B
+ 			</div>
+-			<span class="font-grotesk font-bold text-xl tracking-tight text-brand hidden sm:inline-block"
+-				>Beres</span
+-			>
+-			<span class="font-mono text-xs text-ink-faint hidden md:inline-block border-l border-border pl-2 ml-1"
+-				>dashboard.beres.id</span
+-			>
++			<span class="font-grotesk font-bold text-xl tracking-tight text-brand">Beres</span>
+ 		</a>
++		<div class="hidden lg:block">
++			<span class="font-grotesk font-bold text-lg tracking-tight text-ink">Dashboard</span>
++		</div>
+ 
+ 		<!-- Actions -->
+ 		<div class="flex items-center gap-2">
+@@ -80,11 +77,11 @@
+ 			>
+ 				<Settings class="w-4 h-4" />
+ 			</Button>
+-			<Separator orientation="vertical" class="h-6 mx-1" />
++			<Separator orientation="vertical" class="h-6 mx-1 lg:hidden" />
+ 			<Button
+ 				variant="ghost"
+ 				size="sm"
+-				class="text-danger hover:bg-danger-soft font-bold gap-2 rounded-xl"
++				class="text-danger hover:bg-danger-soft font-bold gap-2 rounded-xl lg:hidden"
+ 				onclick={handleLogout}
+ 			>
+ 				<LogOut class="w-4 h-4" />
+@@ -95,58 +92,37 @@
+ </header>
+ 
+ <!-- ===== MAIN CONTENT ===== -->
+-<main class="container-base py-6 md:py-10 min-h-[calc(100vh-64px)]">
++<main class="container-base py-6 md:py-10">
+ 	<div class="max-w-5xl mx-auto" in:fly={{ y: 16, duration: 400 }}>
+-		<!-- Browser chrome frame -->
+-		<Card.Root class="shadow-lg rounded-[22px] overflow-hidden border-border">
+-			<!-- Top chrome bar -->
+-			<div class="bg-paper-alt border-b border-border px-4 py-3 flex items-center gap-3">
+-				<div class="flex gap-1.5">
+-					<span class="w-3 h-3 rounded-full bg-danger/60"></span>
+-					<span class="w-3 h-3 rounded-full bg-warning/60"></span>
+-					<span class="w-3 h-3 rounded-full bg-success/60"></span>
+-				</div>
+-				<div class="flex-1 flex justify-center">
+-					<span
+-						class="font-mono text-xs text-ink-faint bg-paper border border-border rounded-full px-4 py-1"
+-						>dashboard.beres.id</span
+-					>
+-				</div>
+-				<div class="w-12"></div>
+-			</div>
+-
+-			<Card.Content class="p-5 md:p-8">
+-				<!-- Welcome -->
+-				<div class="mb-8">
+-					<span class="eyebrow mb-3 block">Ringkasan Bisnis</span>
+-					<h1 class="font-grotesk text-2xl md:text-3xl font-bold text-ink mb-1">
+-						Halo, <span class="text-cta">Pemilik</span> 👋
+-					</h1>
+-					<p class="text-sm text-ink-soft">Pantau performa tokomu hari ini dalam satu layar.</p>
+-				</div>
++		<!-- Welcome -->
++		<div class="mb-8">
++			<span class="eyebrow mb-3 block">Ringkasan Bisnis</span>
++			<h1 class="font-grotesk text-2xl md:text-3xl font-bold text-ink mb-1">
++				Halo, <span class="text-cta">Pemilik</span> 👋
++			</h1>
++			<p class="text-sm text-ink-soft">Pantau performa tokomu hari ini dalam satu layar.</p>
++		</div>
+ 
+-				<!-- Stats Grid -->
+-				<StatsGrid isPending={dashboardQuery.isPending} data={dashboardQuery.data} />
++		<!-- Stats Grid -->
++		<StatsGrid isPending={dashboardQuery.isPending} data={dashboardQuery.data} />
+ 
+-				<!-- Body: Chart + Quick Access -->
+-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+-					<!-- LEFT: Chart & Activity -->
+-					<div class="lg:col-span-2 space-y-6">
+-						<SalesChart
+-							isPending={dashboardQuery.isPending}
+-							weeklyData={dashboardQuery.data?.weeklyData}
+-						/>
+-						<Separator />
+-						<RecentActivity
+-							isPending={dashboardQuery.isPending}
+-							transactions={dashboardQuery.data?.recentTransactions}
+-						/>
+-					</div>
++		<!-- Body: Chart + Quick Access -->
++		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
++			<!-- LEFT: Chart & Activity -->
++			<div class="lg:col-span-2 space-y-6">
++				<SalesChart
++					isPending={dashboardQuery.isPending}
++					weeklyData={dashboardQuery.data?.weeklyData}
++				/>
++				<Separator />
++				<RecentActivity
++					isPending={dashboardQuery.isPending}
++					transactions={dashboardQuery.data?.recentTransactions}
++				/>
++			</div>
+ 
+-					<!-- RIGHT: Quick Access -->
+-					<QuickAccess />
+-				</div>
+-			</Card.Content>
+-		</Card.Root>
++			<!-- RIGHT: Quick Access -->
++			<QuickAccess />
++		</div>
+ 	</div>
+ </main>
+diff --git a/frontend/src/routes/(app)/debts/[id]/+page.svelte b/frontend/src/routes/(app)/debts/[id]/+page.svelte
+index 46eaff1..83bd9f9 100644
+--- a/frontend/src/routes/(app)/debts/[id]/+page.svelte
++++ b/frontend/src/routes/(app)/debts/[id]/+page.svelte
+@@ -12,6 +12,8 @@
+ 	import * as Select from '$lib/components/ui/select';
+ 	import * as Table from '$lib/components/ui/table';
+ 	import { toast } from 'svelte-sonner';
++	import PageHeader from '$lib/components/PageHeader.svelte';
++	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
+ 
+ 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+ 
+@@ -33,7 +35,7 @@
+ 	async function fetchDebt() {
+ 		loading = true;
+ 		try {
+-			const token = localStorage.getItem('token');
++			const token = localStorage.getItem('umkm_token');
+ 			const res = await fetch(`${API_URL}/v1/debts/${debtId}`, {
+ 				headers: { Authorization: `Bearer ${token}` }
+ 			});
+@@ -55,7 +57,7 @@
+ 
+ 		isSubmitting = true;
+ 		try {
+-			const token = localStorage.getItem('token');
++			const token = localStorage.getItem('umkm_token');
+ 			const res = await fetch(`${API_URL}/v1/debts/${debtId}/payments`, {
+ 				method: 'POST',
+ 				headers: {
+@@ -88,7 +90,7 @@
+ 	async function sendRemind() {
+ 		isReminding = true;
+ 		try {
+-			const token = localStorage.getItem('token');
++			const token = localStorage.getItem('umkm_token');
+ 			const res = await fetch(`${API_URL}/v1/debts/${debtId}/remind`, {
+ 				method: 'POST',
+ 				headers: { Authorization: `Bearer ${token}` }
+@@ -131,77 +133,71 @@
+ </script>
+ 
+ <svelte:head>
+-	<title>Detail Tagihan | UMKM Tools</title>
++	<title>Detail Tagihan — Beres</title>
+ </svelte:head>
+ 
+-<div class="max-w-3xl mx-auto space-y-6 pb-20 p-4">
+-	<div class="flex items-center gap-4">
+-		<Button variant="outline" size="icon" class="rounded-full shrink-0" href="/debts">
+-			←
+-		</Button>
+-		<div>
+-			<h1 class="text-2xl font-bold">Detail Tagihan</h1>
+-		</div>
+-	</div>
++<div class="min-h-screen bg-surface pb-20 font-sans flex flex-col">
++	<PageHeader title="Detail Tagihan" subtitle="Hutang & Piutang" backHref="/debts" />
++
++	<main class="p-4 sm:p-6 max-w-3xl mx-auto w-full flex-1 space-y-6">
+ 
+ 	{#if loading}
+-		<div class="flex justify-center p-12">
+-			<div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+-		</div>
++		<LoadingSpinner message="Memuat data tagihan..." />
+ 	{:else if error}
+-		<div class="bg-destructive/15 text-destructive p-4 rounded-md border border-destructive/20">
++		<div class="bg-cta-soft text-cta p-4 rounded-xl border border-cta/20 font-bold">
+ 			{error}
+ 		</div>
+ 	{:else if debt}
+ 		<!-- Ringkasan Kartu -->
+-		<Card.Root class="overflow-hidden">
+-			<div class="p-6 {debt.type === 'receivable' ? 'bg-primary/10' : 'bg-destructive/10'} border-b flex justify-between items-start">
++		<Card.Root class="overflow-hidden bg-paper shadow-sm border-border rounded-3xl">
++			<div class="p-6 {debt.type === 'receivable' ? 'bg-brand-soft' : 'bg-cta-soft'} border-b border-border flex justify-between items-start">
+ 				<div>
+-					<div class="text-xs font-bold {debt.type === 'receivable' ? 'text-primary' : 'text-destructive'} mb-1 uppercase tracking-wide">
++					<div class="text-xs font-bold {debt.type === 'receivable' ? 'text-brand' : 'text-cta'} mb-1 uppercase tracking-widest font-mono">
+ 						{debt.type === 'receivable' ? 'Piutang Pelanggan' : 'Hutang Supplier'}
+ 					</div>
+-					<h2 class="text-2xl font-bold">{debt.entity_name}</h2>
++					<h2 class="text-2xl font-bold font-grotesk text-ink">{debt.entity_name}</h2>
+ 					{#if debt.entity_phone}
+-						<div class="text-sm text-muted-foreground mt-1">{debt.entity_phone}</div>
++						<div class="text-sm text-ink-soft mt-1 font-mono">{debt.entity_phone}</div>
+ 					{/if}
+ 				</div>
+ 				<div>
+ 					{#if debt.status === 'unpaid'}
+-						<Badge variant="destructive">BELUM LUNAS</Badge>
++						<Badge variant="outline" class="bg-cta-soft text-cta border-transparent font-bold">BELUM LUNAS</Badge>
+ 					{:else if debt.status === 'partial'}
+-						<Badge variant="outline" class="bg-warning-soft text-warning hover:bg-warning-soft border-transparent">CICILAN</Badge>
++						<Badge variant="outline" class="bg-warning-soft text-warning-dark border-transparent font-bold">CICILAN</Badge>
+ 					{:else if debt.status === 'paid'}
+-						<Badge variant="outline" class="bg-primary-soft text-primary hover:bg-primary-soft border-transparent">LUNAS</Badge>
++						<Badge variant="outline" class="bg-success-soft text-success-dark border-transparent font-bold">LUNAS</Badge>
+ 					{/if}
+ 				</div>
+ 			</div>
+ 
+ 			<Card.Content class="p-6 grid grid-cols-2 gap-6">
+ 				<div>
+-					<div class="text-xs text-muted-foreground mb-1 uppercase font-mono">Total Tagihan</div>
+-					<div class="text-lg font-bold">{formatRupiah(debt.amount)}</div>
++					<div class="text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest">Total Tagihan</div>
++					<div class="text-lg font-bold font-mono text-ink">{formatRupiah(debt.amount)}</div>
+ 				</div>
+ 				<div>
+-					<div class="text-xs text-muted-foreground mb-1 uppercase font-mono">Sisa Tagihan</div>
+-					<div class="text-2xl font-black {debt.status === 'paid' ? 'text-primary' : 'text-destructive'}">
++					<div class="text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest">Sisa Tagihan</div>
++					<div class="text-2xl font-black font-mono {debt.status === 'paid' ? 'text-success-dark' : 'text-cta'}">
+ 						{formatRupiah(debt.remaining_amount)}
+ 					</div>
+ 				</div>
+ 				<div>
+-					<div class="text-xs text-muted-foreground mb-1 uppercase font-mono">Jatuh Tempo</div>
+-					<div class="text-sm font-medium">{formatDateOnly(debt.due_date)}</div>
++					<div class="text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest">Jatuh Tempo</div>
++					<div class="text-sm font-semibold text-ink">{formatDateOnly(debt.due_date)}</div>
+ 				</div>
+ 				<div>
+-					<div class="text-xs text-muted-foreground mb-1 uppercase font-mono">Catatan</div>
+-					<div class="text-sm">{debt.notes || '-'}</div>
++					<div class="text-[11px] text-ink-faint mb-1 uppercase font-mono tracking-widest">Catatan</div>
++					<div class="text-sm text-ink">{debt.notes || '-'}</div>
+ 				</div>
+ 			</Card.Content>
+ 
+-			<div class="p-4 bg-muted/50 border-t flex gap-3 flex-col sm:flex-row">
++			<div class="p-4 bg-paper-alt border-t border-border flex gap-3 flex-col sm:flex-row">
+ 				<Button
+ 					onclick={() => (showPaymentModal = true)}
+ 					disabled={debt.status === 'paid'}
+-					class="flex-1"
++					variant="cta"
++					class="flex-1 rounded-xl h-12 font-bold"
+ 				>
+ 					Catat Pembayaran
+ 				</Button>
+@@ -209,9 +205,9 @@
+ 					variant="outline"
+ 					onclick={sendRemind}
+ 					disabled={debt.status === 'paid' || !debt.entity_phone || isReminding}
+-					class="flex items-center gap-2"
++					class="flex items-center gap-2 rounded-xl h-12 font-bold border-border"
+ 				>
+-					<svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
++					<svg class="w-5 h-5 text-success" fill="currentColor" viewBox="0 0 24 24">
+ 						<path d="M12.031 0C5.389 0 0 5.39 0 12.031c0 2.115.55 4.184 1.597 6.002L.15 23.473l5.59-1.465A11.966 11.966 0 0012.03 24c6.643 0 12.032-5.39 12.032-12.032S18.674 0 12.03 0h.001zm0 22c-1.782 0-3.526-.479-5.056-1.385l-.36-.214-3.766.988.995-3.67-.235-.373A9.972 9.972 0 012.03 12.031C2.03 6.505 6.505 2 12.03 2s10 4.505 10 10-4.495 10-10 10zm5.498-7.513c-.3-.151-1.78-.88-2.056-.98-.277-.101-.478-.152-.68.151-.202.304-.78 1.002-.956 1.203-.176.202-.352.227-.654.076a8.214 8.214 0 01-2.417-1.495 9.07 9.07 0 01-1.676-2.078c-.176-.303-.019-.467.13-.618.136-.135.303-.353.455-.53.151-.176.202-.303.303-.504.101-.202.05-.38-.025-.531-.076-.151-.68-1.643-.933-2.25-.246-.593-.496-.512-.68-.52-.176-.008-.377-.01-.578-.01a1.11 1.11 0 00-.804.38c-.277.303-1.056 1.032-1.056 2.518 0 1.486 1.08 2.921 1.232 3.123.151.202 2.128 3.25 5.155 4.556 2.455 1.063 3.124.975 3.684.82 1.353-.377 2.383-.976 2.723-1.92.34-.945.34-1.753.24-1.92-.102-.168-.378-.269-.68-.42z"/>
+ 					</svg>
+ 					{#if isReminding}
+@@ -224,37 +220,38 @@
+ 		</Card.Root>
+ 
+ 		<!-- Riwayat Pembayaran -->
+-		<h3 class="font-bold text-lg mt-8 mb-4">Riwayat Pembayaran</h3>
++		<h3 class="font-bold font-grotesk text-lg mt-8 mb-4 text-ink">Riwayat Pembayaran</h3>
+ 
+ 		{#if debt.payments && debt.payments.length > 0}
+-			<Card.Root class="overflow-hidden">
++			<Card.Root class="overflow-hidden bg-paper shadow-sm border-border rounded-3xl">
+ 				<Table.Root>
+-					<Table.Header class="bg-muted/50">
+-						<Table.Row>
+-							<Table.Head>Tanggal & Waktu</Table.Head>
+-							<Table.Head>Metode</Table.Head>
+-							<Table.Head>Nominal</Table.Head>
+-							<Table.Head>Catatan</Table.Head>
++					<Table.Header class="bg-paper-alt">
++						<Table.Row class="hover:bg-transparent border-b-border">
++							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Tanggal &amp; Waktu</Table.Head>
++							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Metode</Table.Head>
++							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Nominal</Table.Head>
++							<Table.Head class="font-mono text-[11px] uppercase tracking-wider font-bold text-ink-soft">Catatan</Table.Head>
+ 						</Table.Row>
+ 					</Table.Header>
+ 					<Table.Body>
+ 						{#each debt.payments as pay}
+-							<Table.Row>
+-								<Table.Cell class="text-muted-foreground">{formatDate(pay.payment_date)}</Table.Cell>
+-								<Table.Cell class="uppercase text-xs font-bold">{pay.payment_method}</Table.Cell>
+-								<Table.Cell class="font-bold text-primary">{formatRupiah(pay.amount)}</Table.Cell>
+-								<Table.Cell class="text-muted-foreground">{pay.notes || '-'}</Table.Cell>
++							<Table.Row class="hover:bg-muted/40 border-b-border/60">
++								<Table.Cell class="text-ink-soft">{formatDate(pay.payment_date)}</Table.Cell>
++								<Table.Cell class="uppercase text-xs font-bold text-ink">{pay.payment_method}</Table.Cell>
++								<Table.Cell class="font-bold font-mono text-success-dark">{formatRupiah(pay.amount)}</Table.Cell>
++								<Table.Cell class="text-ink-soft">{pay.notes || '-'}</Table.Cell>
+ 							</Table.Row>
+ 						{/each}
+ 					</Table.Body>
+ 				</Table.Root>
+ 			</Card.Root>
+ 		{:else}
+-			<div class="text-center py-8 bg-muted/20 border rounded-md border-dashed text-muted-foreground text-sm">
++			<div class="text-center py-10 bg-paper-alt border-2 border-dashed border-border/60 rounded-2xl text-ink-soft text-sm">
+ 				Belum ada riwayat pembayaran untuk tagihan ini.
+ 			</div>
+ 		{/if}
+ 	{/if}
++	</main>
+ </div>
+ 
+ <Dialog.Root bind:open={showPaymentModal}>
+@@ -268,32 +265,32 @@
+ 
+ 		{#if debt}
+ 			<div class="space-y-4 py-4">
+-				<div class="p-3 bg-warning-soft rounded-md border border-warning mb-4">
+-					<div class="text-xs text-warning uppercase font-bold mb-1">Sisa Tagihan Maksimal</div>
+-					<div class="text-lg font-black text-warning">{formatRupiah(debt.remaining_amount)}</div>
++				<div class="p-3.5 bg-warning-soft rounded-xl border border-warning/30 mb-4">
++					<div class="text-[11px] text-warning-dark uppercase font-mono font-bold tracking-widest mb-1">Sisa Tagihan Maksimal</div>
++					<div class="text-lg font-black font-mono text-warning-dark">{formatRupiah(debt.remaining_amount)}</div>
+ 				</div>
+ 
+ 				<div class="space-y-2">
+-					<Label for="paymentAmount">
+-						Nominal Pembayaran <span class="text-destructive">*</span>
++					<Label for="paymentAmount" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">
++						Nominal Pembayaran <span class="text-cta">*</span>
+ 					</Label>
+ 					<div class="relative">
+-						<span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">Rp</span>
++						<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint font-mono font-semibold">Rp</span>
+ 						<Input
+ 							id="paymentAmount"
+ 							type="number"
+ 							min="1"
+ 							max={debt.remaining_amount}
+ 							bind:value={paymentAmount}
+-							class="pl-10 font-bold"
++							class="pl-10 font-mono font-bold h-12 rounded-xl border-border bg-paper-alt"
+ 						/>
+ 					</div>
+ 				</div>
+ 
+ 				<div class="space-y-2">
+-					<Label for="paymentMethod">Metode</Label>
++					<Label for="paymentMethod" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Metode</Label>
+ 					<Select.Root type="single" bind:value={paymentMethod}>
+-						<Select.Trigger class="w-full">
++						<Select.Trigger class="w-full h-12 rounded-xl border-border bg-paper-alt">
+ 							{paymentMethod === 'cash' ? 'Tunai / Cash' : paymentMethod === 'transfer' ? 'Transfer Bank' : 'QRIS / e-Wallet'}
+ 						</Select.Trigger>
+ 						<Select.Content>
+@@ -305,26 +302,29 @@
+ 				</div>
+ 
+ 				<div class="space-y-2">
+-					<Label for="paymentNotes">Catatan</Label>
++					<Label for="paymentNotes" class="text-xs font-bold uppercase tracking-widest text-ink-soft font-mono">Catatan</Label>
+ 					<Input
+ 						id="paymentNotes"
+ 						type="text"
+ 						bind:value={paymentNotes}
+ 						placeholder="Misal: Cicilan pertama..."
++						class="h-12 rounded-xl border-border bg-paper-alt font-medium"
+ 					/>
+ 				</div>
+ 			</div>
+ 			
+ 			<Dialog.Footer>
+-				<Button variant="outline" onclick={() => (showPaymentModal = false)}>
++				<Button variant="outline" onclick={() => (showPaymentModal = false)} class="rounded-xl h-11 font-bold border-border">
+ 					Batal
+ 				</Button>
+ 				<Button
++					variant="cta"
+ 					onclick={submitPayment}
+ 					disabled={isSubmitting || !paymentAmount}
++					class="rounded-xl h-11 font-bold"
+ 				>
+ 					{#if isSubmitting}
+-						<div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
++						<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2"></div>
+ 						Menyimpan...
+ 					{:else}
+ 						Simpan Pembayaran
