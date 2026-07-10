@@ -1,27 +1,107 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const createWarehouseSchema = z.object({
-  name: z.string().min(1, 'Nama gudang wajib diisi').max(255),
-  address: z.string().nullable().optional(),
-  is_default: z.boolean().optional(),
+  name: z.string().min(1, 'Nama gudang wajib diisi').max(255).openapi({ example: 'Gudang Pusat' }),
+  address: z.string().nullable().optional().openapi({ example: 'Jl. Merdeka No 1' }),
+  is_default: z.boolean().optional().openapi({ example: true }),
 });
 
 const updateWarehouseSchema = createWarehouseSchema.extend({
-  name: z.string().min(1).max(255).optional(),
-  is_active: z.boolean().optional(),
+  name: z.string().min(1).max(255).optional().openapi({ example: 'Gudang Cabang' }),
+  is_active: z.boolean().optional().openapi({ example: true }),
+});
+
+const warehouseResponseSchema = z.object({
+  id: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
+  businessId: z.string().uuid(),
+  name: z.string(),
+  address: z.string().nullable().optional(),
+  isDefault: z.boolean(),
+  isActive: z.boolean(),
+  createdAt: z.string().openapi({ example: '2023-01-01T00:00:00.000Z' }),
+  updatedAt: z.string().openapi({ example: '2023-01-01T00:00:00.000Z' }),
+});
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar semua gudang milik bisnis',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(warehouseResponseSchema)) } },
+      description: 'Daftar gudang',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat gudang baru (maksimal 5)',
+  request: {
+    body: {
+      content: { 'application/json': { schema: createWarehouseSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(warehouseResponseSchema) } },
+      description: 'Gudang berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+    403: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Kuota gudang terpenuhi',
+    },
+  },
+});
+
+const updateRouteDef = createRoute({
+  method: 'put',
+  path: '/{id}',
+  description: 'Mengubah data gudang yang ada',
+  request: {
+    params: z.object({
+      id: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' })
+    }),
+    body: {
+      content: { 'application/json': { schema: updateWarehouseSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(warehouseResponseSchema) } },
+      description: 'Gudang berhasil diubah',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Gudang tidak ditemukan',
+    }
+  },
 });
 
 type Variables = { businessId: string; userId: string; roleId: string };
-export const warehousesRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const warehousesRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 // Semua endpoint butuh autentikasi dan izin 'settings.manage'
 warehousesRoute.use('*', authMiddleware, requirePermission('settings.manage'));
 
-warehousesRoute.get('/', async (c) => {
+warehousesRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -33,19 +113,18 @@ warehousesRoute.get('/', async (c) => {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return c.json({ success: true, data: keysToCamel(data || []) });
+    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil daftar gudang" } }, 500);
   }
 });
 
-warehousesRoute.post('/', async (c) => {
+warehousesRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = createWarehouseSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     // Validate quota: max 5 warehouses
     const { count: warehouseCount, error: countError } = await supabase
@@ -76,14 +155,13 @@ warehousesRoute.post('/', async (c) => {
   }
 });
 
-warehousesRoute.put('/:id', async (c) => {
+warehousesRoute.openapi(updateRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
-    const body = await c.req.json();
-    const dataObj = updateWarehouseSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     const updateData: any = { updated_at: new Date().toISOString() };
     if (dataObj.name !== undefined) updateData.name = dataObj.name;
@@ -102,7 +180,7 @@ warehousesRoute.put('/:id', async (c) => {
       return c.json({ success: false, error: { message: "Gudang tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) });
+    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
