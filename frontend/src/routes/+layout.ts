@@ -5,7 +5,7 @@ import { authState, loadAuthFromStorage } from '$lib/stores/auth.svelte';
 export const ssr = false;
 export const prerender = false;
 
-export async function load({ url }) {
+export async function load({ url }: { url: URL }) {
 	if (browser) {
 		loadAuthFromStorage();
 		const isAuthRoute = url.pathname.startsWith('/auth');

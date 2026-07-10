@@ -104,3 +104,31 @@ settingsRoute.get('/usage', authMiddleware, async (c) => {
     return c.json({ success: false, error: { message: "Gagal mengambil data pemakaian" } }, 500);
   }
 });
+
+settingsRoute.patch('/app-mode', authMiddleware, async (c) => {
+  const supabase = getSupabase(c.env);
+  const businessId = c.get('businessId');
+  
+  try {
+    const body = await c.req.json();
+    const mode = body.mode;
+    
+    if (mode !== 'simple' && mode !== 'full') {
+      return c.json({ success: false, error: { message: "Mode tidak valid" } }, 400);
+    }
+    
+    // Get current settings
+    const { data: biz, error: bizErr } = await supabase.from('businesses').select('settings').eq('id', businessId).single();
+    if (bizErr || !biz) throw new Error("Bisnis tidak ditemukan");
+    
+    const currentSettings = biz.settings || {};
+    const newSettings = { ...currentSettings, appMode: mode };
+    
+    const { error: updateErr } = await supabase.from('businesses').update({ settings: newSettings }).eq('id', businessId);
+    if (updateErr) throw updateErr;
+    
+    return c.json({ success: true, message: "Mode aplikasi diperbarui" });
+  } catch (e: any) {
+    return c.json({ success: false, error: { message: e.message || "Gagal memperbarui mode aplikasi" } }, 500);
+  }
+});

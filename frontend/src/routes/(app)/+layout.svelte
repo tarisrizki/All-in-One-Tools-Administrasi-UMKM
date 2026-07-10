@@ -21,6 +21,8 @@
 	onMount(() => {
 		// Sync manager berjalan di background, tidak memblokir render
 		initSyncManager();
+		
+		import('$lib/stores/appMode.svelte').then(m => m.loadAppModeFromStorage());
 
 		function onKeydown(e: KeyboardEvent) {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {

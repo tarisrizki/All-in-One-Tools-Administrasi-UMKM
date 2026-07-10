@@ -49,10 +49,10 @@ authRoute.post('/register', async (c) => {
     const { data: existingUser } = await supabase.from('users').select('id').eq('phone', phone).single();
     if (existingUser) return c.json({ success: false, error: { code: "REGISTER_FAILED", message: "Nomor HP sudah terdaftar" } }, 400);
 
-    const { data: ownerRole } = await supabase.from('roles').select('id').eq('name', 'owner').single();
+    const { data: ownerRole } = await supabase.from('roles').select('id, permissions').eq('name', 'owner').single();
     if (!ownerRole) throw new Error("Role owner tidak ditemukan di database");
 
-    const { data: business, error: bizError } = await supabase.from('businesses').insert({ name: businessName }).select().single();
+    const { data: business, error: bizError } = await supabase.from('businesses').insert({ name: businessName, settings: { appMode: 'simple' } }).select().single();
     if (bizError || !business) throw bizError || new Error("Gagal membuat bisnis");
 
     const salt = await bcrypt.genSalt(10);
@@ -87,7 +87,16 @@ authRoute.post('/register', async (c) => {
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 1 week
     }, c.env.JWT_SECRET, 'HS256');
 
-    return c.json({ success: true, data: { token, userId: user.id, businessId: business.id } }, 201);
+    return c.json({ 
+      success: true, 
+      data: { 
+        token, 
+        userId: user.id, 
+        businessId: business.id,
+        appMode: 'simple',
+        permissions: ownerRole.permissions
+      } 
+    }, 201);
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal mendaftar");
     return c.json({ success: false, error: { code: "REGISTER_FAILED", message } }, 400);
@@ -100,7 +109,7 @@ authRoute.post('/login', async (c) => {
     const body = await c.req.json();
     const { phone, password } = loginSchema.parse(body);
 
-    const { data: user } = await supabase.from('users').select('*').eq('phone', phone).single();
+    const { data: user } = await supabase.from('users').select('*, businesses(settings), roles(permissions)').eq('phone', phone).single();
     if (!user) {
       return c.json({ success: false, error: { code: "UNAUTHORIZED", message: "Nomor HP atau kata sandi salah" } }, 401);
     }
@@ -117,7 +126,10 @@ authRoute.post('/login', async (c) => {
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 1 week
     }, c.env.JWT_SECRET, 'HS256');
 
-    return c.json({ success: true, data: { token, userId: user.id, businessId: user.business_id } });
+    const appMode = (user as any).businesses?.settings?.appMode || 'full';
+    const permissions = (user as any).roles?.permissions || [];
+
+    return c.json({ success: true, data: { token, userId: user.id, businessId: user.business_id, appMode, permissions } });
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal masuk");
     return c.json({ success: false, error: { code: "LOGIN_FAILED", message } }, 400);
@@ -131,7 +143,7 @@ authRoute.get('/me', authMiddleware, async (c) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, phone, businesses(name), roles(name, permissions)')
+      .select('id, name, phone, businesses(name, settings), roles(name, permissions)')
       .eq('id', userId)
       .single();
 
@@ -142,6 +154,7 @@ authRoute.get('/me', authMiddleware, async (c) => {
       name: user.name,
       phone: user.phone,
       business_name: (user as any).businesses?.name,
+      business_settings: (user as any).businesses?.settings,
       role_name: (user as any).roles?.name,
       permissions: (user as any).roles?.permissions
     };

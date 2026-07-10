@@ -7,6 +7,7 @@
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import StoreProfileCard from '$lib/components/settings/StoreProfileCard.svelte';
+	import AppModeCard from '$lib/components/settings/AppModeCard.svelte';
 	import PrinterCard from '$lib/components/settings/PrinterCard.svelte';
 	import DocumentCard from '$lib/components/settings/DocumentCard.svelte';
 	import BackupCard from '$lib/components/settings/BackupCard.svelte';
@@ -29,6 +30,7 @@
 
 	<main class="p-4 sm:p-6 space-y-6 container-base mt-4 flex-1">
 		<StoreProfileCard />
+		<AppModeCard />
 		<PrinterCard />
 
 		<RoleSettingsCard />

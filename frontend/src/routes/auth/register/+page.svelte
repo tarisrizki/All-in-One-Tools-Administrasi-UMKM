@@ -44,8 +44,10 @@
 						if (result.success) {
 							setAuth(result.data.token, {
 								userId: result.data.userId,
-								businessId: result.data.businessId
+								businessId: result.data.businessId,
+								permissions: result.data.permissions
 							});
+							import('$lib/stores/appMode.svelte').then(m => m.syncAppModeFromServer(result.data.appMode));
 							goto('/dashboard');
 						} else {
 							errorMsg = result.error?.message || 'Gagal mendaftar';
