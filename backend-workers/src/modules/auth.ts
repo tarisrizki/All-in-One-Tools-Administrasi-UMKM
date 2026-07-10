@@ -7,9 +7,10 @@ import { sign } from 'hono/jwt';
 import { authMiddleware } from '../middleware/auth';
 
 const registerSchema = z.object({
-  phone: z.string().min(10).max(30),
+  phone: z.string().regex(/^(08|628|\+628)\d{6,14}$/, "Nomor HP harus berupa nomor Indonesia yang valid"),
   password: z.string().min(6).max(255),
   businessName: z.string().min(2).max(255),
+  cfTurnstileResponse: z.string().min(1, "Verifikasi keamanan (CAPTCHA) wajib diisi"),
 });
 
 const loginSchema = z.object({
@@ -24,7 +25,26 @@ authRoute.post('/register', async (c) => {
   const supabase = getSupabase(c.env);
   try {
     const body = await c.req.json();
-    const { phone, password, businessName } = registerSchema.parse(body);
+    const { phone, password, businessName, cfTurnstileResponse } = registerSchema.parse(body);
+
+    const turnstileSecret = c.env.TURNSTILE_SECRET_KEY;
+    if (!turnstileSecret) {
+      return c.json({ success: false, error: { code: "SERVER_ERROR", message: "Konfigurasi Turnstile belum diatur di server" } }, 500);
+    }
+
+    const formData = new FormData();
+    formData.append('secret', turnstileSecret);
+    formData.append('response', cfTurnstileResponse);
+
+    const turnstileRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const turnstileOutcome: any = await turnstileRes.json();
+    if (!turnstileOutcome.success) {
+      return c.json({ success: false, error: { code: "BOT_DETECTED", message: "Verifikasi keamanan gagal, silakan coba lagi" } }, 400);
+    }
 
     const { data: existingUser } = await supabase.from('users').select('id').eq('phone', phone).single();
     if (existingUser) return c.json({ success: false, error: { code: "REGISTER_FAILED", message: "Nomor HP sudah terdaftar" } }, 400);
