@@ -8,6 +8,7 @@ import { suppliersRoute } from './modules/suppliers';
 import { employeesRoute } from './modules/employees';
 import { customersRoute } from './modules/customers';
 import { productsRoute } from './modules/products';
+import { salesRoute } from './modules/sales';
 
 const app = new Hono();
 
@@ -32,5 +33,6 @@ app.route('/suppliers', suppliersRoute);
 app.route('/employees', employeesRoute);
 app.route('/customers', customersRoute);
 app.route('/products', productsRoute);
+app.route('/sales', salesRoute);
 
 export default app;
