@@ -80,7 +80,26 @@ export default {
         console.log(`Mulai backup untuk bisnis: ${businessId}`);
 
         // Fetch vital data
-        const [salesRes, purchasesRes, cashbookRes, debtsRes] = await Promise.all([
+        const [
+          rolesRes,
+          employeesRes,
+          categoriesRes,
+          productsRes,
+          customersRes,
+          suppliersRes,
+          warehousesRes,
+          salesRes,
+          purchasesRes,
+          cashbookRes,
+          debtsRes
+        ] = await Promise.all([
+          supabase.from('roles').select('*').eq('business_id', businessId),
+          supabase.from('employees').select('*').eq('business_id', businessId),
+          supabase.from('categories').select('*').eq('business_id', businessId),
+          supabase.from('products').select('*, product_stock(*)').eq('business_id', businessId),
+          supabase.from('customers').select('*').eq('business_id', businessId),
+          supabase.from('suppliers').select('*').eq('business_id', businessId),
+          supabase.from('warehouses').select('*').eq('business_id', businessId),
           supabase.from('sales').select('*, sale_items(*)').eq('business_id', businessId),
           supabase.from('purchase_orders').select('*, purchase_order_items(*)').eq('business_id', businessId),
           supabase.from('cashbook_entries').select('*').eq('business_id', businessId),
@@ -89,6 +108,13 @@ export default {
 
         const backupData = {
           date: new Date().toISOString(),
+          roles: rolesRes.data || [],
+          employees: employeesRes.data || [],
+          categories: categoriesRes.data || [],
+          products: productsRes.data || [],
+          customers: customersRes.data || [],
+          suppliers: suppliersRes.data || [],
+          warehouses: warehousesRes.data || [],
           sales: salesRes.data || [],
           purchases: purchasesRes.data || [],
           cashbook: cashbookRes.data || [],
