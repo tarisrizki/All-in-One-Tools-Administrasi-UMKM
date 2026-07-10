@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
 	import { setAuth } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';

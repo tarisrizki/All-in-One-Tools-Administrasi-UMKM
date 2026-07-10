@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
-	import { env } from '$env/dynamic/public';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { onMount } from 'svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';

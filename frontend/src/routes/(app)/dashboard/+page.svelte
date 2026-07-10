@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { authState, logout } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { createQuery } from '@tanstack/svelte-query';

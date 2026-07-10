@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { onMount } from 'svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { syncState, triggerSync } from '$lib/stores/sync.svelte';

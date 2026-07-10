@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { onMount } from 'svelte';
-	import { env } from '$env/dynamic/public';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Card from '$lib/components/ui/card';
@@ -13,7 +12,6 @@
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 
 	let activeTab = $state<'payable' | 'receivable'>('receivable');
 	let debts = $state<any[]>([]);

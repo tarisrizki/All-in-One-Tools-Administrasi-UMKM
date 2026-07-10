@@ -10,7 +10,6 @@
 		formData.append('file', file);
 		formData.append('type', type);
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const res = await apiClient(`/settings/upload`, {
 				method: 'POST',
 				headers: { Authorization: `Bearer ${authState.token}` },

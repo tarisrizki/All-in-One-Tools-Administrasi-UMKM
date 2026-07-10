@@ -56,7 +56,6 @@ async function pushPendingTransactions() {
 	if (pending.length === 0) return;
 
 	try {
-		const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 		const res = await apiClient(`/sync/push`, {
 			method: 'POST',
 			headers: {
@@ -95,7 +94,6 @@ async function pullLatestData() {
 	}
 
 	try {
-		const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 		const res = await apiClient(`/sync/pull?since=${since}`, {
 			headers: {
 				'Authorization': `Bearer ${authState.token}`

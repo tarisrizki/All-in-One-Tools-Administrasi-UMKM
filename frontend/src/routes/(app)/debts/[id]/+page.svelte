@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { onMount } from 'svelte';
-	import { env } from '$env/dynamic/public';
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
@@ -16,7 +15,6 @@
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 
 	let debtId = $page.params.id;
 	let debt = $state<any>(null);

@@ -14,7 +14,6 @@
 	async function loadBackups() {
 		loadingBackups = true;
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const body = await apiClient(`/backup/list`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
@@ -31,7 +30,6 @@
 	async function triggerBackup() {
 		triggeringBackup = true;
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const res = await apiClient(`/backup/trigger`, {
 				method: 'POST',
 				headers: { Authorization: `Bearer ${authState.token}` }
@@ -54,7 +52,6 @@
 
 		const toastId = toast.loading('Memulihkan data...');
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const res = await apiClient(`/backup/restore`, {
 				method: 'POST',
 				headers: {

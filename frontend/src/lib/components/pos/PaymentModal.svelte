@@ -7,7 +7,6 @@
 	import * as Select from '$lib/components/ui/select';
 	import { formatRupiah } from '$lib/utils/format';
 	import { Trash2 } from '@lucide/svelte';
-	import { env } from '$env/dynamic/public';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { v4 as uuidv4 } from 'uuid';
 

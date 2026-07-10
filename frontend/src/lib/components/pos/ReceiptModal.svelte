@@ -27,7 +27,6 @@
 		isDownloading = type;
 		
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const res = await apiClient(`/sales/${transactionId}/document?type=${type}`, {
 				headers: {
 					Authorization: `Bearer ${authState.token}`
@@ -95,7 +94,6 @@
 		if (!waNumber) return toast.error("Masukkan nomor WA");
 		isSendingWa = true;
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const res = await apiClient(`/sales/${transactionId}/send-wa`, {
 				method: 'POST',
 				headers: {
@@ -118,7 +116,6 @@
 		if (!emailAddress) return toast.error("Masukkan alamat email");
 		isSendingEmail = true;
 		try {
-			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 			const res = await apiClient(`/sales/${transactionId}/send-email`, {
 				method: 'POST',
 				headers: {

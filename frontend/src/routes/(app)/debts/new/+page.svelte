@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
-	import { env } from '$env/dynamic/public';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -11,7 +10,6 @@
 	import { toast } from 'svelte-sonner';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 
 	let debt = $state({
 		type: 'receivable', // default

@@ -56,6 +56,25 @@ npm run dev
 ```
 Frontend akan berjalan di `http://localhost:5173`
 
+## Deploy ke Production
+
+Aplikasi ini menggunakan infrastruktur serverless.
+
+**Backend (Cloudflare Workers)**:
+```bash
+cd backend-workers
+npx wrangler deploy
+```
+
+**Frontend (Cloudflare Pages)**:
+Frontend ini telah dikonfigurasi menggunakan `@sveltejs/adapter-cloudflare`. Untuk men-deploy:
+1. Hubungkan repository GitHub ini ke **Cloudflare Pages** melalui dashboard Cloudflare.
+2. Set Build Command: `npm run build`
+3. Set Build Output Directory: `.svelte-kit/cloudflare`
+4. Set Environment Variables di dashboard:
+   - `PUBLIC_API_URL` (contoh: `https://backend-workers.<username>.workers.dev`)
+5. Deploy.
+
 ## Dokumentasi Proyek
 
 | Dokumen | Deskripsi |
