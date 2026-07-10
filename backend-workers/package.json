@@ -10,6 +10,7 @@
     "as-table": "^1.0.55",
     "bcryptjs": "^2.4.3",
     "blake3-wasm": "^2.1.5",
+    "bwip-js": "^4.11.2",
     "color": "^4.2.3",
     "color-convert": "^2.0.1",
     "color-name": "^1.1.4",
