@@ -55,3 +55,9 @@ backend/test-db.js
 
 # Prompts
 prompt.md
+
+# Cleanup Residue
+*.patch
+last_user_message.json
+extract.js
+migrate-landing.js
