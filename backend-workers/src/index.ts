@@ -68,7 +68,7 @@ export default {
 
     try {
       // 1. Fetch all businesses
-      const { data: businesses, error: bizErr } = await supabase.from('businesses').select('id');
+      const { data: businesses, error: bizErr } = await supabase.from('businesses').select('id, is_demo');
       if (bizErr || !businesses) throw new Error("Gagal mengambil daftar bisnis");
 
       const today = new Date();
@@ -77,6 +77,59 @@ export default {
       // 2. Process backup for each business
       for (const biz of businesses) {
         const businessId = biz.id;
+        console.log(`Mulai proses untuk bisnis: ${businessId}`);
+
+        // --- PHASE G: ISOLASI AKUN DEMO ---
+        if (biz.is_demo) {
+          console.log(`Menjalankan reset data harian untuk akun demo: ${businessId}`);
+          try {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const isoYesterday = yesterday.toISOString();
+
+            // 1. Hapus transaksi 24 jam terakhir
+            await supabase.from('debts').delete().eq('business_id', businessId).gte('created_at', isoYesterday);
+            await supabase.from('cashbook_entries').delete().eq('business_id', businessId).gte('created_at', isoYesterday);
+            
+            // Hapus penjualan (sale_items dihapus terlebih dahulu jika ada)
+            const { data: recentSales } = await supabase.from('sales').select('id').eq('business_id', businessId).gte('created_at', isoYesterday);
+            if (recentSales && recentSales.length > 0) {
+              const saleIds = recentSales.map((s: any) => s.id);
+              // Untuk menghindari URI too long di query jika array sangat besar,
+              // pada skala demo ini array saleIds aman dikirim via filter "in".
+              await supabase.from('sale_items').delete().in('sale_id', saleIds);
+              await supabase.from('sales').delete().in('id', saleIds);
+            }
+
+            // 2. Reset ulang produk demo ke set data awal
+            await supabase.from('product_stock').delete().eq('warehouse_id', (await supabase.from('warehouses').select('id').eq('business_id', businessId).limit(1).single()).data?.id);
+            await supabase.from('products').delete().eq('business_id', businessId);
+            
+            const { data: defaultCat } = await supabase.from('categories').select('id').eq('business_id', businessId).limit(1).single();
+            const { data: defaultWH } = await supabase.from('warehouses').select('id').eq('business_id', businessId).limit(1).single();
+            
+            if (defaultCat && defaultWH) {
+              const { data: insertedProducts } = await supabase.from('products').insert([
+                { business_id: businessId, category_id: defaultCat.id, name: 'Kopi Susu', cost_price: 10000, sell_price: 15000, min_stock: 5 },
+                { business_id: businessId, category_id: defaultCat.id, name: 'Teh Manis', cost_price: 2000, sell_price: 5000, min_stock: 10 }
+              ]).select();
+              
+              if (insertedProducts && insertedProducts.length > 0) {
+                await supabase.from('product_stock').insert(
+                  insertedProducts.map((p: any) => ({
+                    product_id: p.id,
+                    warehouse_id: defaultWH.id,
+                    quantity: 50
+                  }))
+                );
+              }
+            }
+          } catch (demoErr) {
+            console.error(`Gagal mereset data akun demo ${businessId}:`, demoErr);
+          }
+        }
+        // --- END PHASE G ---
+
         console.log(`Mulai backup untuk bisnis: ${businessId}`);
 
         // Fetch vital data

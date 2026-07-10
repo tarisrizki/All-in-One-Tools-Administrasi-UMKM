@@ -37,6 +37,7 @@
     "ohash": "^2.0.11",
     "path-to-regexp": "^6.3.0",
     "pathe": "^2.0.3",
+    "pdf-lib": "^1.17.1",
     "printable-characters": "^1.0.42",
     "rollup-plugin-inject": "^3.0.2",
     "rollup-plugin-node-polyfills": "^0.2.1",
@@ -58,17 +59,19 @@
     "zod": "^3.25.76"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.4",
     "@cloudflare/workers-types": "^5.20260710.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/bwip-js": "^3.2.3",
     "typescript": "^7.0.2",
+    "vitest": "^4.1.10",
     "wrangler": "^4.110.0"
   }
 }
