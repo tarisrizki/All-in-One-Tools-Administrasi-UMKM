@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const purchaseItemSchema = z.object({
   product_id: z.string().uuid(),
@@ -22,12 +22,120 @@ const purchaseStatusSchema = z.object({
   status: z.enum(["draft", "ordered", "received"]),
 });
 
+const purchaseResponseSchema = z.object({
+  id: z.string().uuid(),
+  businessId: z.string().uuid(),
+  warehouseId: z.string().uuid(),
+  supplierId: z.string().uuid(),
+  poNumber: z.string(),
+  status: z.string(),
+  totalAmount: z.string(),
+  expectedDate: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  createdBy: z.string().uuid(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  supplierName: z.string().nullable().optional(),
+  warehouseName: z.string().nullable().optional(),
+}).passthrough();
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar purchase order',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(purchaseResponseSchema)) } },
+      description: 'Daftar PO',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const getByIdRoute = createRoute({
+  method: 'get',
+  path: '/{id}',
+  description: 'Mendapatkan detail purchase order',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(purchaseResponseSchema) } },
+      description: 'Detail PO',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'PO tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat purchase order baru',
+  request: {
+    body: {
+      content: { 'application/json': { schema: purchaseSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(purchaseResponseSchema) } },
+      description: 'PO berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+  },
+});
+
+const updateStatusRouteDef = createRoute({
+  method: 'patch',
+  path: '/{id}/status',
+  description: 'Mengubah status PO',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    }),
+    body: {
+      content: { 'application/json': { schema: purchaseStatusSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(purchaseResponseSchema) } },
+      description: 'Status PO berhasil diubah',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input / tidak bisa diubah',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'PO tidak ditemukan',
+    }
+  },
+});
+
 type Variables = { businessId: string; userId: string; roleId: string };
-export const purchasesRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const purchasesRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 purchasesRoute.use('*', authMiddleware);
 
-purchasesRoute.get('/', requirePermission('purchases.read'), async (c) => {
+purchasesRoute.get('/', requirePermission('purchases.read'));
+purchasesRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -46,16 +154,17 @@ purchasesRoute.get('/', requirePermission('purchases.read'), async (c) => {
       warehouse_name: p.warehouses?.name || null
     }));
 
-    return c.json({ success: true, data: keysToCamel(formattedData) });
+    return c.json({ success: true, data: keysToCamel(formattedData) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil PO" } }, 500);
   }
 });
 
-purchasesRoute.get('/:id', requirePermission('purchases.manage'), async (c) => {
+purchasesRoute.get('/:id', requirePermission('purchases.manage'));
+purchasesRoute.openapi(getByIdRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     const { data: po, error } = await supabase
@@ -83,20 +192,21 @@ purchasesRoute.get('/:id', requirePermission('purchases.manage'), async (c) => {
       }))
     };
 
-    return c.json({ success: true, data: keysToCamel(formattedPo) });
+    return c.json({ success: true, data: keysToCamel(formattedPo) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil detail PO" } }, 500);
   }
 });
 
-purchasesRoute.post('/', requirePermission('purchases.manage'), async (c) => {
+purchasesRoute.post('/', requirePermission('purchases.manage'));
+purchasesRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
 
   try {
-    const body = await c.req.json();
-    const { warehouse_id, supplier_id, expected_date, notes, items } = purchaseSchema.parse(body);
+    const body = c.req.valid('json');
+    const { warehouse_id, supplier_id, expected_date, notes, items } = body;
 
     // Validate warehouse
     const { data: wh, error: whErr } = await supabase.from('warehouses').select('id').eq('id', warehouse_id).eq('business_id', businessId).single();
@@ -157,18 +267,18 @@ purchasesRoute.post('/', requirePermission('purchases.manage'), async (c) => {
 
     return c.json({ success: true, data: keysToCamel(po) }, 201);
   } catch (err: any) {
-    return c.json({ success: false, error: { message: "Gagal menyimpan PO" } }, 400);
+    return c.json({ success: false, error: { message: err.message || "Gagal menyimpan PO" } }, 400);
   }
 });
 
-purchasesRoute.patch('/:id/status', requirePermission('purchases.manage'), async (c) => {
+purchasesRoute.patch('/:id/status', requirePermission('purchases.manage'));
+purchasesRoute.openapi(updateStatusRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
-    const body = await c.req.json();
-    const { status } = purchaseStatusSchema.parse(body);
+    const { status } = c.req.valid('json');
 
     const { data: po } = await supabase.from('purchase_orders').select('*').eq('id', id).eq('business_id', businessId).single();
     if (!po) return c.json({ success: false, error: { message: "PO tidak ditemukan" } }, 404);
@@ -211,7 +321,7 @@ purchasesRoute.patch('/:id/status', requirePermission('purchases.manage'), async
       }
     }
 
-    return c.json({ success: true, data: keysToCamel(updatedPo) });
+    return c.json({ success: true, data: keysToCamel(updatedPo) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengupdate status PO" } }, 400);
   }
