@@ -1,0 +1,10 @@
+name = "umkm-backend-workers"
+main = "src/index.ts"
+compatibility_date = "2024-05-29"
+
+[vars]
+# JANGAN pernah meletakkan SUPABASE_SERVICE_ROLE_KEY atau JWT_SECRET di file ini
+# Simpan secret dengan perintah:
+# npx wrangler secret put SUPABASE_URL
+# npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+# npx wrangler secret put JWT_SECRET
