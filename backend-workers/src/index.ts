@@ -5,6 +5,7 @@ import { healthRoute } from './modules/health';
 import { categoriesRoute } from './modules/categories';
 import { warehousesRoute } from './modules/warehouses';
 import { suppliersRoute } from './modules/suppliers';
+import { employeesRoute } from './modules/employees';
 
 const app = new Hono();
 
@@ -26,5 +27,6 @@ app.route('/health', healthRoute);
 app.route('/categories', categoriesRoute);
 app.route('/warehouses', warehousesRoute);
 app.route('/suppliers', suppliersRoute);
+app.route('/employees', employeesRoute);
 
 export default app;
