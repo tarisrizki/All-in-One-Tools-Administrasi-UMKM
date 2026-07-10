@@ -1,14 +1,112 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
+
+const uploadRoute = createRoute({
+  method: 'post',
+  path: '/upload',
+  description: 'Mengunggah file (stamp, signature, logo, qris)',
+  // Using openapi to document formData without strictly validating via zod in middleware
+  // because Hono zod-openapi form-data file validation can be tricky.
+  request: {
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: z.object({
+            file: z.any().openapi({ type: 'string', format: 'binary' }),
+            type: z.enum(['stamp', 'signature', 'logo', 'qris']).optional(),
+          })
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.object({ url: z.string() })) } },
+      description: 'Upload berhasil',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Gagal upload / validasi',
+    },
+  },
+});
+
+const usageRoute = createRoute({
+  method: 'get',
+  path: '/usage',
+  description: 'Mendapatkan data penggunaan paket (kuota)',
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            products: z.object({ used: z.number(), max: z.number() }),
+            customers: z.object({ used: z.number(), max: z.number() }),
+            employees: z.object({ used: z.number(), max: z.number() }),
+            warehouses: z.object({ used: z.number(), max: z.number() }),
+          })) 
+        } 
+      },
+      description: 'Data usage',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const qrisRoute = createRoute({
+  method: 'get',
+  path: '/qris',
+  description: 'Mendapatkan URL QRIS toko',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.object({ qrisUrl: z.string().nullable() })) } },
+      description: 'Data QRIS',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const appModeRoute = createRoute({
+  method: 'patch',
+  path: '/app-mode',
+  description: 'Mengubah mode aplikasi (simple / full)',
+  request: {
+    body: {
+      content: { 'application/json': { schema: z.object({ mode: z.enum(['simple', 'full']) }) } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: MessageSuccessSchema } },
+      description: 'Mode diubah',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid mode',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
 
 type Variables = { businessId: string; userId: string; roleId: string };
-export const settingsRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const settingsRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 settingsRoute.use('*', authMiddleware);
 
-settingsRoute.post('/upload', requirePermission('settings.manage'), async (c) => {
+settingsRoute.post('/upload', requirePermission('settings.manage'));
+settingsRoute.openapi(uploadRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -75,13 +173,14 @@ settingsRoute.post('/upload', requirePermission('settings.manage'), async (c) =>
       }
     }
 
-    return c.json({ success: true, data: { url } });
+    return c.json({ success: true, data: { url } }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: err.message || "Gagal mengunggah berkas" } }, 400);
   }
 });
 
-settingsRoute.get('/usage', authMiddleware, async (c) => {
+settingsRoute.get('/usage', authMiddleware);
+settingsRoute.openapi(usageRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   
@@ -99,13 +198,14 @@ settingsRoute.get('/usage', authMiddleware, async (c) => {
         employees: { used: employeeCount || 0, max: 20 },
         warehouses: { used: warehouseCount || 0, max: 5 }
       })
-    });
+    }, 200);
   } catch (e) {
     return c.json({ success: false, error: { message: "Gagal mengambil data pemakaian" } }, 500);
   }
 });
 
-settingsRoute.get('/qris', authMiddleware, async (c) => {
+settingsRoute.get('/qris', authMiddleware);
+settingsRoute.openapi(qrisRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   
@@ -114,23 +214,19 @@ settingsRoute.get('/qris', authMiddleware, async (c) => {
     if (error || !biz) throw new Error("Bisnis tidak ditemukan");
     
     const settings = biz.settings || {};
-    return c.json({ success: true, data: { qrisUrl: settings.qrisUrl || null } });
+    return c.json({ success: true, data: { qrisUrl: settings.qrisUrl || null } }, 200);
   } catch (e: any) {
     return c.json({ success: false, error: { message: e.message || "Gagal mengambil data QRIS" } }, 500);
   }
 });
 
-settingsRoute.patch('/app-mode', authMiddleware, async (c) => {
+settingsRoute.patch('/app-mode', authMiddleware);
+settingsRoute.openapi(appModeRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   
   try {
-    const body = await c.req.json();
-    const mode = body.mode;
-    
-    if (mode !== 'simple' && mode !== 'full') {
-      return c.json({ success: false, error: { message: "Mode tidak valid" } }, 400);
-    }
+    const { mode } = c.req.valid('json');
     
     // Get current settings
     const { data: biz, error: bizErr } = await supabase.from('businesses').select('settings').eq('id', businessId).single();
@@ -142,7 +238,7 @@ settingsRoute.patch('/app-mode', authMiddleware, async (c) => {
     const { error: updateErr } = await supabase.from('businesses').update({ settings: newSettings }).eq('id', businessId);
     if (updateErr) throw updateErr;
     
-    return c.json({ success: true, message: "Mode aplikasi diperbarui" });
+    return c.json({ success: true, message: "Mode aplikasi diperbarui" }, 200);
   } catch (e: any) {
     return c.json({ success: false, error: { message: e.message || "Gagal memperbarui mode aplikasi" } }, 500);
   }
