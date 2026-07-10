@@ -1,9 +1,10 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
+
 const saleItemSchema = z.object({
   productId: z.string().uuid(),
   qty: z.number().min(1),
@@ -26,22 +27,192 @@ const saleSchema = z.object({
   redeemPoints: z.number().min(0).optional().default(0),
 });
 
+const salesListResponseSchema = z.object({
+  id: z.string().uuid(),
+  invoiceNumber: z.string(),
+  grandTotal: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+  customerName: z.string().nullable().optional(),
+  paymentMethod: z.string(),
+});
+
+const saleCreateResponseSchema = z.object({
+  id: z.string().uuid(),
+  invoiceNumber: z.string().optional(),
+  // bisa tambahkan field lain jika perlu, return type dari insert
+}).passthrough(); // passthrough karena kita return object supabase
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar riwayat transaksi penjualan',
+  request: {
+    query: z.object({
+      search: z.string().optional(),
+      from: z.string().optional(),
+      to: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    })
+  },
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: z.object({
+            success: z.boolean(),
+            data: z.array(salesListResponseSchema),
+            pagination: z.object({
+              page: z.number(),
+              limit: z.number(),
+              total: z.number(),
+            })
+          }) 
+        } 
+      },
+      description: 'Daftar riwayat penjualan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat transaksi penjualan baru',
+  request: {
+    body: {
+      content: { 'application/json': { schema: saleSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: z.object({ success: z.boolean(), message: z.string(), data: z.object({ id: z.string() }) }) } },
+      description: 'Transaksi sudah ada (Idempotency)',
+    },
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(saleCreateResponseSchema) } },
+      description: 'Transaksi berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+  },
+});
+
+const documentRoute = createRoute({
+  method: 'get',
+  path: '/{id}/document',
+  description: 'Mendownload struk PDF',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/pdf': { schema: z.any() } },
+      description: 'PDF Document',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Transaksi tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const qrisTokenRoute = createRoute({
+  method: 'post',
+  path: '/qris-token',
+  description: 'Mendapatkan QRIS token mock',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.object({ token: z.string() })) } },
+      description: 'QRIS Token',
+    }
+  },
+});
+
+const sendWaRoute = createRoute({
+  method: 'post',
+  path: '/{id}/send-wa',
+  description: 'Mengirim struk via WhatsApp',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: MessageSuccessSchema } },
+      description: 'Pesan terkirim',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Transaksi tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const sendEmailRoute = createRoute({
+  method: 'post',
+  path: '/{id}/send-email',
+  description: 'Mengirim struk via Email',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: MessageSuccessSchema } },
+      description: 'Pesan terkirim',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Transaksi tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
 type Variables = { businessId: string; userId: string; roleId: string };
-export const salesRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const salesRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 salesRoute.use('*', authMiddleware);
 
-salesRoute.get('/', requirePermission('pos.read'), async (c) => {
+salesRoute.get('/', requirePermission('pos.read'));
+salesRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const search = c.req.query('search');
-  const from = c.req.query('from');
-  const to = c.req.query('to');
-  const page = parseInt(c.req.query('page') || '1', 10);
-  const limit = parseInt(c.req.query('limit') || '20', 10);
-
-  const pageNum = Math.max(page || 1, 1);
-  const limitNum = Math.min(Math.max(limit || 20, 1), 100);
+  const { search, from, to, page, limit } = c.req.valid('query');
+  
+  const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit || '20', 10) || 20, 1), 100);
   const offset = (pageNum - 1) * limitNum;
 
   try {
@@ -53,8 +224,6 @@ salesRoute.get('/', requirePermission('pos.read'), async (c) => {
       .range(offset, offset + limitNum - 1);
 
     if (search) {
-      // In Supabase, joining and filtering on joined table is complex via REST.
-      // We will filter only by invoice_number for simplicity, or omit joined search.
       query = query.ilike('invoice_number', `%${search}%`);
     }
     if (from) query = query.gte('created_at', from);
@@ -93,21 +262,21 @@ salesRoute.get('/', requirePermission('pos.read'), async (c) => {
       success: true,
       data: keysToCamel(formattedRows),
       pagination: { page: pageNum, limit: limitNum, total: count || 0 }
-    });
+    }, 200);
   } catch (err: any) {
     console.error("Sales GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil riwayat transaksi" } }, 500);
   }
 });
 
-salesRoute.post('/', requirePermission('pos.write'), async (c) => {
+salesRoute.post('/', requirePermission('pos.write'));
+salesRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = saleSchema.parse(body);
+    const dataObj = c.req.valid('json');
     const clientTxId = dataObj.clientTransactionId || crypto.randomUUID();
 
     // 1. Idempotency check
@@ -293,10 +462,11 @@ salesRoute.post('/', requirePermission('pos.write'), async (c) => {
   }
 });
 
-salesRoute.get('/:id/document', requirePermission('pos.read'), async (c) => {
+salesRoute.get('/:id/document', requirePermission('pos.read'));
+salesRoute.openapi(documentRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     // 1. Fetch sale data
@@ -391,13 +561,15 @@ salesRoute.get('/:id/document', requirePermission('pos.read'), async (c) => {
 
     const pdfBytes = await pdfDoc.save();
 
+    // We must cast Response back since Hono OpenAPI types might expect JSON if it's strict,
+    // but returning Response directly works in Hono. We can cast as any.
     return new Response(pdfBytes, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="Invoice-${sale.invoice_number.replace(/\//g, '-')}.pdf"`
       }
-    });
+    }) as any;
 
   } catch (err: any) {
     console.error("PDF Generate Error:", err);
@@ -405,14 +577,15 @@ salesRoute.get('/:id/document', requirePermission('pos.read'), async (c) => {
   }
 });
 
-salesRoute.post('/qris-token', async (c) => {
-  return c.json({ success: true, data: { token: 'mock-qris-token-workers' } });
+salesRoute.openapi(qrisTokenRoute, async (c) => {
+  return c.json({ success: true, data: { token: 'mock-qris-token-workers' } }, 200);
 });
 
-salesRoute.post('/:id/send-wa', requirePermission('pos.read'), async (c) => {
+salesRoute.post('/:id/send-wa', requirePermission('pos.read'));
+salesRoute.openapi(sendWaRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
   const waApiKey = c.env.WA_API_KEY;
 
   if (!waApiKey) {
@@ -456,17 +629,18 @@ salesRoute.post('/:id/send-wa', requirePermission('pos.read'), async (c) => {
       return c.json({ success: false, error: { message: "Gagal mengirim WhatsApp via API Fonnte" } }, 500);
     }
 
-    return c.json({ success: true, message: "Pesan WA berhasil dikirim" });
+    return c.json({ success: true, message: "Pesan WA berhasil dikirim" }, 200);
   } catch (err) {
     console.error("Send WA Error:", err);
     return c.json({ success: false, error: { message: "Terjadi kesalahan internal" } }, 500);
   }
 });
 
-salesRoute.post('/:id/send-email', requirePermission('pos.read'), async (c) => {
+salesRoute.post('/:id/send-email', requirePermission('pos.read'));
+salesRoute.openapi(sendEmailRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
   const emailApiKey = c.env.EMAIL_API_KEY;
 
   if (!emailApiKey) {
@@ -515,7 +689,7 @@ salesRoute.post('/:id/send-email', requirePermission('pos.read'), async (c) => {
       return c.json({ success: false, error: { message: "Gagal mengirim Email via API Resend" } }, 500);
     }
 
-    return c.json({ success: true, message: "Email berhasil dikirim" });
+    return c.json({ success: true, message: "Email berhasil dikirim" }, 200);
   } catch (err) {
     console.error("Send Email Error:", err);
     return c.json({ success: false, error: { message: "Terjadi kesalahan internal" } }, 500);
