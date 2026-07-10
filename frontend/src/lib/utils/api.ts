@@ -9,7 +9,7 @@ interface FetchOptions extends RequestInit {
 
 export function getApiUrl(endpoint: string): string {
 	const isAbsolute = endpoint.startsWith('http://') || endpoint.startsWith('https://');
-	return isAbsolute ? endpoint : `${API_URL}/v1${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+	return isAbsolute ? endpoint : `${API_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 }
 
 export async function apiClient<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
