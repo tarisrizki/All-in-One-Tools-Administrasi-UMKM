@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/public';
+import { PUBLIC_API_URL } from '$env/static/public';
 import { authState, logout } from '$lib/stores/auth.svelte';
 
-const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = PUBLIC_API_URL || 'http://localhost:3000';
 
 interface FetchOptions extends RequestInit {
 	skipAuth?: boolean;
