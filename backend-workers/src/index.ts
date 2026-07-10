@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import { healthRoute } from './modules/health';
 import { categoriesRoute } from './modules/categories';
 import { warehousesRoute } from './modules/warehouses';
+import { suppliersRoute } from './modules/suppliers';
 
 const app = new Hono();
 
@@ -24,5 +25,6 @@ app.onError((err, c) => {
 app.route('/health', healthRoute);
 app.route('/categories', categoriesRoute);
 app.route('/warehouses', warehousesRoute);
+app.route('/suppliers', suppliersRoute);
 
 export default app;
