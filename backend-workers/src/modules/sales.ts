@@ -143,7 +143,20 @@ salesRoute.post('/', requirePermission('pos.write'), async (c) => {
       discountTotal += item.discount * item.qty;
     }
 
-    // 4. Loyalty points
+    // 4. Validate products ownership
+    const productIds = dataObj.items.map(i => i.productId);
+    if (productIds.length > 0) {
+      const { data: validProducts, error: vpError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('business_id', businessId)
+        .in('id', productIds);
+      if (vpError || !validProducts || validProducts.length !== productIds.length) {
+        throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
+      }
+    }
+
+    // 5. Loyalty points
     let appliedRedeemPoints = 0;
     let earnedPoints = 0;
     let customerRecord: any = null;
@@ -153,6 +166,7 @@ salesRoute.post('/', requirePermission('pos.write'), async (c) => {
         .from('customers')
         .select('*')
         .eq('id', dataObj.customerId)
+        .eq('business_id', businessId)
         .single();
         
       if (!custData) throw new Error("Pelanggan tidak ditemukan");

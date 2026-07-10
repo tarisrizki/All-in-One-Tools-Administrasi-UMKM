@@ -101,6 +101,12 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
     }
     const warehouseId = whData.id;
 
+    // Validate category
+    if (dataObj.categoryId) {
+      const { data: cat, error: catErr } = await supabase.from('categories').select('id').eq('id', dataObj.categoryId).eq('business_id', businessId).single();
+      if (catErr || !cat) throw new Error("Kategori tidak valid atau bukan milik bisnis ini");
+    }
+
     // Insert Product
     const { data: newProduct, error: insertError } = await supabase
       .from('products')

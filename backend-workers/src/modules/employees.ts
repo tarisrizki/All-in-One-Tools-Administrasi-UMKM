@@ -63,6 +63,10 @@ employeesRoute.post('/', async (c) => {
     const body = await c.req.json();
     const dataObj = employeeCreateSchema.parse(body);
 
+    // Validate role
+    const { data: role, error: roleErr } = await supabase.from('roles').select('id').eq('id', dataObj.role_id).eq('business_id', businessId).single();
+    if (roleErr || !role) throw new Error("Role tidak valid atau bukan milik bisnis ini");
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(dataObj.password, salt);
 

@@ -110,6 +110,17 @@ syncRoute.post('/push', async (c) => {
     if (!wh) throw new Error("Gudang tidak ditemukan");
     const warehouseId = wh.id;
 
+    // Validate products ownership
+    const allProductIds = new Set<string>();
+    data.transactions.forEach(t => t.items.forEach(i => allProductIds.add(i.productId)));
+    const productIdsArray = Array.from(allProductIds);
+    if (productIdsArray.length > 0) {
+      const { data: validProducts, error: vpErr } = await supabase.from('products').select('id').eq('business_id', businessId).in('id', productIdsArray);
+      if (vpErr || !validProducts || validProducts.length !== productIdsArray.length) {
+        throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
+      }
+    }
+
     let processed = 0;
 
     for (const t of data.transactions) {

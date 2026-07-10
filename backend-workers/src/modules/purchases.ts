@@ -98,6 +98,23 @@ purchasesRoute.post('/', requirePermission('purchases.manage'), async (c) => {
     const body = await c.req.json();
     const { warehouse_id, supplier_id, expected_date, notes, items } = purchaseSchema.parse(body);
 
+    // Validate warehouse
+    const { data: wh, error: whErr } = await supabase.from('warehouses').select('id').eq('id', warehouse_id).eq('business_id', businessId).single();
+    if (whErr || !wh) throw new Error("Gudang tidak valid atau bukan milik bisnis ini");
+
+    // Validate supplier
+    const { data: sup, error: supErr } = await supabase.from('suppliers').select('id').eq('id', supplier_id).eq('business_id', businessId).single();
+    if (supErr || !sup) throw new Error("Supplier tidak valid atau bukan milik bisnis ini");
+
+    // Validate products
+    const productIds = items.map(i => i.product_id);
+    if (productIds.length > 0) {
+      const { data: validProducts, error: vpErr } = await supabase.from('products').select('id').eq('business_id', businessId).in('id', productIds);
+      if (vpErr || !validProducts || validProducts.length !== productIds.length) {
+        throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
+      }
+    }
+
     const { count } = await supabase
       .from('purchase_orders')
       .select('*', { count: 'exact', head: true })
