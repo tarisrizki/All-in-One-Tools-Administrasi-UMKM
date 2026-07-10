@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { onMount } from 'svelte';
@@ -26,10 +27,10 @@
 	onMount(async () => {
 		try {
 			const [predRes, sumRes] = await Promise.all([
-				fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/ai/predictions`, {
+				apiClient(`/ai/predictions`, {
 					headers: { Authorization: `Bearer ${authState.token}` }
 				}),
-				fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/ai/summary`, {
+				apiClient(`/ai/summary`, {
 					headers: { Authorization: `Bearer ${authState.token}` }
 				})
 			]);
@@ -55,7 +56,7 @@
 		isTyping = true;
 
 		try {
-			const res = await fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/ai/chat`, {
+			const data = await apiClient(`/ai/chat`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -63,8 +64,6 @@
 				},
 				body: JSON.stringify({ message: userMsg })
 			});
-
-			const data = await res.json();
 			if (data.success) {
 				chatMessages = [...chatMessages, { role: 'assistant', content: data.data.response }];
 			}

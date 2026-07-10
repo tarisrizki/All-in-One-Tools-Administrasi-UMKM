@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { onMount } from 'svelte';
@@ -46,28 +47,24 @@
 			}
 
 			if (activeTab === 'profit-loss') {
-				const res = await fetch(`${API_URL}/v1/reports/profit-loss?${query.toString()}`, {
+				const data = await apiClient(`/reports/profit-loss?${query.toString()}`, {
 					headers: { Authorization: `Bearer ${authState.token}` }
 				});
-				const data = await res.json();
 				if (data.success) report = data.data;
 			} else if (activeTab === 'cash-flow') {
-				const res = await fetch(`${API_URL}/v1/reports/cash-flow?${query.toString()}`, {
+				const data = await apiClient(`/reports/cash-flow?${query.toString()}`, {
 					headers: { Authorization: `Bearer ${authState.token}` }
 				});
-				const data = await res.json();
 				if (data.success) cashFlow = data.data;
 			} else if (activeTab === 'sales') {
-				const res = await fetch(`${API_URL}/v1/reports/sales?${query.toString()}`, {
+				const data = await apiClient(`/reports/sales?${query.toString()}`, {
 					headers: { Authorization: `Bearer ${authState.token}` }
 				});
-				const data = await res.json();
 				if (data.success) report = data.data;
 			} else if (activeTab === 'inventory') {
-				const res = await fetch(`${API_URL}/v1/reports/inventory?${query.toString()}`, {
+				const data = await apiClient(`/reports/inventory?${query.toString()}`, {
 					headers: { Authorization: `Bearer ${authState.token}` }
 				});
-				const data = await res.json();
 				if (data.success) report = data.data;
 			}
 		} catch (e) {
@@ -96,7 +93,7 @@
 
 			toast.loading(`Mengunduh laporan ${format.toUpperCase()}...`);
 
-			const res = await fetch(`${API_URL}/v1/reports/export?${query.toString()}`, {
+			const res = await apiClient(`/reports/export?${query.toString()}`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
 

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { onMount } from 'svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -30,10 +29,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch(`${API_URL}/v1/products`, {
-				headers: { Authorization: `Bearer ${authState.token}` }
-			});
-			const data = await res.json();
+			const data = await apiClient('/products');
 			if (data.success) products = data.data;
 		} catch (e) {
 			console.error(e);
@@ -141,7 +137,7 @@
 													variant="outline"
 													size="icon"
 													class="h-8 w-8 rounded-lg text-ink-soft hover:text-brand border-border bg-paper shadow-sm hover:shadow"
-													onclick={() => window.open(`${API_URL}/v1/products/${p.id}/barcode`, '_blank')}
+													onclick={() => window.open(getApiUrl(`/products/${p.id}/barcode`), '_blank')}
 													aria-label="Barcode"
 												>
 													<Barcode class="w-4 h-4" />
@@ -150,7 +146,7 @@
 													variant="outline"
 													size="icon"
 													class="h-8 w-8 rounded-lg text-ink-soft hover:text-brand border-border bg-paper shadow-sm hover:shadow"
-													onclick={() => window.open(`${API_URL}/v1/products/${p.id}/qrcode`, '_blank')}
+													onclick={() => window.open(getApiUrl(`/products/${p.id}/qrcode`), '_blank')}
 													aria-label="QR Code"
 												>
 													<QrCode class="w-4 h-4" />

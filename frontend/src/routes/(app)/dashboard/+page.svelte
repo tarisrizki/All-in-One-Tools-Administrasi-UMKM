@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { authState, logout } from '$lib/stores/auth.svelte';
@@ -19,10 +20,9 @@
 	const dashboardQuery = createQuery(() => ({
 		queryKey: ['dashboard'],
 		queryFn: async () => {
-			const res = await fetch(`${API_URL}/v1/reports/dashboard`, {
+			const data = await apiClient(`/reports/dashboard`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const data = await res.json();
 			if (data.success) return data.data;
 			throw new Error(data.message || 'Failed to fetch dashboard');
 		},

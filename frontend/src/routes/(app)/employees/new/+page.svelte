@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { authState } from '$lib/stores/auth.svelte';
@@ -35,10 +36,9 @@
 
 	async function fetchRoles() {
 		try {
-			const res = await fetch(`${API_URL}/v1/roles`, {
+			const data = await apiClient(`/roles`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const data = await res.json();
 			if (data.success) {
 				roles = data.data;
 				if (roles.length > 0) {
@@ -59,7 +59,7 @@
 		loading = true;
 
 		try {
-			const res = await fetch(`${API_URL}/v1/employees`, {
+			const data = await apiClient(`/employees`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authState.token}`,
@@ -67,7 +67,6 @@
 				},
 				body: JSON.stringify(form)
 			});
-			const data = await res.json();
 
 			if (data.success) {
 				toast.success('Karyawan berhasil ditambahkan');

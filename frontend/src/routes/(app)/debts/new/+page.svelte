@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
@@ -37,7 +38,7 @@
 
 		try {
 			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(`${API_URL}/v1/debts`, {
+			const json = await apiClient(`/debts`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -48,8 +49,6 @@
 					amount: Number(debt.amount)
 				})
 			});
-
-			const json = await res.json();
 			if (json.success) {
 				toast.success('Catatan berhasil disimpan');
 				goto('/debts');

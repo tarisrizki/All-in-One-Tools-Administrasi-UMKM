@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
@@ -14,10 +15,9 @@
 		loadingBackups = true;
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/backup/list`, {
+			const body = await apiClient(`/backup/list`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const body = await res.json();
 			if (body.success) {
 				backups = body.data;
 			}
@@ -32,7 +32,7 @@
 		triggeringBackup = true;
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/backup/trigger`, {
+			const res = await apiClient(`/backup/trigger`, {
 				method: 'POST',
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
@@ -55,7 +55,7 @@
 		const toastId = toast.loading('Memulihkan data...');
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/backup/restore`, {
+			const res = await apiClient(`/backup/restore`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+	import { apiClient } from '$lib/utils/api';
 	import { onMount } from 'svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -30,10 +29,7 @@
 		try {
 			const params = new URLSearchParams({ page: String(page), limit: '20' });
 			if (search.trim()) params.set('search', search.trim());
-			const res = await fetch(`${API_URL}/v1/sales?${params}`, {
-				headers: { Authorization: `Bearer ${authState.token}` }
-			});
-			const json = await res.json();
+			const json = await apiClient(`/sales?${params}`);
 			if (json.success) {
 				sales = json.data;
 				totalPages = Math.max(Math.ceil((json.pagination?.total || 0) / 20), 1);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { onMount } from 'svelte';
@@ -18,10 +19,9 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch(`${API_URL}/v1/cashbook`, {
+			const data = await apiClient(`/cashbook`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const data = await res.json();
 			if (data.success) entries = data.data;
 		} catch (e) {
 			console.error(e);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import { page } from '$app/stores';
@@ -36,10 +37,9 @@
 		loading = true;
 		try {
 			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(`${API_URL}/v1/debts/${debtId}`, {
+			const json = await apiClient(`/debts/${debtId}`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			const json = await res.json();
 			if (json.success) {
 				debt = json.data;
 			} else {
@@ -58,7 +58,7 @@
 		isSubmitting = true;
 		try {
 			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(`${API_URL}/v1/debts/${debtId}/payments`, {
+			const json = await apiClient(`/debts/${debtId}/payments`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -70,7 +70,6 @@
 					notes: paymentNotes
 				})
 			});
-			const json = await res.json();
 			if (json.success) {
 				showPaymentModal = false;
 				paymentAmount = '';
@@ -91,11 +90,10 @@
 		isReminding = true;
 		try {
 			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(`${API_URL}/v1/debts/${debtId}/remind`, {
+			const json = await apiClient(`/debts/${debtId}/remind`, {
 				method: 'POST',
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			const json = await res.json();
 			if (json.success) {
 				toast.success(json.message);
 			} else {

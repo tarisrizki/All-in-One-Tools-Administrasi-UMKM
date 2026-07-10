@@ -1,3 +1,4 @@
+import { apiClient, getApiUrl } from '$lib/utils/api';
 import { db } from '../db.js';
 import { authState } from './auth.svelte.js';
 import { toast } from 'svelte-sonner';
@@ -56,7 +57,7 @@ async function pushPendingTransactions() {
 
 	try {
 		const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-		const res = await fetch(`${API_URL}/v1/sync/push`, {
+		const res = await apiClient(`/sync/push`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -95,7 +96,7 @@ async function pullLatestData() {
 
 	try {
 		const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-		const res = await fetch(`${API_URL}/v1/sync/pull?since=${since}`, {
+		const res = await apiClient(`/sync/pull?since=${since}`, {
 			headers: {
 				'Authorization': `Bearer ${authState.token}`
 			}

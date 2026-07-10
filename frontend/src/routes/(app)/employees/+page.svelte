@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { authState } from '$lib/stores/auth.svelte';
@@ -30,10 +31,9 @@
 	async function fetchEmployees() {
 		loading = true;
 		try {
-			const res = await fetch(`${API_URL}/v1/employees`, {
+			const data = await apiClient(`/employees`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const data = await res.json();
 			if (data.success) {
 				employees = data.data;
 			} else {
@@ -50,7 +50,7 @@
 	async function toggleStatus(emp: any) {
 		try {
 			const newStatus = !emp.is_active;
-			const res = await fetch(`${API_URL}/v1/employees/${emp.id}/status`, {
+			const data = await apiClient(`/employees/${emp.id}/status`, {
 				method: 'PUT',
 				headers: {
 					Authorization: `Bearer ${authState.token}`,
@@ -58,7 +58,6 @@
 				},
 				body: JSON.stringify({ is_active: newStatus })
 			});
-			const data = await res.json();
 
 			if (data.success) {
 				emp.is_active = newStatus;

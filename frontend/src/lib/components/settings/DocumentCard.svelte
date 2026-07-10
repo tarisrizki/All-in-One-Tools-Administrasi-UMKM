@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import * as Card from '$lib/components/ui/card';
 	import { toast } from 'svelte-sonner';
 	import { FileImage, Store } from '@lucide/svelte';
@@ -10,7 +11,7 @@
 		formData.append('type', type);
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/settings/upload`, {
+			const res = await apiClient(`/settings/upload`, {
 				method: 'POST',
 				headers: { Authorization: `Bearer ${authState.token}` },
 				body: formData

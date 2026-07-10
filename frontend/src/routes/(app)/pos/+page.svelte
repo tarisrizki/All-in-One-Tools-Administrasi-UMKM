@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { onMount } from 'svelte';
@@ -196,14 +197,10 @@
 	async function syncTokopedia() {
 		syncingMarketplace = true;
 		try {
-			const res = await fetch(`${API_URL}/v1/sync/marketplace/pull/tokopedia`, {
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${authState.token}`
-				}
+			const data = await apiClient(`/sync/marketplace/pull/tokopedia`, {
+				method: 'POST'
 			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error?.message || 'Gagal sinkronisasi');
+			if (!data.success) throw new Error(data.error?.message || 'Gagal sinkronisasi');
 			
 			toast.success(data.message);
 			triggerSync(); // pull the new data to offline DB

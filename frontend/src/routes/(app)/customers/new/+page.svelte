@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+	import { apiClient } from '$lib/utils/api';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
@@ -29,15 +28,10 @@
 		loading = true;
 
 		try {
-			const res = await fetch(`${API_URL}/v1/customers`, {
+			const data = await apiClient('/customers', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${authState.token}`,
-					'Content-Type': 'application/json'
-				},
 				body: JSON.stringify(form)
 			});
-			const data = await res.json();
 
 			if (data.success) {
 				toast.success('Pelanggan berhasil disimpan');

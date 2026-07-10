@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { env } from '$env/dynamic/public';
+	import { apiClient } from '$lib/utils/api';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -27,14 +27,7 @@
 	async function fetchPurchases() {
 		loading = true;
 		try {
-			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(
-				`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/purchase-orders`,
-				{
-					headers: { Authorization: `Bearer ${token}` }
-				}
-			);
-			const json = await res.json();
+			const json = await apiClient('/purchase-orders');
 			if (json.success) {
 				purchases = json.data;
 			} else {
@@ -52,19 +45,10 @@
 
 		isSubmitting = true;
 		try {
-			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(
-				`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/purchase-orders/${selectedPo.id}/status`,
-				{
+			const json = await apiClient(`/purchase-orders/${selectedPo.id}/status`, {
 					method: 'PATCH',
-					headers: {
-						Authorization: `Bearer ${token}`,
-						'Content-Type': 'application/json'
-					},
 					body: JSON.stringify({ status: newStatus })
-				}
-			);
-			const json = await res.json();
+			});
 			if (json.success) {
 				toast.success('Status berhasil diupdate');
 				showStatusModal = false;

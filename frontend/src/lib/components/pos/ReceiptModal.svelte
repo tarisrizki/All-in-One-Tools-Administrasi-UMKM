@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
@@ -27,7 +28,7 @@
 		
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/sales/${transactionId}/document?type=${type}`, {
+			const res = await apiClient(`/sales/${transactionId}/document?type=${type}`, {
 				headers: {
 					Authorization: `Bearer ${authState.token}`
 				}
@@ -95,7 +96,7 @@
 		isSendingWa = true;
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/sales/${transactionId}/send-wa`, {
+			const res = await apiClient(`/sales/${transactionId}/send-wa`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -118,7 +119,7 @@
 		isSendingEmail = true;
 		try {
 			const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-			const res = await fetch(`${API_URL}/v1/sales/${transactionId}/send-email`, {
+			const res = await apiClient(`/sales/${transactionId}/send-email`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

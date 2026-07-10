@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { setAuth } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
@@ -10,6 +9,7 @@
 	import { z } from 'zod';
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 as zod } from 'sveltekit-superforms/adapters';
+	import { apiClient } from '$lib/utils/api';
 
 
 	const DEMO_PHONE = '08123456789';
@@ -35,12 +35,11 @@
 					loading = true;
 					errorMsg = '';
 					try {
-						const res = await fetch(`${API_URL}/v1/auth/login`, {
+						const result = await apiClient('/auth/login', {
 							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
+							skipAuth: true,
 							body: JSON.stringify(f.data)
 						});
-						const result = await res.json();
 						if (result.success) {
 							setAuth(result.data.token, {
 								userId: result.data.userId,

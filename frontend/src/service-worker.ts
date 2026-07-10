@@ -1,3 +1,4 @@
+import { apiClient, getApiUrl } from '$lib/utils/api';
 /// <reference types="@sveltejs/kit" />
 /// <reference lib="webworker" />
 
@@ -51,7 +52,7 @@ self.addEventListener('fetch', (event) => {
 		// for everything else, try the network first, but
 		// fall back to the cache if we're offline
 		try {
-			const response = await fetch(event.request);
+			const response = await apiClient(event.request);
 
 			// if we're offline, fetch can return a value that is not a Response
 			// instead of throwing - and we can't pass this non-Response to put

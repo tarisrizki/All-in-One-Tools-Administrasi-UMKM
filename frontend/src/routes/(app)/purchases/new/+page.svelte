@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { env } from '$env/dynamic/public';
+	import { apiClient } from '$lib/utils/api';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -33,16 +33,11 @@
 	async function fetchData() {
 		loading = true;
 		try {
-			const token = localStorage.getItem('umkm_token');
-			const headers = { Authorization: `Bearer ${token}` };
-
-			const [wRes, sRes, pRes] = await Promise.all([
-				fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/warehouses`, { headers }),
-				fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/suppliers`, { headers }),
-				fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/products`, { headers })
+			const [wJson, sJson, pJson] = await Promise.all([
+				apiClient('/warehouses'),
+				apiClient('/suppliers'),
+				apiClient('/products')
 			]);
-
-			const [wJson, sJson, pJson] = await Promise.all([wRes.json(), sRes.json(), pRes.json()]);
 
 			if (wJson.success) warehouses = wJson.data;
 			if (sJson.success) suppliers = sJson.data;
@@ -117,19 +112,10 @@
 
 		isSubmitting = true;
 		try {
-			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(
-				`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/purchase-orders`,
-				{
+			const json = await apiClient('/purchase-orders', {
 					method: 'POST',
-					headers: {
-						Authorization: `Bearer ${token}`,
-						'Content-Type': 'application/json'
-					},
 					body: JSON.stringify(po)
-				}
-			);
-			const json = await res.json();
+			});
 			if (json.success) {
 				toast.success('PO berhasil dibuat');
 				goto('/purchases');

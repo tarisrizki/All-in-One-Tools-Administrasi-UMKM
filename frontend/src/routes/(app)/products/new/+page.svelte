@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+	import { apiClient } from '$lib/utils/api';
 	import { onMount } from 'svelte';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
@@ -28,10 +27,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch(`${API_URL}/v1/categories`, {
-				headers: { Authorization: `Bearer ${authState.token}` }
-			});
-			const data = await res.json();
+			const data = await apiClient('/categories');
 			if (data.success) {
 				categories = data.data;
 				if (categories.length > 0) {
@@ -48,12 +44,8 @@
 		loading = true;
 
 		try {
-			const res = await fetch(`${API_URL}/v1/products`, {
+			const result = await apiClient('/products', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${authState.token}`,
-					'Content-Type': 'application/json'
-				},
 				body: JSON.stringify({
 					name,
 					categoryId: categoryId || null,
@@ -65,8 +57,6 @@
 					minStock: Number(minStock) || 5
 				})
 			});
-
-			const result = await res.json();
 
 			if (result.success) {
 				toast.success('Produk berhasil disimpan');

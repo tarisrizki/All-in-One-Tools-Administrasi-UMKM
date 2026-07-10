@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { env } from '$env/dynamic/public';
-	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
+	import { apiClient } from '$lib/utils/api';
 	import { authState } from '$lib/stores/auth.svelte';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -25,10 +24,7 @@
 			const queryParams = new URLSearchParams();
 			if (searchQuery) queryParams.append('search', searchQuery);
 
-			const res = await fetch(`${API_URL}/v1/customers?${queryParams.toString()}`, {
-				headers: { Authorization: `Bearer ${authState.token}` }
-			});
-			const data = await res.json();
+			const data = await apiClient(`/customers?${queryParams.toString()}`);
 			if (data.success) customers = data.data;
 		} catch (e) {
 			console.error(e);

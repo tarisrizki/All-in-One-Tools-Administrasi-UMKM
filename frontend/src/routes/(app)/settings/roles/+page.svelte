@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { onMount } from 'svelte';
@@ -22,10 +23,9 @@
 
 	async function fetchRoles() {
 		try {
-			const res = await fetch(`${API_URL}/v1/roles`, {
+			const data = await apiClient(`/roles`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const data = await res.json();
 			if (data.success) {
 				roles = data.data;
 			} else {
@@ -54,11 +54,10 @@
 	async function deleteRole(id: string) {
 		if (!confirm('Apakah Anda yakin ingin menghapus role ini? Role yang sudah digunakan oleh karyawan tidak bisa dihapus.')) return;
 		try {
-			const res = await fetch(`${API_URL}/v1/roles/${id}`, {
+			const data = await apiClient(`/roles/${id}`, {
 				method: 'DELETE',
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const data = await res.json();
 			if (data.success) {
 				toast.success('Role berhasil dihapus');
 				fetchRoles();
@@ -73,10 +72,10 @@
 	async function handleSaveRole(data: any) {
 		const isEdit = !!data.id;
 		const method = isEdit ? 'PUT' : 'POST';
-		const url = isEdit ? `${API_URL}/v1/roles/${data.id}` : `${API_URL}/v1/roles`;
+		const url = isEdit ? `/roles/${data.id}` : `/roles`;
 
 		try {
-			const res = await fetch(url, {
+			const resData = await apiClient(url, {
 				method,
 				headers: {
 					'Content-Type': 'application/json',
@@ -88,7 +87,6 @@
 					permissions: data.permissions
 				})
 			});
-			const resData = await res.json();
 			if (resData.success) {
 				toast.success(isEdit ? 'Role berhasil diubah' : 'Role berhasil ditambahkan');
 				isFormOpen = false;

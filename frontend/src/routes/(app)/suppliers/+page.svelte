@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { authState } from '$lib/stores/auth.svelte';
@@ -34,10 +35,9 @@
 	async function fetchSuppliers() {
 		loading = true;
 		try {
-			const res = await fetch(`${API_URL}/v1/suppliers`, {
+			const json = await apiClient(`/suppliers`, {
 				headers: { Authorization: `Bearer ${authState.token}` }
 			});
-			const json = await res.json();
 			if (json.success) {
 				suppliers = json.data;
 			} else {
@@ -58,7 +58,7 @@
 
 		isSubmitting = true;
 		try {
-			const res = await fetch(`${API_URL}/v1/suppliers`, {
+			const json = await apiClient(`/suppliers`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authState.token}`,
@@ -66,7 +66,6 @@
 				},
 				body: JSON.stringify(newSupplier)
 			});
-			const json = await res.json();
 			if (json.success) {
 				showAddModal = false;
 				newSupplier = { name: '', contact_name: '', phone: '', address: '' };

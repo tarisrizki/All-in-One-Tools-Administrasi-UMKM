@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import { Button } from '$lib/components/ui/button';
@@ -28,10 +29,9 @@
 		loading = true;
 		try {
 			const token = localStorage.getItem('umkm_token');
-			const res = await fetch(`${API_URL}/v1/debts?type=${activeTab}`, {
+			const json = await apiClient(`/debts?type=${activeTab}`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			const json = await res.json();
 			if (json.success) {
 				debts = json.data;
 				error = '';

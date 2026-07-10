@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import { env } from '$env/dynamic/public';
 	const API_URL = env.PUBLIC_API_URL || 'http://localhost:3000';
 	import { authState } from '$lib/stores/auth.svelte';
@@ -22,7 +23,7 @@
 		loading = true;
 
 		try {
-			const res = await fetch(`${API_URL}/v1/cashbook`, {
+			const result = await apiClient(`/cashbook`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authState.token}`,
@@ -34,8 +35,6 @@
 					description
 				})
 			});
-
-			const result = await res.json();
 
 			if (result.success) {
 				toast.success('Transaksi berhasil dicatat');

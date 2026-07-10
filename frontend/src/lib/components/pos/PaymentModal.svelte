@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { apiClient, getApiUrl } from '$lib/utils/api';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -67,7 +68,7 @@
 			const qrisPayment = payments.find((p) => p.method === 'qris');
 			const amount = qrisPayment ? Number(qrisPayment.amount) : finalTotal;
 			
-			fetch(`${env.PUBLIC_API_URL || 'http://localhost:3000'}/v1/sales/qris-token`, {
+			apiClient(`/sales/qris-token`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
