@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const cashbookSchema = z.object({
   type: z.enum(["in", "out"]),
@@ -10,12 +10,61 @@ const cashbookSchema = z.object({
   description: z.string().min(1, "Deskripsi wajib diisi"),
 });
 
+const cashbookResponseSchema = z.object({
+  id: z.string().uuid(),
+  businessId: z.string().uuid(),
+  type: z.string(),
+  category: z.string().nullable().optional(),
+  amount: z.string(),
+  note: z.string().nullable().optional(),
+  createdBy: z.string().uuid().nullable().optional(),
+  createdAt: z.string(),
+}).passthrough();
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  description: 'Mendapatkan daftar entri buku kas',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(cashbookResponseSchema)) } },
+      description: 'Daftar buku kas',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  description: 'Membuat entri buku kas',
+  request: {
+    body: {
+      content: { 'application/json': { schema: cashbookSchema } },
+    },
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(cashbookResponseSchema) } },
+      description: 'Entri berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input',
+    },
+  },
+});
+
 type Variables = { businessId: string; userId: string; roleId: string };
-export const cashbookRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const cashbookRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 cashbookRoute.use('*', authMiddleware);
 
-cashbookRoute.get('/', requirePermission('cashbook.read'), async (c) => {
+cashbookRoute.get('/', requirePermission('cashbook.read'));
+cashbookRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -29,21 +78,21 @@ cashbookRoute.get('/', requirePermission('cashbook.read'), async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(data || []) });
+    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
   } catch (err: any) {
     console.error("Cashbook GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil buku kas" } }, 500);
   }
 });
 
-cashbookRoute.post('/', requirePermission('cashbook.write'), async (c) => {
+cashbookRoute.post('/', requirePermission('cashbook.write'));
+cashbookRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = cashbookSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     const { data: result, error } = await supabase
       .from('cashbook_entries')
