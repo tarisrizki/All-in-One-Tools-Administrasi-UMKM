@@ -17,6 +17,7 @@ import { authRoute } from './modules/auth';
 import { rolesRoute } from './modules/roles';
 import { settingsRoute } from './modules/settings';
 import { syncRoute } from './modules/sync';
+import { aiRoute } from './modules/ai';
 import { getSupabase } from './utils/supabase';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
@@ -59,6 +60,7 @@ app.route('/auth', authRoute);
 app.route('/roles', rolesRoute);
 app.route('/settings', settingsRoute);
 app.route('/sync', syncRoute);
+app.route('/ai', aiRoute);
 
 export default {
   fetch: app.fetch,
