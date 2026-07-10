@@ -4,46 +4,57 @@ Aplikasi PWA all-in-one untuk UMKM Indonesia: kasir/POS, stok, keuangan, dan lap
 
 > **Status:** MVP & Core Features (Batch A-G) Completed
 > **Current Version:** v1.0.0-beta
+
 ## Tech Stack
 
 | Layer | Teknologi |
 |---|---|
 | **Frontend** | SvelteKit (Svelte 5 / Runes) + Tailwind CSS v4 |
-| **Backend** | Node.js + Fastify + TypeScript |
-| **Database** | PostgreSQL 16 |
-| **Cache** | Redis 7 |
+| **Backend** | Cloudflare Workers (Hono) |
+| **Database** | Supabase (PostgreSQL 15+) |
 | **PWA** | @vite-pwa/sveltekit |
 | **CI/CD** | GitHub Actions |
-| **Infra** | Docker Compose (dev), Coolify (staging/prod) |
+
+## Arsitektur Baru
+Backend yang sebelumnya menggunakan Node.js (Fastify) telah dimigrasikan ke **Cloudflare Workers**. Database lokal PostgreSQL diganti menggunakan **Supabase** (BaaS) agar mendukung skalabilitas, keamanan, dan deployment yang lebih modern. Lihat file `MIGRATION-NOTES.md` untuk rincian migrasi.
 
 ## Quick Start
 
 ### Prerequisites
-- Node.js ≥ 18.13
-- Docker & Docker Compose
+- Node.js ≥ 20.x
 - Git
+- Akun Cloudflare & Supabase
 
-### 1. Start Database & Redis
+### 1. Setup Backend (Workers)
 ```bash
-docker compose up -d
-```
+cd backend-workers
+npm install
 
-### 2. Frontend
+# Buat file .env dari .env.example (Hanya untuk local dev!)
+cp .env.example .env
+
+# Tambahkan secrets ke Wrangler
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put JWT_SECRET
+
+# Jalankan server lokal
+npm run dev
+```
+Backend API akan berjalan di `http://localhost:8787`
+
+### 2. Setup Frontend
 ```bash
 cd frontend
 npm install
+
+# Buat file .env dari .env.example
+cp .env.example .env
+
+# Jalankan frontend
 npm run dev
 ```
 Frontend akan berjalan di `http://localhost:5173`
-
-### 3. Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-Backend API akan berjalan di `http://localhost:3001`
-Health check: `GET http://localhost:3001/v1/health`
 
 ## Dokumentasi Proyek
 
@@ -52,28 +63,14 @@ Health check: `GET http://localhost:3001/v1/health`
 | `Prd allinone tools administrasi umkm.MD` | Product Requirements Document |
 | `DESIGN.MD` | Design System & Token |
 | `Technical specification allinone umkm.MD` | Technical Specification |
-| `FLOW WIREFRAME.HTML` | User Flow & Wireframe |
-| `Project timeline umkm.HTML` | Project Timeline & Milestone |
-| `Testing qa checklist allinone umkm.HTML` | Testing & QA Checklist |
-| `Deployment maintenance plan allinone umkm.HTML` | Deployment & Maintenance Plan |
+| `MIGRATION-NOTES.md` | Catatan Migrasi Backend (Baru) |
 
 ## Struktur Proyek
 
 ```
 UMKM/
 ├── frontend/          # SvelteKit PWA
-├── backend/           # Fastify API
-├── .github/workflows/ # CI/CD
-├── docker-compose.yml # Dev environment
+├── backend-workers/   # Cloudflare Workers API
+├── .github/workflows/ # CI/CD Pipeline
 └── [docs...]          # Dokumentasi proyek
 ```
-
-## Tim & Timeline
-
-- **Durasi:** 8 Jul 2026 – 26 Apr 2027 (±42 minggu)
-- **Sprint:** 17 sprint kerja (2 minggu) + 4 buffer
-- **Milestone:** MVP (12 Okt), Fase 2 (1 Feb), Fase 3 (26 Apr)
-
----
-
-*Lihat Technical Specification untuk detail arsitektur dan API contract.*
