@@ -10,8 +10,8 @@ ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE warehouses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sale_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE purchase_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cashbook ENABLE ROW LEVEL SECURITY;
 ALTER TABLE debts ENABLE ROW LEVEL SECURITY;
 
@@ -30,7 +30,7 @@ CREATE POLICY "Service Role Full Access" ON suppliers FOR ALL TO service_role US
 CREATE POLICY "Service Role Full Access" ON warehouses FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access" ON sales FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access" ON sale_items FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access" ON purchases FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access" ON purchase_items FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access" ON purchase_orders FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access" ON purchase_order_items FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access" ON cashbook FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access" ON debts FOR ALL TO service_role USING (true) WITH CHECK (true);
