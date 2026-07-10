@@ -28,6 +28,7 @@
     "hono": "^4.12.28",
     "iceberg-js": "^0.8.1",
     "is-arrayish": "^0.3.4",
+    "jsonwebtoken": "^9.0.3",
     "magic-string": "^0.25.9",
     "mime": "^3.0.0",
     "miniflare": "^3.20250718.3",

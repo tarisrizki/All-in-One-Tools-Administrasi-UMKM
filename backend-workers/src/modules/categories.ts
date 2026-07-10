@@ -27,9 +27,13 @@ categoriesRoute.get('/', async (c) => {
       .eq('business_id', businessId)
       .order('name', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase Error:", error);
+      throw error;
+    }
     return c.json({ success: true, data: keysToCamel(data || []) });
   } catch (err: any) {
+    console.error("Categories GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil kategori" } }, 500);
   }
 });

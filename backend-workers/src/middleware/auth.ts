@@ -18,7 +18,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
   try {
     // Verifikasi JWT asli, bukan sekadar memalsukan header
-    const decoded = await verify(token, jwtSecret);
+    const decoded = await verify(token, jwtSecret, 'HS256');
     
     // Pastikan payload memiliki struktur yang diharapkan
     if (!decoded.userId || !decoded.businessId || !decoded.roleId) {
@@ -31,7 +31,8 @@ export const authMiddleware = async (c: Context, next: Next) => {
     c.set('roleId', decoded.roleId);
 
     await next();
-  } catch (err) {
+  } catch (err: any) {
+    console.error("JWT Verification failed:", err.message);
     return c.json({ success: false, error: { message: 'Sesi tidak valid atau telah kedaluwarsa' } }, 401);
   }
 };
