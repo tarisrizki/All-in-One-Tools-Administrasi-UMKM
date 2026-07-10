@@ -1,18 +1,178 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
+
+const reportQuerySchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+const profitLossRoute = createRoute({
+  method: 'get',
+  path: '/profit-loss',
+  description: 'Laporan Laba Rugi',
+  request: {
+    query: reportQuerySchema,
+  },
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            totalRevenue: z.number(),
+            totalCogs: z.number(),
+            grossProfit: z.number(),
+            totalCashIncome: z.number(),
+            totalCashExpense: z.number(),
+            netProfit: z.number(),
+          })) 
+        } 
+      },
+      description: 'Data Laba Rugi',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const cashFlowRoute = createRoute({
+  method: 'get',
+  path: '/cash-flow',
+  description: 'Laporan Arus Kas',
+  request: {
+    query: reportQuerySchema,
+  },
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            cashIn: z.object({ sales: z.number(), cashbook: z.number(), receivable: z.number(), total: z.number() }),
+            cashOut: z.object({ purchases: z.number(), cashbook: z.number(), payable: z.number(), total: z.number() }),
+            netCashFlow: z.number(),
+          })) 
+        } 
+      },
+      description: 'Data Arus Kas',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const salesReportRoute = createRoute({
+  method: 'get',
+  path: '/sales',
+  description: 'Laporan Penjualan & Produk Terlaris',
+  request: {
+    query: reportQuerySchema,
+  },
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            totalRevenue: z.number(),
+            totalTransactions: z.number(),
+            topProducts: z.array(z.object({
+              name: z.string(),
+              qty: z.number(),
+              revenue: z.number(),
+            })),
+          })) 
+        } 
+      },
+      description: 'Data Laporan Penjualan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const inventoryReportRoute = createRoute({
+  method: 'get',
+  path: '/inventory',
+  description: 'Laporan Inventori & Stok Menipis',
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            totalStockValue: z.number(),
+            lowStock: z.array(z.object({
+              name: z.string(),
+              stock: z.number(),
+              minStock: z.number(),
+            })),
+          })) 
+        } 
+      },
+      description: 'Data Laporan Inventori',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const dashboardRoute = createRoute({
+  method: 'get',
+  path: '/dashboard',
+  description: 'Data Ringkasan Dashboard (7 Hari Terakhir)',
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            todaySales: z.number(),
+            todayTransactions: z.number(),
+            weeklyData: z.array(z.object({
+              date: z.string(),
+              total: z.number(),
+            })),
+          })) 
+        } 
+      },
+      description: 'Data Dashboard',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const exportRoute = createRoute({
+  method: 'get',
+  path: '/export',
+  description: 'Ekspor laporan',
+  responses: {
+    501: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Belum diimplementasi',
+    },
+  },
+});
 
 type Variables = { businessId: string; userId: string; roleId: string };
-export const reportsRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const reportsRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 reportsRoute.use('*', authMiddleware);
 
-reportsRoute.get('/profit-loss', requirePermission('reports.read'), async (c) => {
+reportsRoute.get('/profit-loss', requirePermission('reports.read'));
+reportsRoute.openapi(profitLossRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const startDate = c.req.query('startDate');
-  const endDate = c.req.query('endDate');
+  const { startDate, endDate } = c.req.valid('query');
 
   try {
     let salesQuery = supabase.from('sales').select('grand_total, id').eq('business_id', businessId).neq('status', 'void');
@@ -56,17 +216,17 @@ reportsRoute.get('/profit-loss', requirePermission('reports.read'), async (c) =>
     return c.json({
       success: true,
       data: keysToCamel({ totalRevenue, totalCogs, grossProfit, totalCashIncome, totalCashExpense, netProfit })
-    });
+    }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menghitung laporan laba rugi" } }, 500);
   }
 });
 
-reportsRoute.get('/cash-flow', requirePermission('reports.read'), async (c) => {
+reportsRoute.get('/cash-flow', requirePermission('reports.read'));
+reportsRoute.openapi(cashFlowRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const startDate = c.req.query('startDate');
-  const endDate = c.req.query('endDate');
+  const { startDate, endDate } = c.req.valid('query');
 
   try {
     let salesQuery = supabase.from('sales').select('grand_total').eq('business_id', businessId).neq('status', 'void');
@@ -113,17 +273,17 @@ reportsRoute.get('/cash-flow', requirePermission('reports.read'), async (c) => {
         cashOut: { purchases: totalPurchaseOut, cashbook: totalCashbookOut, payable: totalPayableOut, total: totalCashOut },
         netCashFlow
       })
-    });
+    }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menghitung laporan arus kas" } }, 500);
   }
 });
 
-reportsRoute.get('/sales', requirePermission('reports.read'), async (c) => {
+reportsRoute.get('/sales', requirePermission('reports.read'));
+reportsRoute.openapi(salesReportRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const startDate = c.req.query('startDate');
-  const endDate = c.req.query('endDate');
+  const { startDate, endDate } = c.req.valid('query');
 
   try {
     let salesQuery = supabase.from('sales').select('grand_total, id').eq('business_id', businessId).neq('status', 'void');
@@ -163,13 +323,14 @@ reportsRoute.get('/sales', requirePermission('reports.read'), async (c) => {
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 10);
 
-    return c.json({ success: true, data: keysToCamel({ totalRevenue, totalTransactions, topProducts }) });
+    return c.json({ success: true, data: keysToCamel({ totalRevenue, totalTransactions, topProducts }) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menghitung laporan penjualan" } }, 500);
   }
 });
 
-reportsRoute.get('/inventory', requirePermission('reports.read'), async (c) => {
+reportsRoute.get('/inventory', requirePermission('reports.read'));
+reportsRoute.openapi(inventoryReportRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -202,13 +363,13 @@ reportsRoute.get('/inventory', requirePermission('reports.read'), async (c) => {
 
     lowStock.sort((a, b) => a.stock - b.stock);
 
-    return c.json({ success: true, data: keysToCamel({ totalStockValue, lowStock }) });
+    return c.json({ success: true, data: keysToCamel({ totalStockValue, lowStock }) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menghitung laporan inventori" } }, 500);
   }
 });
 
-reportsRoute.get('/dashboard', async (c) => {
+reportsRoute.openapi(dashboardRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
@@ -239,12 +400,13 @@ reportsRoute.get('/dashboard', async (c) => {
     const weeklyData = Array.from(dailyMap.entries()).map(([date, total]) => ({ date, total }));
     weeklyData.sort((a, b) => a.date.localeCompare(b.date));
 
-    return c.json({ success: true, data: keysToCamel({ todaySales, todayTransactions, weeklyData }) });
+    return c.json({ success: true, data: keysToCamel({ todaySales, todayTransactions, weeklyData }) }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil data dashboard" } }, 500);
   }
 });
 
-reportsRoute.get('/export', requirePermission('reports.read'), async (c) => {
+reportsRoute.get('/export', requirePermission('reports.read'));
+reportsRoute.openapi(exportRoute, async (c) => {
   return c.json({ success: false, error: { message: "Fitur export laporan belum didukung di Workers" } }, 501);
 });
