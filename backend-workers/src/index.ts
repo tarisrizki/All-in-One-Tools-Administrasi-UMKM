@@ -12,6 +12,7 @@ import { salesRoute } from './modules/sales';
 import { cashbookRoute } from './modules/cashbook';
 import { debtsRoute } from './modules/debts';
 import { purchasesRoute } from './modules/purchases';
+import { reportsRoute } from './modules/reports';
 
 const app = new Hono();
 
@@ -40,5 +41,6 @@ app.route('/sales', salesRoute);
 app.route('/cashbook', cashbookRoute);
 app.route('/debts', debtsRoute);
 app.route('/purchases', purchasesRoute);
+app.route('/reports', reportsRoute);
 
 export default app;
