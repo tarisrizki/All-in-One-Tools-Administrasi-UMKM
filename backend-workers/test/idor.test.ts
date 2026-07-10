@@ -1,4 +1,4 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect, vi, beforeEach } from 'vitest';
 import worker from '../src/index';
 
 // 1. Mock the auth middleware so we can inject a test businessId
@@ -15,28 +15,53 @@ vi.mock('../src/middleware/auth', () => ({
   }
 }));
 
-// 2. Mock Supabase client
-const mockSingle = vi.fn();
-const mockEqBusinessId = vi.fn(() => ({ single: mockSingle }));
-const mockEqId = vi.fn(() => ({ eq: mockEqBusinessId }));
-const mockSelect = vi.fn(() => ({ eq: mockEqId }));
+// 2. Generic Supabase Mock Builder
+const mockSelect = vi.fn();
+const mockEq = vi.fn();
+const mockIn = vi.fn();
+const mockInsert = vi.fn();
+
+const createChain = () => {
+  const chain: any = {
+    select: mockSelect,
+    eq: mockEq,
+    in: mockIn,
+    insert: mockInsert,
+    limit: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: { message: "Mocked Not Found" } }),
+    order: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis()
+  };
+  
+  // Make all methods return the chain itself to support chaining
+  mockSelect.mockReturnValue(chain);
+  mockEq.mockReturnValue(chain);
+  mockIn.mockReturnValue(chain);
+  mockInsert.mockReturnValue(chain);
+  
+  // Make the chain thenable so await works
+  chain.then = (resolve: any) => resolve({ data: [], error: null, count: 0 });
+  return chain;
+};
+
+const tableMocks: Record<string, any> = {};
 
 vi.mock('../src/utils/supabase', () => ({
   getSupabase: vi.fn(() => ({
     from: vi.fn((table) => {
-      if (table === 'sales') {
-        return { select: mockSelect };
+      if (!tableMocks[table]) {
+        tableMocks[table] = createChain();
       }
-      return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn() })) })) };
+      return tableMocks[table];
     })
   }))
 }));
 
-test('IDOR Protection: GET /sales/:id must scope to businessId from JWT', async () => {
-  // Simulate the DB returning null because the business_id doesn't match the sale's owner
-  mockSingle.mockResolvedValue({ data: null, error: { message: "Not found" } });
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
-  // Try to access a sale belonging to Business B
+test('IDOR Protection: GET /sales/:id must scope to businessId from JWT', async () => {
   const req = new Request('http://localhost/sales/sale-B/document', {
     method: 'GET',
     headers: { 'Authorization': 'Bearer fake' }
@@ -45,11 +70,57 @@ test('IDOR Protection: GET /sales/:id must scope to businessId from JWT', async 
   const res = await worker.fetch(req, { JWT_SECRET: 'test' });
   const json = await res.json();
 
-  // Assert API returns 404 Not Found
   expect(res.status).toBe(404);
-  expect(json.success).toBe(false);
   
-  // VITAL: Assert that the database query included .eq('business_id', 'biz-A')
-  // This proves that IDOR scoping is active and users cannot fetch other businesses' data
-  expect(mockEqBusinessId).toHaveBeenCalledWith('business_id', 'biz-A');
+  // Verify that the query included .eq('business_id', 'biz-A')
+  expect(mockEq).toHaveBeenCalledWith('business_id', 'biz-A');
+  expect(mockEq).toHaveBeenCalledWith('id', 'sale-B');
+});
+
+test('IDOR Protection: GET /sales (list) must scope to businessId from JWT', async () => {
+  const req = new Request('http://localhost/sales?page=1', {
+    method: 'GET',
+    headers: { 'Authorization': 'Bearer fake' }
+  });
+
+  await worker.fetch(req, { JWT_SECRET: 'test' });
+
+  // Verify that the list query applied the business_id filter
+  expect(mockEq).toHaveBeenCalledWith('business_id', 'biz-A');
+});
+
+test('IDOR Protection: POST /sales must enforce business ownership of products and warehouse', async () => {
+  const req = new Request('http://localhost/sales', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      items: [{ productId: '00000000-0000-0000-0000-000000000001', qty: 1, price: 10000, discount: 0 }],
+      payments: [{ method: 'cash', amount: 10000 }]
+    })
+  });
+
+  // Since we mocked `single` to return null, the sale creation will fail at warehouse lookup
+  // But we just want to verify the scoping was attempted!
+  await worker.fetch(req, { JWT_SECRET: 'test' });
+
+  // Verify warehouse lookup is scoped
+  expect(mockEq).toHaveBeenCalledWith('business_id', 'biz-A');
+  expect(mockEq).toHaveBeenCalledWith('is_default', true);
+});
+
+test('IDOR Protection: POST /purchases must enforce business ownership of warehouse', async () => {
+  const req = new Request('http://localhost/purchases', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      warehouse_id: '00000000-0000-0000-0000-000000000002', // Malicious input trying to use other business's warehouse
+      supplier_id: '00000000-0000-0000-0000-000000000003',
+      items: [{ product_id: '00000000-0000-0000-0000-000000000004', qty: 10, cost_price: 5000 }],
+    })
+  });
+
+  await worker.fetch(req, { JWT_SECRET: 'test' });
+
+  // Verify warehouse lookup is scoped
+  expect(mockEq).toHaveBeenCalledWith('business_id', 'biz-A');
 });

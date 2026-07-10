@@ -437,6 +437,8 @@ salesRoute.post('/:id/send-wa', requirePermission('pos.read'), async (c) => {
     const total = Number(sale.grand_total).toLocaleString('id-ID');
     const message = `Halo ${name}, terima kasih telah berbelanja. Total tagihan Anda adalah Rp ${total} dengan No Invoice: ${sale.invoice_number}.`;
 
+    // WARNING: Menggunakan Fonnte (API web scraping tidak resmi) dengan nomor WA utama berisiko terkena ban dari Meta.
+    // Direkomendasikan menggunakan nomor cadangan (dummy) atau beralih ke WhatsApp Cloud API resmi untuk produksi jangka panjang.
     const response = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
       headers: {
