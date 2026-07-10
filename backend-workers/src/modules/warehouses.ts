@@ -47,6 +47,17 @@ warehousesRoute.post('/', async (c) => {
     const body = await c.req.json();
     const dataObj = createWarehouseSchema.parse(body);
 
+    // Validate quota: max 5 warehouses
+    const { count: warehouseCount, error: countError } = await supabase
+      .from('warehouses')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId);
+    
+    if (countError) throw countError;
+    if (warehouseCount !== null && warehouseCount >= 5) {
+      return c.json({ success: false, error: { message: "Batas paket gratis (5 item) sudah tercapai" } }, 403);
+    }
+
     const { data, error } = await supabase
       .from('warehouses')
       .insert({

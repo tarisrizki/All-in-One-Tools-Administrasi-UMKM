@@ -16,3 +16,7 @@ routes = [
 
 [triggers]
 crons = ["0 0 * * *"] # Run backup cron every day at midnight
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "b053885b3e9e427988a40d2df107e575"

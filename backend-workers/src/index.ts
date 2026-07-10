@@ -18,6 +18,7 @@ import { rolesRoute } from './modules/roles';
 import { settingsRoute } from './modules/settings';
 import { syncRoute } from './modules/sync';
 import { getSupabase } from './utils/supabase';
+import { rateLimitMiddleware } from './middleware/rateLimit';
 
 const app = new Hono<{ Bindings: any }>();
 
@@ -26,7 +27,6 @@ app.use('*', async (c, next) => {
   const allowedOrigin = c.env.ALLOWED_ORIGIN || 'http://localhost:5173';
   return cors({
     origin: (origin) => {
-      // Allow exact match or if no origin (e.g. server-to-server or initial request)
       return origin === allowedOrigin ? allowedOrigin : null;
     },
     allowHeaders: ['Content-Type', 'Authorization', 'x-business-id', 'x-user-id'],
@@ -34,6 +34,7 @@ app.use('*', async (c, next) => {
     credentials: true,
   })(c, next);
 });
+app.use('*', rateLimitMiddleware);
 
 // Global error handler
 app.onError((err, c) => {

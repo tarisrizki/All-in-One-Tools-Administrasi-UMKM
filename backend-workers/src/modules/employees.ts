@@ -63,6 +63,17 @@ employeesRoute.post('/', async (c) => {
     const body = await c.req.json();
     const dataObj = employeeCreateSchema.parse(body);
 
+    // Validate quota: max 20 employees
+    const { count: employeeCount, error: countError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId);
+    
+    if (countError) throw countError;
+    if (employeeCount !== null && employeeCount >= 20) {
+      return c.json({ success: false, error: { message: "Batas paket gratis (20 item) sudah tercapai" } }, 403);
+    }
+
     // Validate role
     const { data: role, error: roleErr } = await supabase.from('roles').select('id').eq('id', dataObj.role_id).eq('business_id', businessId).single();
     if (roleErr || !role) throw new Error("Role tidak valid atau bukan milik bisnis ini");

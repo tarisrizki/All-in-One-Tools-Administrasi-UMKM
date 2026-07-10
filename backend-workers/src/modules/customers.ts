@@ -123,6 +123,17 @@ customersRoute.post('/', requirePermission('customers.write'), async (c) => {
     const body = await c.req.json();
     const dataObj = customerSchema.parse(body);
 
+    // Validate quota: max 2000 customers
+    const { count: customerCount, error: countError } = await supabase
+      .from('customers')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId);
+    
+    if (countError) throw countError;
+    if (customerCount !== null && customerCount >= 2000) {
+      return c.json({ success: false, error: { message: "Batas paket gratis (2000 item) sudah tercapai" } }, 403);
+    }
+
     const { data, error } = await supabase
       .from('customers')
       .insert({

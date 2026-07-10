@@ -87,6 +87,17 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
     const body = await c.req.json();
     const dataObj = productSchema.parse(body);
 
+    // Validate quota: max 500 products
+    const { count: productCount, error: countError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId);
+    
+    if (countError) throw countError;
+    if (productCount !== null && productCount >= 500) {
+      return c.json({ success: false, error: { message: "Batas paket gratis (500 item) sudah tercapai" } }, 403);
+    }
+
     // Get default warehouse
     const { data: whData, error: whError } = await supabase
       .from('warehouses')
