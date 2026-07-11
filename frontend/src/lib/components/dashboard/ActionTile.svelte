@@ -19,6 +19,7 @@
 		href?: string;
 	} = $props();
 
+	let Icon = $derived(icon);
 	let hClass = $derived(size === 'lg' ? 'h-[108px]' : 'h-[88px]');
 	let iconSize = $derived(size === 'lg' ? 30 : 26);
 	let labelClass = $derived(size === 'lg' ? 'text-[17px]' : 'text-[15px]');
@@ -29,7 +30,6 @@
 		{href}
 		class="w-full text-left {bgClass} rounded-[20px] {hClass} px-5 flex flex-col items-start justify-center gap-1 cursor-pointer border-none shadow-[0_1px_2px_rgba(20,22,45,0.06)] hover:brightness-95 transition-all"
 	>
-		{@const Icon = icon}
 		<Icon size={iconSize} class={colorClass} strokeWidth={2} />
 		<span class="font-grotesk font-bold {labelClass} text-ink leading-tight">{label}</span>
 		{#if sub}
@@ -42,7 +42,6 @@
 		onclick={onClick}
 		class="w-full text-left {bgClass} rounded-[20px] {hClass} px-5 flex flex-col items-start justify-center gap-1 cursor-pointer border-none shadow-[0_1px_2px_rgba(20,22,45,0.06)] hover:brightness-95 transition-all"
 	>
-		{@const Icon = icon}
 		<Icon size={iconSize} class={colorClass} strokeWidth={2} />
 		<span class="font-grotesk font-bold {labelClass} text-ink leading-tight">{label}</span>
 		{#if sub}
