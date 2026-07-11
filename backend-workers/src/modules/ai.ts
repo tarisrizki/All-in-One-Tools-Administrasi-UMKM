@@ -1,12 +1,8 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { authMiddleware } from '../middleware/auth';
 import { SupabaseClient } from '@supabase/supabase-js';
-
-type Variables = { businessId: string; userId: string; roleId: string };
-export const aiRoute = new Hono<{ Bindings: any, Variables: Variables }>();
-
-aiRoute.use('*', authMiddleware);
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 async function checkAndIncrementAiUsage(supabase: SupabaseClient, businessId: string): Promise<boolean> {
   const { data: biz, error } = await supabase.from('businesses').select('settings').eq('id', businessId).single();
@@ -54,7 +50,85 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Tidak ada balasan dari AI.';
 }
 
-aiRoute.get('/predictions', async (c) => {
+const predictionsRoute = createRoute({
+  method: 'get',
+  path: '/predictions',
+  description: 'Mendapatkan prediksi AI (sales & stock alerts)',
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            salesProjection: z.object({
+              prev7Days: z.number(),
+              last7Days: z.number(),
+              growthRate: z.number(),
+              projectedNext30Days: z.number()
+            }),
+            stockAlerts: z.array(z.object({
+              productId: z.string(),
+              productName: z.string(),
+              currentStock: z.number(),
+              totalSold: z.number(),
+              dailyVelocity: z.number(),
+              daysToEmpty: z.number(),
+              status: z.string()
+            }))
+          })) 
+        } 
+      },
+      description: 'Data Prediksi',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const summaryRoute = createRoute({
+  method: 'get',
+  path: '/summary',
+  description: 'Mendapatkan ringkasan harian bisnis',
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.object({ summary: z.string() })) } },
+      description: 'Ringkasan AI',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+const chatRoute = createRoute({
+  method: 'post',
+  path: '/chat',
+  description: 'Chat dengan AI Assistant',
+  request: {
+    body: {
+      content: { 'application/json': { schema: z.object({ message: z.string().optional() }) } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.object({ response: z.string() })) } },
+      description: 'Chat response AI',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  },
+});
+
+type Variables = { businessId: string; userId: string; roleId: string };
+export const aiRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
+
+aiRoute.use('*', authMiddleware);
+
+aiRoute.openapi(predictionsRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   
@@ -142,25 +216,25 @@ aiRoute.get('/predictions', async (c) => {
         },
         stockAlerts: stockAlerts.slice(0, 10)
       }
-    });
+    }, 200);
   } catch (e: any) {
     return c.json({ success: false, error: { message: e.message } }, 500);
   }
 });
 
-aiRoute.get('/summary', async (c) => {
+aiRoute.openapi(summaryRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const apiKey = c.env.GEMINI_API_KEY;
   
   if (!apiKey) {
-    return c.json({ success: true, data: { summary: "Konfigurasi **GEMINI_API_KEY** belum diatur oleh pemilik toko." } });
+    return c.json({ success: true, data: { summary: "Konfigurasi **GEMINI_API_KEY** belum diatur oleh pemilik toko." } }, 200);
   }
   
   try {
     const allowed = await checkAndIncrementAiUsage(supabase, businessId);
     if (!allowed) {
-      return c.json({ success: true, data: { summary: "Limit harian penggunaan asisten AI (10 permintaan/hari) telah habis. Silakan coba besok." } });
+      return c.json({ success: true, data: { summary: "Limit harian penggunaan asisten AI (10 permintaan/hari) telah habis. Silakan coba besok." } }, 200);
     }
     
     // Provide basic context to AI
@@ -179,29 +253,28 @@ aiRoute.get('/summary', async (c) => {
     
     const summary = await callGemini(apiKey, prompt);
     
-    return c.json({ success: true, data: { summary } });
+    return c.json({ success: true, data: { summary } }, 200);
   } catch (e: any) {
     return c.json({ success: false, error: { message: e.message } }, 500);
   }
 });
 
-aiRoute.post('/chat', async (c) => {
+aiRoute.openapi(chatRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const apiKey = c.env.GEMINI_API_KEY;
   
   if (!apiKey) {
-    return c.json({ success: true, data: { response: "Maaf, kunci API Gemini belum dikonfigurasi. Harap hubungi administrator." } });
+    return c.json({ success: true, data: { response: "Maaf, kunci API Gemini belum dikonfigurasi. Harap hubungi administrator." } }, 200);
   }
   
   try {
     const allowed = await checkAndIncrementAiUsage(supabase, businessId);
     if (!allowed) {
-      return c.json({ success: true, data: { response: "Maaf, jatah harian (10 chat/hari) Anda telah habis. Silakan gunakan lagi esok hari untuk menjaga performa." } });
+      return c.json({ success: true, data: { response: "Maaf, jatah harian (10 chat/hari) Anda telah habis. Silakan gunakan lagi esok hari untuk menjaga performa." } }, 200);
     }
     
-    const body = await c.req.json();
-    const userMessage = body.message || '';
+    const { message: userMessage } = c.req.valid('json');
     
     // Inject contextual data
     const today = new Date().toISOString().split('T')[0];
@@ -210,11 +283,11 @@ aiRoute.post('/chat', async (c) => {
     const systemPrompt = `Anda adalah Asisten Bisnis UMKM yang profesional dan ramah bernama 'Beres AI'. Anda sedang melayani pemilik bisnis. 
 Gunakan bahasa Indonesia. Konteks toko: Tanggal ${today}, Jumlah pelanggan terdaftar: ${customerCount || 0}. 
 Jawablah dengan singkat, ramah, gunakan poin-poin Markdown jika perlu. 
-Pertanyaan pemilik: "${userMessage}"`;
+Pertanyaan pemilik: "${userMessage || ''}"`;
 
     const response = await callGemini(apiKey, systemPrompt);
     
-    return c.json({ success: true, data: { response } });
+    return c.json({ success: true, data: { response } }, 200);
   } catch (e: any) {
     return c.json({ success: false, error: { message: e.message } }, 500);
   }
