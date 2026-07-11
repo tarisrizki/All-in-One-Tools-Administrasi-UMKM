@@ -62,7 +62,7 @@ beforeEach(() => {
 });
 
 test('IDOR Protection: GET /sales/:id must scope to businessId from JWT', async () => {
-  const req = new Request('http://localhost/sales/sale-B/document', {
+  const req = new Request('http://localhost/sales/11111111-1111-4111-a111-111111111111/document', {
     method: 'GET',
     headers: { 'Authorization': 'Bearer fake' }
   });
@@ -74,7 +74,7 @@ test('IDOR Protection: GET /sales/:id must scope to businessId from JWT', async 
   
   // Verify that the query included .eq('business_id', 'biz-A')
   expect(mockEq).toHaveBeenCalledWith('business_id', 'biz-A');
-  expect(mockEq).toHaveBeenCalledWith('id', 'sale-B');
+  expect(mockEq).toHaveBeenCalledWith('id', '11111111-1111-4111-a111-111111111111');
 });
 
 test('IDOR Protection: GET /sales (list) must scope to businessId from JWT', async () => {
@@ -94,7 +94,7 @@ test('IDOR Protection: POST /sales must enforce business ownership of products a
     method: 'POST',
     headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      items: [{ productId: '00000000-0000-0000-0000-000000000001', qty: 1, price: 10000, discount: 0 }],
+      items: [{ productId: '00000000-0000-4000-8000-000000000001', qty: 1, price: 10000, discount: 0 }],
       payments: [{ method: 'cash', amount: 10000 }]
     })
   });
@@ -113,9 +113,9 @@ test('IDOR Protection: POST /purchases must enforce business ownership of wareho
     method: 'POST',
     headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      warehouse_id: '00000000-0000-0000-0000-000000000002', // Malicious input trying to use other business's warehouse
-      supplier_id: '00000000-0000-0000-0000-000000000003',
-      items: [{ product_id: '00000000-0000-0000-0000-000000000004', qty: 10, cost_price: 5000 }],
+      warehouse_id: '00000000-0000-4000-8000-000000000002', // Malicious input trying to use other business's warehouse
+      supplier_id: '00000000-0000-4000-8000-000000000003',
+      items: [{ product_id: '00000000-0000-4000-8000-000000000004', qty: 10, cost_price: 5000 }],
     })
   });
 
