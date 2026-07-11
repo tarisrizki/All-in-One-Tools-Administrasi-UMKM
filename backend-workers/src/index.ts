@@ -79,8 +79,13 @@ app.get(
   })
 );
 
+import { HTTPException } from 'hono/http-exception';
+
 // Global error handler
 app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return err.getResponse();
+  }
   console.error(`[Error] ${err.message}`);
   return c.json({ success: false, error: { message: 'Terjadi kesalahan internal server' } }, 500);
 });
