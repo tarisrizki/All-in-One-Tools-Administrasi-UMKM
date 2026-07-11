@@ -6,16 +6,16 @@ import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '
 
 const debtSchema = z.object({
   type: z.enum(["hutang", "piutang"]),
-  entityName: z.string().min(1, "Nama entitas wajib diisi").max(255),
-  entityPhone: z.string().max(30).nullable().optional(),
+  entity_name: z.string().min(1, "Nama entitas wajib diisi").max(255),
+  entity_phone: z.string().max(30).nullable().optional(),
   amount: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val > 0, "Nominal harus lebih dari 0"),
-  dueDate: z.string().nullable().optional(),
+  due_date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
 const paymentSchema = z.object({
   amount: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val > 0, "Nominal pembayaran tidak valid"),
-  paymentMethod: z.string().max(100).nullable().optional(),
+  payment_method: z.string().max(100).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -218,11 +218,11 @@ debtsRoute.openapi(createRouteDef, async (c) => {
       .insert({
         business_id: businessId,
         type: dataObj.type,
-        entity_name: dataObj.entityName,
-        entity_phone: dataObj.entityPhone || null,
+        entity_name: dataObj.entity_name,
+        entity_phone: dataObj.entity_phone || null,
         amount: dataObj.amount.toString(),
         remaining_amount: dataObj.amount.toString(),
-        due_date: dataObj.dueDate ? new Date(dataObj.dueDate).toISOString() : null,
+        due_date: dataObj.due_date ? new Date(dataObj.due_date).toISOString() : null,
         notes: dataObj.notes || null,
         created_by: userId,
       })
@@ -287,7 +287,7 @@ debtsRoute.openapi(payRoute, async (c) => {
   const { id } = c.req.valid('param');
 
   try {
-    const { amount, paymentMethod, notes } = c.req.valid('json');
+    const { amount, payment_method, notes } = c.req.valid('json');
 
     const { data: debt } = await supabase.from('debts').select('*').eq('id', id).eq('business_id', businessId).single();
     if (!debt) return c.json({ success: false, error: { message: "Data tidak ditemukan" } }, 404);
@@ -310,7 +310,7 @@ debtsRoute.openapi(payRoute, async (c) => {
     await supabase.from('debt_payments').insert({
       debt_id: id,
       amount: paymentAmount.toString(),
-      payment_method: paymentMethod || "cash",
+      payment_method: payment_method || "cash",
       notes: notes || null,
       created_by: userId,
     });

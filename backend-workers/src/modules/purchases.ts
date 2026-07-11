@@ -5,15 +5,15 @@ import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const purchaseItemSchema = z.object({
-  productId: z.string().uuid(),
+  product_id: z.string().uuid(),
   qty: z.number().positive(),
-  costPrice: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val >= 0),
+  cost_price: z.union([z.string(), z.number()]).transform(val => Number(val)).refine(val => val >= 0),
 });
 
 const purchaseSchema = z.object({
-  warehouseId: z.string().uuid(),
-  supplierId: z.string().uuid(),
-  expectedDate: z.string().nullable().optional(),
+  warehouse_id: z.string().uuid(),
+  supplier_id: z.string().uuid(),
+  expected_date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   items: z.array(purchaseItemSchema).min(1, "Data PO tidak lengkap"),
 });
@@ -210,18 +210,18 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
 
   try {
     const body = c.req.valid('json');
-    const { warehouseId, supplierId, expectedDate, notes, items } = body;
+    const { warehouse_id, supplier_id, expected_date, notes, items } = body;
 
     // Validate warehouse
-    const { data: wh, error: whErr } = await supabase.from('warehouses').select('id').eq('id', warehouseId).eq('business_id', businessId).single();
+    const { data: wh, error: whErr } = await supabase.from('warehouses').select('id').eq('id', warehouse_id).eq('business_id', businessId).single();
     if (whErr || !wh) throw new Error("Gudang tidak valid atau bukan milik bisnis ini");
 
     // Validate supplier
-    const { data: sup, error: supErr } = await supabase.from('suppliers').select('id').eq('id', supplierId).eq('business_id', businessId).single();
+    const { data: sup, error: supErr } = await supabase.from('suppliers').select('id').eq('id', supplier_id).eq('business_id', businessId).single();
     if (supErr || !sup) throw new Error("Supplier tidak valid atau bukan milik bisnis ini");
 
     // Validate products
-    const productIds = items.map(i => i.productId);
+    const productIds = items.map(i => i.product_id);
     if (productIds.length > 0) {
       const { data: validProducts, error: vpErr } = await supabase.from('products').select('id').eq('business_id', businessId).in('id', productIds);
       if (vpErr || !validProducts || validProducts.length !== productIds.length) {
@@ -238,18 +238,18 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
     const poNumber = `PO/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${String(nextId).padStart(4, "0")}`;
 
     let totalAmount = 0;
-    for (const item of items) totalAmount += item.qty * item.costPrice;
+    for (const item of items) totalAmount += item.qty * item.cost_price;
 
     const { data: po, error: poError } = await supabase
       .from('purchase_orders')
       .insert({
         business_id: businessId,
-        warehouse_id: warehouseId,
-        supplier_id: supplierId,
+        warehouse_id,
+        supplier_id,
         po_number: poNumber,
         status: 'draft',
         total_amount: totalAmount.toString(),
-        expected_date: expectedDate ? new Date(expectedDate).toISOString() : null,
+        expected_date: expected_date ? new Date(expected_date).toISOString() : null,
         notes: notes || null,
         created_by: userId,
       })
@@ -262,9 +262,9 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
       await supabase.from('purchase_order_items').insert(
         items.map((item: any) => ({
           po_id: po.id,
-          product_id: item.productId,
+          product_id: item.product_id,
           qty: item.qty,
-          cost_price: item.costPrice.toString(),
+          cost_price: item.cost_price.toString(),
         }))
       );
     }

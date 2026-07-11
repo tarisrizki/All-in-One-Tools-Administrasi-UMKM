@@ -9,11 +9,11 @@ const employeeCreateSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').max(255).openapi({ example: 'Andi' }),
   phone: z.string().min(1, 'Nomor HP wajib diisi').max(30).openapi({ example: '08123456789' }),
   password: z.string().min(6, 'Password minimal 6 karakter').max(255).openapi({ example: 'rahasia123' }),
-  roleId: z.string().uuid('Role ID tidak valid').openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
+  role_id: z.string().uuid('Role ID tidak valid').openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
 });
 
 const employeeUpdateStatusSchema = z.object({
-  isActive: z.boolean().openapi({ example: false }),
+  is_active: z.boolean().openapi({ example: false }),
 });
 
 const employeeResponseSchema = z.object({
@@ -170,7 +170,7 @@ employeesRoute.openapi(createRouteDef, async (c) => {
     const { data: role, error: roleErr } = await supabase
       .from('roles')
       .select('id')
-      .eq('id', dataObj.roleId)
+      .eq('id', dataObj.role_id)
       .or(`business_id.is.null,business_id.eq.${businessId}`)
       .single();
     if (roleErr || !role) throw new Error("Role tidak valid atau bukan milik bisnis ini");
@@ -182,7 +182,7 @@ employeesRoute.openapi(createRouteDef, async (c) => {
       .from('users')
       .insert({
         business_id: businessId,
-        role_id: dataObj.roleId,
+        role_id: dataObj.role_id,
         name: dataObj.name,
         phone: dataObj.phone,
         password_hash: passwordHash
@@ -219,7 +219,7 @@ employeesRoute.openapi(updateStatusRouteDef, async (c) => {
     const { data, error } = await supabase
       .from('users')
       .update({
-        is_active: dataObj.isActive,
+        is_active: dataObj.is_active,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
