@@ -55,7 +55,7 @@
 				body: JSON.stringify({
 					type: showForm === 'masuk' ? 'in' : 'out',
 					amount,
-					note: formNote || (showForm === 'masuk' ? 'Uang masuk' : 'Uang keluar')
+					description: formNote || (showForm === 'masuk' ? 'Uang masuk' : 'Uang keluar')
 				})
 			});
 			if (res.success) {
