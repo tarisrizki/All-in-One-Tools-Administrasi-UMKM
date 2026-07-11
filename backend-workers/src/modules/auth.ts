@@ -21,6 +21,7 @@ const authResponseSchema = z.object({
   token: z.string(),
   user_id: z.string().uuid(),
   business_id: z.string().uuid(),
+  business_name: z.string().optional(),
   app_mode: z.string(),
   permissions: z.array(z.string()).optional(),
 });
@@ -208,6 +209,7 @@ authRoute.openapi(registerRoute, async (c) => {
         token, 
         user_id: user.id, 
         business_id: business.id,
+        business_name: business.name,
         app_mode: 'simple',
         permissions: ownerRole.permissions
       } 
@@ -241,9 +243,10 @@ authRoute.openapi(loginRoute, async (c) => {
     }, c.env.JWT_SECRET, 'HS256');
 
     const appMode = (user as any).businesses?.settings?.appMode || 'full';
+    const businessName = (user as any).businesses?.name || 'Toko Anda';
     const permissions = (user as any).roles?.permissions || [];
 
-    return c.json({ success: true, data: { token, user_id: user.id, business_id: user.business_id, app_mode: appMode, permissions } }, 200);
+    return c.json({ success: true, data: { token, user_id: user.id, business_id: user.business_id, business_name: businessName, app_mode: appMode, permissions } }, 200);
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal masuk");
     return c.json({ success: false, error: { code: "LOGIN_FAILED", message } }, 400);

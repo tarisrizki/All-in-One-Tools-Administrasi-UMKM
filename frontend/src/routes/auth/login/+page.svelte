@@ -43,6 +43,7 @@
 							setAuth(result.data.token, {
 								userId: result.data.user_id,
 								businessId: result.data.business_id,
+								businessName: result.data.business_name,
 								permissions: result.data.permissions
 							});
 							import('$lib/stores/appMode.svelte').then(m => m.syncAppModeFromServer(result.data.app_mode));

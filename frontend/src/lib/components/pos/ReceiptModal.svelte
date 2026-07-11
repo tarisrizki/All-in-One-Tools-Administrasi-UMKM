@@ -62,6 +62,7 @@
 	}
 	import { Input } from '$lib/components/ui/input';
 	import { thermalPrinter } from '$lib/utils/printer';
+	import { appModeState } from '$lib/stores/appMode.svelte';
 
 	let waNumber = $state('');
 	let emailAddress = $state('');
@@ -81,12 +82,32 @@
 				price: i.unitPrice
 			}));
 			
-			await thermalPrinter.printReceipt("TOKO BERES UMKM", items, transaction.grandTotal);
+			const storeName = authState.user?.businessName || authState.user?.business_name || 'Toko Anda';
+			await thermalPrinter.printReceipt(storeName, items, transaction.grandTotal);
 			toast.success("Struk berhasil dicetak ke Thermal Printer!");
 		} catch (e: any) {
 			toast.error(e.message || "Gagal mencetak struk thermal");
 		} finally {
 			isPrintingThermal = false;
+		}
+	}
+
+	function printBrowser() {
+		if (!transaction) return toast.error("Data transaksi tidak tersedia");
+		const storeName = authState.user?.businessName || authState.user?.business_name || 'Toko Anda';
+		const items = transaction.items.map((i: any) => ({
+			name: i.name || 'Produk',
+			qty: i.quantity,
+			price: i.unitPrice
+		}));
+		thermalPrinter.printBrowserReceipt(storeName, items, transaction.grandTotal, transactionId);
+	}
+
+	async function printSmart() {
+		if (thermalPrinter.isConnected) {
+			await printThermal();
+		} else {
+			printBrowser();
 		}
 	}
 
@@ -145,6 +166,26 @@
 		</div>
 
 		<div class="p-6 space-y-6">
+			{#if appModeState.mode === 'simple'}
+				<div class="space-y-3">
+					<Button
+						class="w-full h-14 rounded-xl font-bold bg-cta hover:bg-cta-dark text-white shadow-lg gap-2 text-lg"
+						onclick={printSmart}
+						disabled={isPrintingThermal}
+					>
+						<Printer class="w-6 h-6" />
+						{#if isPrintingThermal} Memproses... {:else} Cetak Struk {/if}
+					</Button>
+					<div class="grid grid-cols-2 gap-3">
+						<Button variant="outline" class="h-12 border-border text-ink hover:text-brand font-bold gap-2" onclick={sendWa} disabled={isSendingWa}>
+							Kirim via WA
+						</Button>
+						<Button variant="outline" class="h-12 border-border text-ink hover:text-brand font-bold gap-2" onclick={() => downloadPDF('nota')} disabled={isDownloading !== null}>
+							Simpan PDF
+						</Button>
+					</div>
+				</div>
+			{:else}
 			<div>
 				<h3 class="text-xs font-bold uppercase tracking-widest font-mono text-ink-soft mb-3 text-center">Cetak Dokumen</h3>
 				<div class="grid grid-cols-2 gap-3">
@@ -208,15 +249,26 @@
 			<div class="space-y-4">
 				<h3 class="text-xs font-bold uppercase tracking-widest font-mono text-ink-soft mb-3 text-center">Kirim Resi Digital & Cetak Langsung</h3>
 				
-				<Button
-					variant="outline"
-					class="w-full h-11 border-border text-ink hover:bg-muted font-bold rounded-xl flex items-center justify-center gap-2"
-					onclick={printThermal}
-					disabled={isPrintingThermal}
-				>
-					<Printer class="w-4 h-4" />
-					{#if isPrintingThermal} Menghubungkan Printer... {:else} Cetak Thermal (WebUSB) {/if}
-				</Button>
+				<div class="grid grid-cols-2 gap-2">
+					<Button
+						variant="outline"
+						class="w-full h-11 border-border text-ink hover:bg-muted font-bold rounded-xl flex items-center justify-center gap-2"
+						onclick={printThermal}
+						disabled={isPrintingThermal}
+					>
+						<Printer class="w-4 h-4" />
+						{#if isPrintingThermal} Menghubungkan... {:else} Cetak WebUSB {/if}
+					</Button>
+					
+					<Button
+						variant="outline"
+						class="w-full h-11 border-border text-ink hover:bg-muted font-bold rounded-xl flex items-center justify-center gap-2"
+						onclick={printBrowser}
+					>
+						<Printer class="w-4 h-4" />
+						Print Biasa
+					</Button>
+				</div>
 
 				<div class="flex gap-2">
 					<Input type="tel" placeholder="08xx..." bind:value={waNumber} class="h-11 rounded-xl" />
@@ -244,6 +296,7 @@
 					Catatan: Jika koneksi offline, pastikan transaksi telah tersinkronisasi sebelum mencetak.
 				</p>
 			</div>
+			{/if}
 		</div>
 
 		<div class="p-4 bg-muted/30 border-t border-border flex justify-center">

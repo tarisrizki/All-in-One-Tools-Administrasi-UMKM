@@ -3,8 +3,12 @@
 export class ESCPOSPrinter {
 	private device: USBDevice | null = null;
 
+	get isConnected() {
+		return this.device !== null;
+	}
+
 	async connect() {
-		if (!navigator.usb) {
+		if (typeof navigator === 'undefined' || !navigator.usb) {
 			throw new Error('WebUSB tidak didukung di browser ini. Gunakan Chrome untuk PC/Android.');
 		}
 		
@@ -69,6 +73,122 @@ export class ESCPOSPrinter {
 			await this.device.close();
 			this.device = null;
 		}
+	}
+
+	printBrowserReceipt(storeName: string, items: any[], grandTotal: string, transactionId?: string) {
+		// Buat iframe tersembunyi
+		const iframe = document.createElement('iframe');
+		iframe.style.position = 'fixed';
+		iframe.style.right = '-1000px';
+		iframe.style.bottom = '-1000px';
+		iframe.style.width = '0';
+		iframe.style.height = '0';
+		document.body.appendChild(iframe);
+
+		const dateStr = new Date().toLocaleString('id-ID', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+
+		const itemsHtml = items.map(item => `
+			<div class="item">
+				<div class="item-name">${item.name}</div>
+				<div class="item-details">
+					<span>${item.qty} x ${parseInt(item.price).toLocaleString('id-ID')}</span>
+					<span>${(item.qty * item.price).toLocaleString('id-ID')}</span>
+				</div>
+			</div>
+		`).join('');
+
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<title>Struk - ${storeName}</title>
+				<style>
+					@page {
+						margin: 0;
+						size: 58mm auto; /* Default for thermal printers */
+					}
+					body {
+						font-family: 'Courier New', Courier, monospace; /* Monospace is better for receipts */
+						margin: 0;
+						padding: 10px;
+						color: #000;
+						width: 100%;
+						max-width: 58mm;
+						font-size: 12px;
+						line-height: 1.4;
+					}
+					@media print {
+						body {
+							/* For A4 printers, limit width and center */
+							max-width: 300px;
+							margin: 0 auto;
+						}
+					}
+					.text-center { text-align: center; }
+					.store-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+					.divider { border-top: 1px dashed #000; margin: 8px 0; }
+					.item-name { font-weight: bold; }
+					.item-details { display: flex; justify-content: space-between; }
+					.total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-top: 10px; }
+					.footer { margin-top: 15px; font-size: 10px; }
+				</style>
+			</head>
+			<body>
+				<div class="text-center">
+					<div class="store-name">${storeName}</div>
+					<div>${dateStr}</div>
+					${transactionId ? `<div>ID: ${transactionId.substring(0, 8).toUpperCase()}</div>` : ''}
+				</div>
+				
+				<div class="divider"></div>
+				
+				<div class="items">
+					${itemsHtml}
+				</div>
+				
+				<div class="divider"></div>
+				
+				<div class="total-row">
+					<span>TOTAL</span>
+					<span>Rp ${parseInt(grandTotal).toLocaleString('id-ID')}</span>
+				</div>
+				
+				<div class="divider"></div>
+				
+				<div class="text-center footer">
+					<div>Terima Kasih Atas Kunjungan Anda</div>
+					<div>Struk ini adalah bukti pembayaran sah</div>
+				</div>
+				<script>
+					window.onload = function() {
+						setTimeout(function() {
+							window.print();
+						}, 300);
+					}
+				</script>
+			</body>
+			</html>
+		`;
+
+		const doc = iframe.contentWindow?.document;
+		if (doc) {
+			doc.open();
+			doc.write(html);
+			doc.close();
+		}
+
+		// Cleanup iframe after printing
+		setTimeout(() => {
+			if (iframe.parentNode) {
+				iframe.parentNode.removeChild(iframe);
+			}
+		}, 60000); // Wait enough time for user to interact with print dialog
 	}
 }
 
