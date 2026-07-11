@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
 const saleItemSchema = z.object({
   productId: z.string().uuid(),
@@ -29,15 +29,63 @@ const syncPushSchema = z.object({
   )
 });
 
+const pullRoute = createRoute({
+  method: 'get',
+  path: '/pull',
+  description: 'Menarik data terbaru dari server (sinkronisasi)',
+  request: {
+    query: z.object({ since: z.string().optional() }),
+  },
+  responses: {
+    200: {
+      content: { 
+        'application/json': { 
+          schema: createSuccessSchema(z.object({
+            products: z.array(z.unknown()),
+            categories: z.array(z.unknown()),
+            customers: z.array(z.unknown()),
+          })) 
+        } 
+      },
+      description: 'Data sync pull',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Gagal menarik data',
+    },
+  },
+});
+
+const pushRoute = createRoute({
+  method: 'post',
+  path: '/push',
+  description: 'Mendorong data transaksi offline ke server',
+  request: {
+    body: {
+      content: { 'application/json': { schema: syncPushSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: MessageSuccessSchema } },
+      description: 'Berhasil push',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Input tidak valid',
+    },
+  },
+});
+
 type Variables = { businessId: string; userId: string; roleId: string };
-export const syncRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const syncRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 syncRoute.use('*', authMiddleware);
 
-syncRoute.get('/pull', async (c) => {
+syncRoute.openapi(pullRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const since = c.req.query('since');
+  const { since } = c.req.valid('query');
 
   try {
     let pQuery = supabase.from('products').select('id, business_id, category_id, sku, barcode, name, description, unit, sell_price, min_stock, image_url, is_active, updated_at, product_stock(quantity)').eq('business_id', businessId);
@@ -91,20 +139,19 @@ syncRoute.get('/pull', async (c) => {
         categories: categoriesRes.data || [],
         customers: formattedCustomers
       })
-    });
+    }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menarik sinkronisasi" } }, 400);
   }
 });
 
-syncRoute.post('/push', async (c) => {
+syncRoute.openapi(pushRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
 
   try {
-    const body = await c.req.json();
-    const data = syncPushSchema.parse(body);
+    const data = c.req.valid('json');
 
     const { data: wh } = await supabase.from('warehouses').select('id').eq('business_id', businessId).eq('is_default', true).limit(1).single();
     if (!wh) throw new Error("Gudang tidak ditemukan");
@@ -205,7 +252,7 @@ syncRoute.post('/push', async (c) => {
       processed++;
     }
 
-    return c.json({ success: true, message: `Berhasil push ${processed} transaksi` });
+    return c.json({ success: true, message: `Berhasil push ${processed} transaksi` }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal mendorong sinkronisasi");
     return c.json({ success: false, error: { message: msg } }, 400);
