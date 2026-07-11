@@ -14,6 +14,7 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import BottomNav from '$lib/components/BottomNav.svelte';
 	import { paletteState } from '$lib/stores/commandPalette.svelte';
 
 	let { children } = $props();
@@ -83,11 +84,16 @@
 					<AppSidebar />
 				</div>
 			</aside>
-			<div class="lg:flex-1 lg:min-w-0 lg:min-h-screen">
+			<div class="lg:flex-1 lg:min-w-0 lg:min-h-screen pb-[60px] lg:pb-0">
 				{@render children()}
 			</div>
 		</div>
 	{:else}
 		{@render children()}
+	{/if}
+
+	<!-- Bottom navigation: mobile only, hidden on POS -->
+	{#if showSidebar}
+		<BottomNav />
 	{/if}
 </QueryClientProvider>
