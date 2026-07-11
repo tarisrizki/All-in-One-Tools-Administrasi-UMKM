@@ -31,6 +31,7 @@ const supplierResponseSchema = z.object({
 });
 
 const listRoute = createRoute({
+  tags: ['Suppliers'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar supplier milik bisnis',
@@ -47,6 +48,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Suppliers'],
   method: 'post',
   path: '/',
   description: 'Membuat supplier baru',
@@ -68,6 +70,7 @@ const createRouteDef = createRoute({
 });
 
 const updateRouteDef = createRoute({
+  tags: ['Suppliers'],
   method: 'put',
   path: '/{id}',
   description: 'Mengubah data supplier',

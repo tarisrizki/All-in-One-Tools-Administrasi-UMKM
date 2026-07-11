@@ -44,6 +44,7 @@ const saleCreateResponseSchema = z.object({
 }).passthrough(); // passthrough karena kita return object supabase
 
 const listRoute = createRoute({
+  tags: ['Sales'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar riwayat transaksi penjualan',
@@ -81,6 +82,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Sales'],
   method: 'post',
   path: '/',
   description: 'Membuat transaksi penjualan baru',
@@ -106,6 +108,7 @@ const createRouteDef = createRoute({
 });
 
 const documentRoute = createRoute({
+  tags: ['Sales'],
   method: 'get',
   path: '/{id}/document',
   description: 'Mendownload struk PDF',
@@ -131,6 +134,7 @@ const documentRoute = createRoute({
 });
 
 const qrisTokenRoute = createRoute({
+  tags: ['Sales'],
   method: 'post',
   path: '/qris-token',
   description: 'Mendapatkan QRIS token mock',
@@ -143,6 +147,7 @@ const qrisTokenRoute = createRoute({
 });
 
 const sendWaRoute = createRoute({
+  tags: ['Sales'],
   method: 'post',
   path: '/{id}/send-wa',
   description: 'Mengirim struk via WhatsApp',
@@ -172,6 +177,7 @@ const sendWaRoute = createRoute({
 });
 
 const sendEmailRoute = createRoute({
+  tags: ['Sales'],
   method: 'post',
   path: '/{id}/send-email',
   description: 'Mengirim struk via Email',

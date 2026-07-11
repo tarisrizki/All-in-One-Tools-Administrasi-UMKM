@@ -40,6 +40,7 @@ const purchaseResponseSchema = z.object({
 }).passthrough();
 
 const listRoute = createRoute({
+  tags: ['Purchases'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar purchase order',
@@ -56,6 +57,7 @@ const listRoute = createRoute({
 });
 
 const getByIdRoute = createRoute({
+  tags: ['Purchases'],
   method: 'get',
   path: '/{id}',
   description: 'Mendapatkan detail purchase order',
@@ -81,6 +83,7 @@ const getByIdRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Purchases'],
   method: 'post',
   path: '/',
   description: 'Membuat purchase order baru',
@@ -102,6 +105,7 @@ const createRouteDef = createRoute({
 });
 
 const updateStatusRouteDef = createRoute({
+  tags: ['Purchases'],
   method: 'patch',
   path: '/{id}/status',
   description: 'Mengubah status PO',

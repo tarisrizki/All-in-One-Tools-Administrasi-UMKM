@@ -26,6 +26,7 @@ const customerResponseSchema = z.object({
 });
 
 const listRoute = createRoute({
+  tags: ['Customers'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar pelanggan',
@@ -47,6 +48,7 @@ const listRoute = createRoute({
 });
 
 const getByIdRoute = createRoute({
+  tags: ['Customers'],
   method: 'get',
   path: '/{id}',
   description: 'Mendapatkan detail pelanggan',
@@ -72,6 +74,7 @@ const getByIdRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Customers'],
   method: 'post',
   path: '/',
   description: 'Membuat pelanggan baru (maksimal 2000)',
@@ -97,6 +100,7 @@ const createRouteDef = createRoute({
 });
 
 const updateRouteDef = createRoute({
+  tags: ['Customers'],
   method: 'put',
   path: '/{id}',
   description: 'Mengubah data pelanggan',

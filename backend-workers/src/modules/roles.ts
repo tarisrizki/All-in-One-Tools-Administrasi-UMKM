@@ -18,6 +18,7 @@ const roleResponseSchema = z.object({
 }).passthrough();
 
 const listRoute = createRoute({
+  tags: ['Roles'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar role',
@@ -34,6 +35,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Roles'],
   method: 'post',
   path: '/',
   description: 'Membuat role baru',
@@ -55,6 +57,7 @@ const createRouteDef = createRoute({
 });
 
 const updateRoute = createRoute({
+  tags: ['Roles'],
   method: 'put',
   path: '/{id}',
   description: 'Mengubah role',
@@ -81,6 +84,7 @@ const updateRoute = createRoute({
 });
 
 const deleteRoute = createRoute({
+  tags: ['Roles'],
   method: 'delete',
   path: '/{id}',
   description: 'Menghapus role',

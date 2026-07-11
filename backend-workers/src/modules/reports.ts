@@ -10,6 +10,7 @@ const reportQuerySchema = z.object({
 });
 
 const profitLossRoute = createRoute({
+  tags: ['Reports'],
   method: 'get',
   path: '/profit-loss',
   description: 'Laporan Laba Rugi',
@@ -40,6 +41,7 @@ const profitLossRoute = createRoute({
 });
 
 const cashFlowRoute = createRoute({
+  tags: ['Reports'],
   method: 'get',
   path: '/cash-flow',
   description: 'Laporan Arus Kas',
@@ -67,6 +69,7 @@ const cashFlowRoute = createRoute({
 });
 
 const salesReportRoute = createRoute({
+  tags: ['Reports'],
   method: 'get',
   path: '/sales',
   description: 'Laporan Penjualan & Produk Terlaris',
@@ -98,6 +101,7 @@ const salesReportRoute = createRoute({
 });
 
 const inventoryReportRoute = createRoute({
+  tags: ['Reports'],
   method: 'get',
   path: '/inventory',
   description: 'Laporan Inventori & Stok Menipis',
@@ -125,6 +129,7 @@ const inventoryReportRoute = createRoute({
 });
 
 const dashboardRoute = createRoute({
+  tags: ['Reports'],
   method: 'get',
   path: '/dashboard',
   description: 'Data Ringkasan Dashboard (7 Hari Terakhir)',
@@ -152,6 +157,7 @@ const dashboardRoute = createRoute({
 });
 
 const exportRoute = createRoute({
+  tags: ['Reports'],
   method: 'get',
   path: '/export',
   description: 'Ekspor laporan',

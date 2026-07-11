@@ -37,6 +37,7 @@ const meResponseSchema = z.object({
 });
 
 const registerRoute = createRoute({
+  tags: ['Auth'],
   method: 'post',
   path: '/register',
   description: 'Mendaftarkan pengguna dan bisnis baru',
@@ -62,6 +63,7 @@ const registerRoute = createRoute({
 });
 
 const loginRoute = createRoute({
+  tags: ['Auth'],
   method: 'post',
   path: '/login',
   description: 'Masuk ke aplikasi',
@@ -87,6 +89,7 @@ const loginRoute = createRoute({
 });
 
 const meRoute = createRoute({
+  tags: ['Auth'],
   method: 'get',
   path: '/me',
   description: 'Mendapatkan data pengguna saat ini',
@@ -107,6 +110,7 @@ const meRoute = createRoute({
 });
 
 const refreshRoute = createRoute({
+  tags: ['Auth'],
   method: 'post',
   path: '/refresh',
   description: 'Refresh token',
@@ -119,6 +123,7 @@ const refreshRoute = createRoute({
 });
 
 const logoutRoute = createRoute({
+  tags: ['Auth'],
   method: 'post',
   path: '/logout',
   description: 'Logout dari aplikasi',

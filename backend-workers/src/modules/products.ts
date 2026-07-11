@@ -1,30 +1,139 @@
-import { Hono } from 'hono';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
-import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middleware/auth';
+import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 import bwipjs from 'bwip-js';
 
 const productSchema = z.object({
-  name: z.string().min(1, 'Nama produk wajib diisi').max(255),
+  name: z.string().min(1, 'Nama produk wajib diisi').max(255).openapi({ example: 'Kopi Susu' }),
+  category_id: z.string().uuid().nullable().optional().openapi({ example: null }),
+  sku: z.string().max(100).nullable().optional().openapi({ example: 'SKU-001' }),
+  barcode: z.string().max(100).nullable().optional().openapi({ example: 'BC-001' }),
+  cost_price: z.number().min(0).openapi({ example: 8000 }),
+  sell_price: z.number().min(0).openapi({ example: 15000 }),
+  min_stock: z.number().min(0).default(5).openapi({ example: 5 }),
+  initial_stock: z.number().min(0).default(0).openapi({ example: 100 }),
+});
+
+const productResponseSchema = z.object({
+  id: z.string().uuid(),
+  businessId: z.string().uuid(),
   categoryId: z.string().uuid().nullable().optional(),
-  sku: z.string().max(100).nullable().optional(),
-  barcode: z.string().max(100).nullable().optional(),
-  costPrice: z.number().min(0),
-  sellPrice: z.number().min(0),
-  minStock: z.number().min(0).default(5),
-  initialStock: z.number().min(0).default(0),
+  name: z.string(),
+  sku: z.string().nullable().optional(),
+  barcode: z.string().nullable().optional(),
+  costPrice: z.number().or(z.string()),
+  sellPrice: z.number().or(z.string()),
+  minStock: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  categoryName: z.string().nullable().optional(),
+  stock: z.number()
+}).passthrough();
+
+const listRoute = createRoute({
+  method: 'get',
+  path: '/',
+  tags: ['Products'],
+  description: 'Mendapatkan daftar produk',
+  request: {
+    query: z.object({
+      search: z.string().optional()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(productResponseSchema)) } },
+      description: 'Daftar produk',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
+  }
+});
+
+const createRouteDef = createRoute({
+  method: 'post',
+  path: '/',
+  tags: ['Products'],
+  description: 'Membuat produk baru',
+  request: {
+    body: {
+      content: { 'application/json': { schema: productSchema } }
+    }
+  },
+  responses: {
+    201: {
+      content: { 'application/json': { schema: createSuccessSchema(productResponseSchema) } },
+      description: 'Produk berhasil dibuat',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Input tidak valid',
+    },
+    403: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Batas paket gratis tercapai',
+    }
+  }
+});
+
+const barcodeRoute = createRoute({
+  method: 'get',
+  path: '/{id}/barcode',
+  tags: ['Products'],
+  description: 'Mendapatkan barcode produk',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'image/png': { schema: z.string().openapi({ type: 'string', format: 'binary' }) } },
+      description: 'Gambar barcode'
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Gagal generate barcode'
+    }
+  }
+});
+
+const qrcodeRoute = createRoute({
+  method: 'get',
+  path: '/{id}/qrcode',
+  tags: ['Products'],
+  description: 'Mendapatkan QR Code produk',
+  request: {
+    params: z.object({
+      id: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      content: { 'image/png': { schema: z.string().openapi({ type: 'string', format: 'binary' }) } },
+      description: 'Gambar QR Code'
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Gagal generate QR Code'
+    }
+  }
 });
 
 type Variables = { businessId: string; userId: string; roleId: string };
-export const productsRoute = new Hono<{ Bindings: any, Variables: Variables }>();
+export const productsRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }>();
 
 productsRoute.use('*', authMiddleware);
 
-productsRoute.get('/', requirePermission('products.read'), async (c) => {
+productsRoute.get('/', requirePermission('products.read'));
+productsRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const search = c.req.query('search');
+  const { search } = c.req.valid('query');
 
   try {
     let query = supabase
@@ -72,20 +181,20 @@ productsRoute.get('/', requirePermission('products.read'), async (c) => {
       stock: stockMap[p.id] || 0
     }));
 
-    return c.json({ success: true, data: keysToCamel(result) });
+    return c.json({ success: true, data: keysToCamel(result) }, 200);
   } catch (err: any) {
     console.error("Products GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil produk" } }, 500);
   }
 });
 
-productsRoute.post('/', requirePermission('products.write'), async (c) => {
+productsRoute.post('/', requirePermission('products.write'));
+productsRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
 
   try {
-    const body = await c.req.json();
-    const dataObj = productSchema.parse(body);
+    const dataObj = c.req.valid('json');
 
     // Validate quota: max 500 products
     const { count: productCount, error: countError } = await supabase
@@ -113,8 +222,8 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
     const warehouseId = whData.id;
 
     // Validate category
-    if (dataObj.categoryId) {
-      const { data: cat, error: catErr } = await supabase.from('categories').select('id').eq('id', dataObj.categoryId).eq('business_id', businessId).single();
+    if (dataObj.category_id) {
+      const { data: cat, error: catErr } = await supabase.from('categories').select('id').eq('id', dataObj.category_id).eq('business_id', businessId).single();
       if (catErr || !cat) throw new Error("Kategori tidak valid atau bukan milik bisnis ini");
     }
 
@@ -123,13 +232,13 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
       .from('products')
       .insert({
         business_id: businessId,
-        category_id: dataObj.categoryId || null,
+        category_id: dataObj.category_id || null,
         sku: dataObj.sku || null,
         barcode: dataObj.barcode || null,
         name: dataObj.name,
-        cost_price: dataObj.costPrice.toString(),
-        sell_price: dataObj.sellPrice.toString(),
-        min_stock: dataObj.minStock,
+        cost_price: dataObj.cost_price.toString(),
+        sell_price: dataObj.sell_price.toString(),
+        min_stock: dataObj.min_stock,
       })
       .select()
       .single();
@@ -142,7 +251,7 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
       .insert({
         product_id: newProduct.id,
         warehouse_id: warehouseId,
-        quantity: dataObj.initialStock,
+        quantity: dataObj.initial_stock,
       });
 
     if (stockError) {
@@ -150,7 +259,7 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
       // We don't rollback since we are simulating REST transaction, just log it.
     }
 
-    const result = { ...newProduct, stock: dataObj.initialStock };
+    const result = { ...newProduct, stock: dataObj.initial_stock };
     return c.json({ success: true, data: keysToCamel(result) }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal menyimpan produk");
@@ -158,10 +267,11 @@ productsRoute.post('/', requirePermission('products.write'), async (c) => {
   }
 });
 
-productsRoute.get('/:id/barcode', requirePermission('products.read'), async (c) => {
+productsRoute.get('/:id/barcode', requirePermission('products.read'));
+productsRoute.openapi(barcodeRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     const { data: p, error } = await supabase
@@ -186,16 +296,17 @@ productsRoute.get('/:id/barcode', requirePermission('products.read'), async (c) 
     });
     
     c.header('Content-Type', 'image/png');
-    return c.body(buffer as any);
+    return c.body(buffer as any, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal generate barcode" } }, 400);
   }
 });
 
-productsRoute.get('/:id/qrcode', requirePermission('products.read'), async (c) => {
+productsRoute.get('/:id/qrcode', requirePermission('products.read'));
+productsRoute.openapi(qrcodeRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     const { data: p, error } = await supabase
@@ -217,7 +328,7 @@ productsRoute.get('/:id/qrcode', requirePermission('products.read'), async (c) =
     });
     
     c.header('Content-Type', 'image/png');
-    return c.body(buffer as any);
+    return c.body(buffer as any, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal generate QR Code" } }, 400);
   }

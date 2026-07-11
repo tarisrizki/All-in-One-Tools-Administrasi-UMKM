@@ -51,6 +51,7 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
 }
 
 const predictionsRoute = createRoute({
+  tags: ['AI'],
   method: 'get',
   path: '/predictions',
   description: 'Mendapatkan prediksi AI (sales & stock alerts)',
@@ -87,6 +88,7 @@ const predictionsRoute = createRoute({
 });
 
 const summaryRoute = createRoute({
+  tags: ['AI'],
   method: 'get',
   path: '/summary',
   description: 'Mendapatkan ringkasan harian bisnis',
@@ -103,6 +105,7 @@ const summaryRoute = createRoute({
 });
 
 const chatRoute = createRoute({
+  tags: ['AI'],
   method: 'post',
   path: '/chat',
   description: 'Chat dengan AI Assistant',

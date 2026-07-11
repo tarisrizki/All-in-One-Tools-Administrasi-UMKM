@@ -10,6 +10,7 @@ const healthResponseSchema = z.object({
 });
 
 const route = createRoute({
+  tags: ['Health'],
   method: 'get',
   path: '/',
   description: 'Mengecek status sistem dan koneksi database',

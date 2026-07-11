@@ -27,6 +27,7 @@ const warehouseResponseSchema = z.object({
 });
 
 const listRoute = createRoute({
+  tags: ['Warehouses'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar semua gudang milik bisnis',
@@ -43,6 +44,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Warehouses'],
   method: 'post',
   path: '/',
   description: 'Membuat gudang baru (maksimal 5)',
@@ -68,6 +70,7 @@ const createRouteDef = createRoute({
 });
 
 const updateRouteDef = createRoute({
+  tags: ['Warehouses'],
   method: 'put',
   path: '/{id}',
   description: 'Mengubah data gudang yang ada',

@@ -30,6 +30,7 @@ const syncPushSchema = z.object({
 });
 
 const pullRoute = createRoute({
+  tags: ['Sync'],
   method: 'get',
   path: '/pull',
   description: 'Menarik data terbaru dari server (sinkronisasi)',
@@ -57,6 +58,7 @@ const pullRoute = createRoute({
 });
 
 const pushRoute = createRoute({
+  tags: ['Sync'],
   method: 'post',
   path: '/push',
   description: 'Mendorong data transaksi offline ke server',

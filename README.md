@@ -60,6 +60,21 @@ Frontend akan berjalan di `http://localhost:5173`
 
 Aplikasi ini menggunakan infrastruktur serverless.
 
+### Dokumentasi API Interaktif (OpenAPI)
+Backend menyediakan dokumentasi API interaktif menggunakan **Scalar** (mirip Swagger UI) yang dapat diakses di:
+- `http://localhost:8787/docs` (Lokal)
+- `https://[DOMAIN-ANDA]/docs` (Produksi)
+
+**Catatan Keamanan (Basic Auth)**:
+Untuk akses ke `/docs` dan `/openapi.json` di *environment* non-lokal (produksi/staging), sistem mewajibkan login Basic Auth. Konfigurasikan credentials pada dashboard Cloudflare (Wrangler Secrets):
+- `DOCS_USERNAME` (contoh: admin)
+- `DOCS_PASSWORD` (contoh: rahasia)
+
+Jika diakses via `localhost`, halaman dokumentasi akan terbuka langsung tanpa otentikasi.
+
+---
+
+
 **Backend (Cloudflare Workers)**:
 ```bash
 cd backend-workers

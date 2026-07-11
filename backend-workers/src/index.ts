@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { basicAuth } from 'hono/basic-auth';
 import { apiReference } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
@@ -37,6 +38,23 @@ app.use('*', async (c, next) => {
   })(c, next);
 });
 app.use('*', rateLimitMiddleware);
+
+const docsAuth = async (c: any, next: any) => {
+  const hostname = new URL(c.req.url).hostname;
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    const username = c.env.DOCS_USERNAME;
+    const password = c.env.DOCS_PASSWORD;
+    if (username && password) {
+      const auth = basicAuth({ username, password });
+      return auth(c, next);
+    }
+  }
+  return next();
+};
+
+app.use('/docs', docsAuth);
+app.use('/docs/*', docsAuth);
+app.use('/openapi.json', docsAuth);
 
 // OpenAPI Documentation
 app.doc('/openapi.json', {

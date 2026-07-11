@@ -38,6 +38,7 @@ const employeeStatusResponseSchema = z.object({
 });
 
 const listRoute = createRoute({
+  tags: ['Employees'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar karyawan milik bisnis',
@@ -54,6 +55,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Employees'],
   method: 'post',
   path: '/',
   description: 'Membuat akun karyawan baru (maksimal 20)',
@@ -79,6 +81,7 @@ const createRouteDef = createRoute({
 });
 
 const updateStatusRouteDef = createRoute({
+  tags: ['Employees'],
   method: 'put',
   path: '/{id}/status',
   description: 'Mengubah status aktif karyawan',
@@ -164,7 +167,12 @@ employeesRoute.openapi(createRouteDef, async (c) => {
     }
 
     // Validate role
-    const { data: role, error: roleErr } = await supabase.from('roles').select('id').eq('id', dataObj.role_id).eq('business_id', businessId).single();
+    const { data: role, error: roleErr } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('id', dataObj.role_id)
+      .or(`business_id.is.null,business_id.eq.${businessId}`)
+      .single();
     if (roleErr || !role) throw new Error("Role tidak valid atau bukan milik bisnis ini");
 
     const salt = await bcrypt.genSalt(10);

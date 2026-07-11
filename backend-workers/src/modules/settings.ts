@@ -5,6 +5,7 @@ import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
 const uploadRoute = createRoute({
+  tags: ['Settings'],
   method: 'post',
   path: '/upload',
   description: 'Mengunggah file (stamp, signature, logo, qris)',
@@ -35,6 +36,7 @@ const uploadRoute = createRoute({
 });
 
 const usageRoute = createRoute({
+  tags: ['Settings'],
   method: 'get',
   path: '/usage',
   description: 'Mendapatkan data penggunaan paket (kuota)',
@@ -60,6 +62,7 @@ const usageRoute = createRoute({
 });
 
 const qrisRoute = createRoute({
+  tags: ['Settings'],
   method: 'get',
   path: '/qris',
   description: 'Mendapatkan URL QRIS toko',
@@ -76,6 +79,7 @@ const qrisRoute = createRoute({
 });
 
 const appModeRoute = createRoute({
+  tags: ['Settings'],
   method: 'patch',
   path: '/app-mode',
   description: 'Mengubah mode aplikasi (simple / full)',

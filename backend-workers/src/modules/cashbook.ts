@@ -22,6 +22,7 @@ const cashbookResponseSchema = z.object({
 }).passthrough();
 
 const listRoute = createRoute({
+  tags: ['Cashbook'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar entri buku kas',
@@ -38,6 +39,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Cashbook'],
   method: 'post',
   path: '/',
   description: 'Membuat entri buku kas',

@@ -36,6 +36,7 @@ const debtResponseSchema = z.object({
 }).passthrough();
 
 const listRoute = createRoute({
+  tags: ['Debts'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar hutang/piutang',
@@ -58,6 +59,7 @@ const listRoute = createRoute({
 });
 
 const createRouteDef = createRoute({
+  tags: ['Debts'],
   method: 'post',
   path: '/',
   description: 'Membuat catatan hutang/piutang baru',
@@ -79,6 +81,7 @@ const createRouteDef = createRoute({
 });
 
 const deleteRoute = createRoute({
+  tags: ['Debts'],
   method: 'delete',
   path: '/{id}',
   description: 'Menghapus hutang/piutang',
@@ -104,6 +107,7 @@ const deleteRoute = createRoute({
 });
 
 const remindRoute = createRoute({
+  tags: ['Debts'],
   method: 'post',
   path: '/{id}/remind',
   description: 'Mengirimkan pesan pengingat WA',
@@ -121,6 +125,7 @@ const remindRoute = createRoute({
 });
 
 const getByIdRoute = createRoute({
+  tags: ['Debts'],
   method: 'get',
   path: '/{id}',
   description: 'Mendapatkan detail hutang/piutang',
@@ -146,6 +151,7 @@ const getByIdRoute = createRoute({
 });
 
 const payRoute = createRoute({
+  tags: ['Debts'],
   method: 'post',
   path: '/{id}/payments',
   description: 'Membayar cicilan hutang/piutang',

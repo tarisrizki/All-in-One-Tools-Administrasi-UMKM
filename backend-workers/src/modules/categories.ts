@@ -19,6 +19,7 @@ const categoryResponseSchema = z.object({
 });
 
 const categoriesListRoute = createRoute({
+  tags: ['Categories'],
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar semua kategori milik bisnis',
@@ -35,6 +36,7 @@ const categoriesListRoute = createRoute({
 });
 
 const categoryCreateRoute = createRoute({
+  tags: ['Categories'],
   method: 'post',
   path: '/',
   description: 'Membuat kategori baru',
@@ -58,6 +60,7 @@ const categoryCreateRoute = createRoute({
 });
 
 const categoryUpdateRoute = createRoute({
+  tags: ['Categories'],
   method: 'put',
   path: '/{id}',
   description: 'Mengubah kategori yang ada',
@@ -84,6 +87,7 @@ const categoryUpdateRoute = createRoute({
 });
 
 const categoryDeleteRoute = createRoute({
+  tags: ['Categories'],
   method: 'delete',
   path: '/{id}',
   description: 'Menghapus kategori',
