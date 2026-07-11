@@ -11,11 +11,13 @@
 	import { v4 as uuidv4 } from 'uuid';
 
 	import ProductGrid from '$lib/components/pos/ProductGrid.svelte';
+	import SimpleProductGrid from '$lib/components/pos/SimpleProductGrid.svelte';
 	import Cart from '$lib/components/pos/Cart.svelte';
 	import PaymentModal from '$lib/components/pos/PaymentModal.svelte';
 	import ReceiptModal from '$lib/components/pos/ReceiptModal.svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import { appModeState } from '$lib/stores/appMode.svelte';
 	import { liveQuery } from 'dexie';
 
 	let products = $state<LocalProduct[]>([]);
@@ -261,39 +263,71 @@
 	</div>
 
 	<!-- Main POS Grid -->
-	<div class="flex-1 overflow-hidden flex flex-col lg:flex-row relative">
-		<ProductGrid 
-			{loading} 
-			products={filteredProducts} 
-			onAddToCart={addToCart} 
-		/>
-
-		<!-- Desktop Cart -->
-		<div class="hidden lg:block h-full border-l border-border bg-paper w-[400px] xl:w-[440px] shrink-0 z-10 shadow-[-10px_0_20px_rgba(0,0,0,0.02)]">
-			<Cart 
-				{cart} 
-				{cartTotal} 
-				onUpdateQty={updateCartQty}
-				onClearCart={() => cart = []}
-				onPayClick={() => isPaying = true}
+	{#if appModeState.mode === 'simple'}
+		<!-- ===== MODE SEDERHANA ===== -->
+		<div class="flex-1 overflow-hidden flex flex-col">
+			<SimpleProductGrid
+				{loading}
+				products={filteredProducts}
+				{cart}
+				onAddToCart={addToCart}
 			/>
 		</div>
-	</div>
 
-	<!-- Mobile Sticky Bottom Bar -->
-	{#if cart.length > 0}
-		<div class="lg:hidden sticky bottom-0 z-40 bg-paper border-t border-border shadow-[0_-15px_30px_rgba(20,22,45,0.08)] p-4 flex justify-between items-center animate-in slide-in-from-bottom-5 rounded-t-3xl">
-			<div class="flex flex-col">
-				<span class="text-[10px] text-ink-soft font-bold uppercase tracking-widest font-mono">Total Pembayaran</span>
-				<span class="text-xl font-black text-ink font-grotesk tracking-tight">
-					{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartTotal)}
-				</span>
+		<!-- Simple Mode: Floating Cart Bar (always visible, dark pill) -->
+		<div class="sticky bottom-0 z-40 p-4">
+			<div class="bg-ink rounded-[18px] px-5 py-3.5 flex items-center justify-between shadow-[0_12px_32px_rgba(20,22,45,0.28)] transition-all duration-300 {cart.length === 0 ? 'opacity-60' : 'opacity-100'}">
+				<div>
+					<div class="text-[11px] text-white/60 font-sans mb-0.5">{cart.reduce((s, i) => s + i.qty, 0)} item dipilih</div>
+					<div class="font-grotesk font-extrabold text-[18px] text-white tracking-tight">
+						{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartTotal)}
+					</div>
+				</div>
+				<button
+					onclick={() => { if (cart.length > 0) isPaying = true; }}
+					class="bg-cta hover:bg-cta/90 text-white font-grotesk font-bold text-[14px] rounded-[12px] px-5 py-2.5 transition-all duration-200 disabled:opacity-40 border-none cursor-pointer"
+					disabled={cart.length === 0}
+				>
+					Bayar →
+				</button>
 			</div>
-			<Button variant="default" class="rounded-xl shadow-lg h-12 px-6 font-bold bg-brand hover:bg-brand-dark text-white gap-2 transition-transform hover:-translate-y-0.5" onclick={() => isCartOpen = true}>
-				<ShoppingCart class="w-5 h-5" />
-				({cart.length})
-			</Button>
 		</div>
+	{:else}
+		<!-- ===== MODE LENGKAP ===== -->
+		<div class="flex-1 overflow-hidden flex flex-col lg:flex-row relative">
+			<ProductGrid 
+				{loading} 
+				products={filteredProducts} 
+				onAddToCart={addToCart} 
+			/>
+
+			<!-- Desktop Cart -->
+			<div class="hidden lg:block h-full border-l border-border bg-paper w-[400px] xl:w-[440px] shrink-0 z-10 shadow-[-10px_0_20px_rgba(0,0,0,0.02)]">
+				<Cart 
+					{cart} 
+					{cartTotal} 
+					onUpdateQty={updateCartQty}
+					onClearCart={() => cart = []}
+					onPayClick={() => isPaying = true}
+				/>
+			</div>
+		</div>
+
+		<!-- Mobile Sticky Bottom Bar -->
+		{#if cart.length > 0}
+			<div class="lg:hidden sticky bottom-0 z-40 bg-paper border-t border-border shadow-[0_-15px_30px_rgba(20,22,45,0.08)] p-4 flex justify-between items-center animate-in slide-in-from-bottom-5 rounded-t-3xl">
+				<div class="flex flex-col">
+					<span class="text-[10px] text-ink-soft font-bold uppercase tracking-widest font-mono">Total Pembayaran</span>
+					<span class="text-xl font-black text-ink font-grotesk tracking-tight">
+						{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartTotal)}
+					</span>
+				</div>
+				<Button variant="default" class="rounded-xl shadow-lg h-12 px-6 font-bold bg-brand hover:bg-brand-dark text-white gap-2 transition-transform hover:-translate-y-0.5" onclick={() => isCartOpen = true}>
+					<ShoppingCart class="w-5 h-5" />
+					({cart.length})
+				</Button>
+			</div>
+		{/if}
 	{/if}
 </div>
 
