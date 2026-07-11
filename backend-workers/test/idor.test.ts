@@ -113,9 +113,9 @@ test('IDOR Protection: POST /purchases must enforce business ownership of wareho
     method: 'POST',
     headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      warehouse_id: '00000000-0000-4000-8000-000000000002', // Malicious input trying to use other business's warehouse
-      supplier_id: '00000000-0000-4000-8000-000000000003',
-      items: [{ product_id: '00000000-0000-4000-8000-000000000004', qty: 10, cost_price: 5000 }],
+      warehouseId: '00000000-0000-4000-8000-000000000002', // Malicious input trying to use other business's warehouse
+      supplierId: '00000000-0000-4000-8000-000000000003',
+      items: [{ productId: '00000000-0000-4000-8000-000000000004', qty: 10, costPrice: 5000 }],
     })
   });
 

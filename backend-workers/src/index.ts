@@ -48,6 +48,8 @@ const docsAuth = async (c: any, next: any) => {
       const auth = basicAuth({ username, password });
       return auth(c, next);
     }
+    // Fail-closed jika lupa set credentials di production
+    return c.json({ success: false, error: { message: 'Unauthorized' } }, 401);
   }
   return next();
 };
