@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
@@ -127,7 +126,7 @@ rolesRoute.openapi(listRoute, async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
+    return c.json({ success: true, data: data || [] }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil role" } }, 500);
   }
@@ -154,7 +153,7 @@ rolesRoute.openapi(createRouteDef, async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(newRole) }, 201);
+    return c.json({ success: true, data: newRole }, 201);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal membuat role" } }, 400);
   }
@@ -189,7 +188,7 @@ rolesRoute.openapi(updateRoute, async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(updatedRole) }, 200);
+    return c.json({ success: true, data: updatedRole }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengubah role" } }, 400);
   }

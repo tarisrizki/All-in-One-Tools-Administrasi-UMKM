@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
@@ -19,15 +18,15 @@ const updateSupplierSchema = createSupplierSchema.extend({
 
 const supplierResponseSchema = z.object({
   id: z.string().uuid(),
-  businessId: z.string().uuid(),
+  business_id: z.string().uuid(),
   name: z.string(),
-  contactName: z.string().nullable().optional(),
+  contact_name: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
-  isActive: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 const listRoute = createRoute({
@@ -120,7 +119,7 @@ suppliersRoute.openapi(listRoute, async (c) => {
       console.error("Supabase Error:", error);
       throw error;
     }
-    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
+    return c.json({ success: true, data: data || [] }, 200);
   } catch (err: any) {
     console.error("Suppliers GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil daftar supplier" } }, 500);
@@ -143,12 +142,13 @@ suppliersRoute.openapi(createRouteDef, async (c) => {
         contact_name: dataObj.contact_name,
         phone: dataObj.phone,
         address: dataObj.address,
-        email: dataObj.email
+        email: dataObj.email,
+        is_active: true
       })
       .select();
 
     if (error) throw error;
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 201);
+    return c.json({ success: true, data: data[0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
@@ -183,7 +183,7 @@ suppliersRoute.openapi(updateRouteDef, async (c) => {
       return c.json({ success: false, error: { message: "Supplier tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
+    return c.json({ success: true, data: data[0] }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

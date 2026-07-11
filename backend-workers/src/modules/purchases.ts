@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
@@ -24,19 +23,19 @@ const purchaseStatusSchema = z.object({
 
 const purchaseResponseSchema = z.object({
   id: z.string().uuid(),
-  businessId: z.string().uuid(),
-  warehouseId: z.string().uuid(),
-  supplierId: z.string().uuid(),
-  poNumber: z.string(),
+  business_id: z.string().uuid(),
+  warehouse_id: z.string().uuid(),
+  supplier_id: z.string().uuid(),
+  po_number: z.string(),
   status: z.string(),
-  totalAmount: z.string(),
-  expectedDate: z.string().nullable().optional(),
+  total_amount: z.string(),
+  expected_date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  createdBy: z.string().uuid(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  supplierName: z.string().nullable().optional(),
-  warehouseName: z.string().nullable().optional(),
+  created_by: z.string().uuid(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  supplier_name: z.string().nullable().optional(),
+  warehouse_name: z.string().nullable().optional(),
 }).passthrough();
 
 const listRoute = createRoute({
@@ -158,7 +157,7 @@ purchasesRoute.openapi(listRoute, async (c) => {
       warehouse_name: p.warehouses?.name || null
     }));
 
-    return c.json({ success: true, data: keysToCamel(formattedData) }, 200);
+    return c.json({ success: true, data: formattedData }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil PO" } }, 500);
   }
@@ -196,7 +195,7 @@ purchasesRoute.openapi(getByIdRoute, async (c) => {
       }))
     };
 
-    return c.json({ success: true, data: keysToCamel(formattedPo) }, 200);
+    return c.json({ success: true, data: formattedPo }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil detail PO" } }, 500);
   }
@@ -269,7 +268,7 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
       );
     }
 
-    return c.json({ success: true, data: keysToCamel(po) }, 201);
+    return c.json({ success: true, data: po }, 201);
   } catch (err: any) {
     return c.json({ success: false, error: { message: err.message || "Gagal menyimpan PO" } }, 400);
   }
@@ -325,7 +324,7 @@ purchasesRoute.openapi(updateStatusRouteDef, async (c) => {
       }
     }
 
-    return c.json({ success: true, data: keysToCamel(updatedPo) }, 200);
+    return c.json({ success: true, data: updatedPo }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengupdate status PO" } }, 400);
   }

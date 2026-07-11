@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
@@ -21,18 +20,18 @@ const paymentSchema = z.object({
 
 const debtResponseSchema = z.object({
   id: z.string().uuid(),
-  businessId: z.string().uuid(),
+  business_id: z.string().uuid(),
   type: z.string(),
-  entityName: z.string(),
-  entityPhone: z.string().nullable().optional(),
+  entity_name: z.string(),
+  entity_phone: z.string().nullable().optional(),
   amount: z.string(),
-  remainingAmount: z.string(),
+  remaining_amount: z.string(),
   status: z.string(),
-  dueDate: z.string().nullable().optional(),
+  due_date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  createdBy: z.string().uuid().nullable().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  created_by: z.string().uuid().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
 }).passthrough();
 
 const listRoute = createRoute({
@@ -198,7 +197,7 @@ debtsRoute.openapi(listRoute, async (c) => {
     const { data, error } = await query.order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
+    return c.json({ success: true, data: data || [] }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil data hutang/piutang" } }, 500);
   }
@@ -231,7 +230,7 @@ debtsRoute.openapi(createRouteDef, async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(data) }, 201);
+    return c.json({ success: true, data: data }, 201);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menyimpan hutang/piutang" } }, 400);
   }
@@ -273,7 +272,7 @@ debtsRoute.openapi(getByIdRoute, async (c) => {
 
     const { data: payments } = await supabase.from('debt_payments').select('*').eq('debt_id', id).order('payment_date', { ascending: false });
 
-    return c.json({ success: true, data: keysToCamel({ ...debt, payments: payments || [] }) }, 200);
+    return c.json({ success: true, data: { ...debt, payments: payments || [] } }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil data hutang/piutang" } }, 500);
   }
@@ -322,7 +321,7 @@ debtsRoute.openapi(payRoute, async (c) => {
       .select()
       .single();
 
-    return c.json({ success: true, data: keysToCamel(updatedDebt) }, 200);
+    return c.json({ success: true, data: updatedDebt }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal menyimpan pembayaran" } }, 400);
   }

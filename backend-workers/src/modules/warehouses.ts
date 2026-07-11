@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
@@ -116,7 +115,7 @@ warehousesRoute.openapi(listRoute, async (c) => {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
+    return c.json({ success: true, data: data || [] }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil daftar gudang" } }, 500);
   }
@@ -151,7 +150,7 @@ warehousesRoute.openapi(createRouteDef, async (c) => {
       .select();
 
     if (error) throw error;
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 201);
+    return c.json({ success: true, data: data[0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
@@ -183,7 +182,7 @@ warehousesRoute.openapi(updateRouteDef, async (c) => {
       return c.json({ success: false, error: { message: "Gudang tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
+    return c.json({ success: true, data: data[0] }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
@@ -131,7 +130,7 @@ categoriesRoute.openapi(categoriesListRoute, async (c) => {
       console.error("Supabase Error:", error);
       throw error;
     }
-    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
+    return c.json({ success: true, data: data || [] }, 200);
   } catch (err: any) {
     console.error("Categories GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil kategori" } }, 500);
@@ -155,7 +154,7 @@ categoriesRoute.openapi(categoryCreateRoute, async (c) => {
       .select();
 
     if (error) throw error;
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 201);
+    return c.json({ success: true, data: data[0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
@@ -182,7 +181,7 @@ categoriesRoute.openapi(categoryUpdateRoute, async (c) => {
       .select();
 
     if (error || !data || data.length === 0) throw new Error("Gagal mengupdate atau kategori tidak ditemukan");
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
+    return c.json({ success: true, data: data[0] }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import bcrypt from 'bcryptjs';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
@@ -21,9 +20,9 @@ const employeeResponseSchema = z.object({
   name: z.string(),
   phone: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
-  isActive: z.boolean().optional(),
-  roleId: z.string().uuid().optional(),
-  roleName: z.string().nullable().optional(),
+  is_active: z.boolean().optional(),
+  role_id: z.string().uuid().optional(),
+  role_name: z.string().nullable().optional(),
 });
 
 const employeeCreateResponseSchema = z.object({
@@ -34,7 +33,7 @@ const employeeCreateResponseSchema = z.object({
 
 const employeeStatusResponseSchema = z.object({
   id: z.string().uuid(),
-  isActive: z.boolean(),
+  is_active: z.boolean(),
 });
 
 const listRoute = createRoute({
@@ -141,7 +140,7 @@ employeesRoute.openapi(listRoute, async (c) => {
       role_name: user.roles?.name
     }));
 
-    return c.json({ success: true, data: keysToCamel(formattedData) }, 200);
+    return c.json({ success: true, data: formattedData }, 200);
   } catch (err: any) {
     console.error("Employees GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil daftar karyawan" } }, 500);
@@ -196,7 +195,7 @@ employeesRoute.openapi(createRouteDef, async (c) => {
       throw error;
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 201);
+    return c.json({ success: true, data: data[0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
@@ -230,7 +229,7 @@ employeesRoute.openapi(updateStatusRouteDef, async (c) => {
       return c.json({ success: false, error: { message: "Karyawan tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
+    return c.json({ success: true, data: data[0] }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

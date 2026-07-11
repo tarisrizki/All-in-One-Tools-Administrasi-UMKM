@@ -60,19 +60,19 @@ const predictionsRoute = createRoute({
       content: { 
         'application/json': { 
           schema: createSuccessSchema(z.object({
-            salesProjection: z.object({
-              prev7Days: z.number(),
-              last7Days: z.number(),
-              growthRate: z.number(),
-              projectedNext30Days: z.number()
+            sales_projection: z.object({
+              prev7_days: z.number(),
+              last7_days: z.number(),
+              growth_rate: z.number(),
+              projected_next30_days: z.number()
             }),
-            stockAlerts: z.array(z.object({
-              productId: z.string(),
-              productName: z.string(),
-              currentStock: z.number(),
-              totalSold: z.number(),
-              dailyVelocity: z.number(),
-              daysToEmpty: z.number(),
+            stock_alerts: z.array(z.object({
+              product_id: z.string(),
+              product_name: z.string(),
+              current_stock: z.number(),
+              total_sold: z.number(),
+              daily_velocity: z.number(),
+              days_to_empty: z.number(),
               status: z.string()
             }))
           })) 

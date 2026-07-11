@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
@@ -12,13 +11,13 @@ const cashbookSchema = z.object({
 
 const cashbookResponseSchema = z.object({
   id: z.string().uuid(),
-  businessId: z.string().uuid(),
+  business_id: z.string().uuid(),
   type: z.string(),
   category: z.string().nullable().optional(),
   amount: z.string(),
   note: z.string().nullable().optional(),
-  createdBy: z.string().uuid().nullable().optional(),
-  createdAt: z.string(),
+  created_by: z.string().uuid().nullable().optional(),
+  created_at: z.string(),
 }).passthrough();
 
 const listRoute = createRoute({
@@ -80,7 +79,7 @@ cashbookRoute.openapi(listRoute, async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(data || []) }, 200);
+    return c.json({ success: true, data: data || [] }, 200);
   } catch (err: any) {
     console.error("Cashbook GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil buku kas" } }, 500);
@@ -111,7 +110,7 @@ cashbookRoute.openapi(createRouteDef, async (c) => {
 
     if (error) throw error;
 
-    return c.json({ success: true, data: keysToCamel(result) }, 201);
+    return c.json({ success: true, data: result }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal menyimpan transaksi kas");
     return c.json({ success: false, error: { message: msg } }, 400);

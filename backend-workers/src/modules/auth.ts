@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import bcrypt from 'bcryptjs';
 import { sign } from 'hono/jwt';
 import { authMiddleware } from '../middleware/auth';
@@ -20,9 +19,9 @@ const loginSchema = z.object({
 
 const authResponseSchema = z.object({
   token: z.string(),
-  userId: z.string().uuid(),
-  businessId: z.string().uuid(),
-  appMode: z.string(),
+  user_id: z.string().uuid(),
+  business_id: z.string().uuid(),
+  app_mode: z.string(),
   permissions: z.array(z.string()).optional(),
 });
 
@@ -30,9 +29,9 @@ const meResponseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   phone: z.string(),
-  businessName: z.string().nullable().optional(),
-  businessSettings: z.record(z.string(), z.any()).nullable().optional(),
-  roleName: z.string().nullable().optional(),
+  business_name: z.string().nullable().optional(),
+  business_settings: z.record(z.string(), z.any()).nullable().optional(),
+  role_name: z.string().nullable().optional(),
   permissions: z.array(z.string()).nullable().optional(),
 });
 
@@ -275,7 +274,7 @@ authRoute.openapi(meRoute, async (c) => {
       permissions: (user as any).roles?.permissions
     };
 
-    return c.json({ success: true, data: keysToCamel(formattedData) }, 200);
+    return c.json({ success: true, data: formattedData }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { code: "FETCH_ME_FAILED", message: "Terjadi kesalahan" } }, 400);
   }

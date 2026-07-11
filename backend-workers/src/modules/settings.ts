@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
@@ -196,12 +195,10 @@ settingsRoute.openapi(usageRoute, async (c) => {
     
     return c.json({
       success: true,
-      data: keysToCamel({
-        products: { used: productCount || 0, max: 500 },
+      data: { products: { used: productCount || 0, max: 500 },
         customers: { used: customerCount || 0, max: 2000 },
         employees: { used: employeeCount || 0, max: 20 },
-        warehouses: { used: warehouseCount || 0, max: 5 }
-      })
+        warehouses: { used: warehouseCount || 0, max: 5 } }
     }, 200);
   } catch (e) {
     return c.json({ success: false, error: { message: "Gagal mengambil data pemakaian" } }, 500);

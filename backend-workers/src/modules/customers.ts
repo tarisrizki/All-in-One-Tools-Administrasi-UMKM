@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
@@ -13,15 +12,15 @@ const customerSchema = z.object({
 
 const customerResponseSchema = z.object({
   id: z.string().uuid(),
-  businessId: z.string().uuid(),
+  business_id: z.string().uuid(),
   name: z.string(),
   phone: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
-  createdBy: z.string().uuid().nullable().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  totalSpent: z.number().optional(),
+  created_by: z.string().uuid().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  total_spent: z.number().optional(),
   tier: z.string().optional(),
 });
 
@@ -185,7 +184,7 @@ customersRoute.openapi(listRoute, async (c) => {
       };
     });
 
-    return c.json({ success: true, data: keysToCamel(result) }, 200);
+    return c.json({ success: true, data: result }, 200);
   } catch (err: any) {
     console.error("Customers GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil daftar pelanggan" } }, 500);
@@ -226,7 +225,7 @@ customersRoute.openapi(getByIdRoute, async (c) => {
       tier: calculateTier(totalSpent)
     };
 
-    return c.json({ success: true, data: keysToCamel(result) }, 200);
+    return c.json({ success: true, data: result }, 200);
   } catch (err: any) {
     console.error("Customer GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil pelanggan" } }, 500);
@@ -266,7 +265,7 @@ customersRoute.openapi(createRouteDef, async (c) => {
       .select();
 
     if (error) throw error;
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 201);
+    return c.json({ success: true, data: data[0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);
@@ -299,7 +298,7 @@ customersRoute.openapi(updateRouteDef, async (c) => {
       return c.json({ success: false, error: { message: "Pelanggan tidak ditemukan" } }, 404);
     }
 
-    return c.json({ success: true, data: keysToCamel(data[0]) }, 200);
+    return c.json({ success: true, data: data[0] }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

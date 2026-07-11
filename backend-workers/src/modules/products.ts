@@ -1,6 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 import bwipjs from 'bwip-js';
@@ -18,17 +17,17 @@ const productSchema = z.object({
 
 const productResponseSchema = z.object({
   id: z.string().uuid(),
-  businessId: z.string().uuid(),
-  categoryId: z.string().uuid().nullable().optional(),
+  business_id: z.string().uuid(),
+  category_id: z.string().uuid().nullable().optional(),
   name: z.string(),
   sku: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
-  costPrice: z.number().or(z.string()),
-  sellPrice: z.number().or(z.string()),
-  minStock: z.number(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  categoryName: z.string().nullable().optional(),
+  cost_price: z.number().or(z.string()),
+  sell_price: z.number().or(z.string()),
+  min_stock: z.number(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  category_name: z.string().nullable().optional(),
   stock: z.number()
 }).passthrough();
 
@@ -181,7 +180,7 @@ productsRoute.openapi(listRoute, async (c) => {
       stock: stockMap[p.id] || 0
     }));
 
-    return c.json({ success: true, data: keysToCamel(result) }, 200);
+    return c.json({ success: true, data: result }, 200);
   } catch (err: any) {
     console.error("Products GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil produk" } }, 500);
@@ -260,7 +259,7 @@ productsRoute.openapi(createRouteDef, async (c) => {
     }
 
     const result = { ...newProduct, stock: dataObj.initialStock };
-    return c.json({ success: true, data: keysToCamel(result) }, 201);
+    return c.json({ success: true, data: result }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal menyimpan produk");
     return c.json({ success: false, error: { message: msg } }, 400);
