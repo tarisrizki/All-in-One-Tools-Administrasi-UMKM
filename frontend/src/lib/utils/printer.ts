@@ -76,13 +76,15 @@ export class ESCPOSPrinter {
 	}
 
 	printBrowserReceipt(storeName: string, items: any[], grandTotal: string, transactionId?: string) {
-		// Buat iframe tersembunyi
+		// Buat iframe tersembunyi untuk mencetak. 
+		// PERHATIAN: Di Android Chrome, iframe dengan width:0/height:0 sering menghasilkan cetakan kosong.
+		// Solusi: beri dimensi asli tapi sembunyikan jauh di luar layar.
 		const iframe = document.createElement('iframe');
 		iframe.style.position = 'fixed';
-		iframe.style.right = '-1000px';
-		iframe.style.bottom = '-1000px';
-		iframe.style.width = '0';
-		iframe.style.height = '0';
+		iframe.style.right = '-10000px';
+		iframe.style.bottom = '-10000px';
+		iframe.style.width = '100vw';
+		iframe.style.height = '100vh';
 		document.body.appendChild(iframe);
 
 		const dateStr = new Date().toLocaleString('id-ID', {
