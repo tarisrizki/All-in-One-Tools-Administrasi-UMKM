@@ -206,9 +206,9 @@ authRoute.openapi(registerRoute, async (c) => {
       success: true, 
       data: { 
         token, 
-        userId: user.id, 
-        businessId: business.id,
-        appMode: 'simple',
+        user_id: user.id, 
+        business_id: business.id,
+        app_mode: 'simple',
         permissions: ownerRole.permissions
       } 
     }, 201);
@@ -243,7 +243,7 @@ authRoute.openapi(loginRoute, async (c) => {
     const appMode = (user as any).businesses?.settings?.appMode || 'full';
     const permissions = (user as any).roles?.permissions || [];
 
-    return c.json({ success: true, data: { token, userId: user.id, businessId: user.business_id, appMode, permissions } }, 200);
+    return c.json({ success: true, data: { token, user_id: user.id, business_id: user.business_id, app_mode: appMode, permissions } }, 200);
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal masuk");
     return c.json({ success: false, error: { code: "LOGIN_FAILED", message } }, 400);

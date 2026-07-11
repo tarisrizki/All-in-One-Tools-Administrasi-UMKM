@@ -208,16 +208,24 @@ aiRoute.openapi(predictionsRoute, async (c) => {
     
     stockAlerts.sort((a, b) => a.daysToEmpty - b.daysToEmpty);
     
-    return c.json({
-      success: true,
+    return c.json({ 
+      success: true, 
       data: {
-        salesProjection: {
-          prev7Days: prev7DaysTotal,
-          last7Days: last7DaysTotal,
-          growthRate,
-          projectedNext30Days
+        sales_projection: {
+          prev7_days: prev7DaysTotal,
+          last7_days: last7DaysTotal,
+          growth_rate: growthRate,
+          projected_next30_days: projectedNext30Days
         },
-        stockAlerts: stockAlerts.slice(0, 10)
+        stock_alerts: stockAlerts.slice(0, 10).map(s => ({
+          product_id: s.productId,
+          product_name: s.productName,
+          current_stock: s.currentStock,
+          total_sold: s.totalSold,
+          daily_velocity: s.dailyVelocity,
+          days_to_empty: s.daysToEmpty,
+          status: s.status
+        }))
       }
     }, 200);
   } catch (e: any) {
