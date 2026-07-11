@@ -65,13 +65,13 @@ async function pushPendingTransactions() {
 			body: JSON.stringify({ transactions: pending })
 		});
 
-		if (res.ok) {
+		if (res.success) {
 			// Successfully pushed, remove from local DB
 			const ids = pending.map(t => t.client_transaction_id);
 			await db.pending_transactions.bulkDelete(ids);
 			console.log(`Successfully synced ${ids.length} transactions`);
 		} else {
-			console.error('Failed to push transactions', await res.text());
+			console.error('Failed to push transactions', res);
 		}
 	} catch (error) {
 		console.error('Network error during push', error);
@@ -100,9 +100,8 @@ async function pullLatestData() {
 			}
 		});
 
-		if (res.ok) {
-			const { data } = await res.json();
-			const { products, categories, customers } = data;
+		if (res.success) {
+			const { products, categories, customers } = res.data;
 
 			if (products && products.length > 0) {
 				await db.products.bulkPut(products);

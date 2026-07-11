@@ -112,7 +112,7 @@
 
 		isSubmitting = true;
 		try {
-			const json = await apiClient('/purchase-orders', {
+			const json = await apiClient('/purchases', {
 					method: 'POST',
 					body: JSON.stringify(po)
 			});

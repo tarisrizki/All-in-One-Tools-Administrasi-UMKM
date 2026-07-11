@@ -27,7 +27,7 @@
 	async function fetchPurchases() {
 		loading = true;
 		try {
-			const json = await apiClient('/purchase-orders');
+			const json = await apiClient('/purchases');
 			if (json.success) {
 				purchases = json.data;
 			} else {
@@ -45,7 +45,7 @@
 
 		isSubmitting = true;
 		try {
-			const json = await apiClient(`/purchase-orders/${selectedPo.id}/status`, {
+			const json = await apiClient(`/purchases/${selectedPo.id}/status`, {
 					method: 'PATCH',
 					body: JSON.stringify({ status: newStatus })
 			});
