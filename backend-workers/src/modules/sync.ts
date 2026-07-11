@@ -19,7 +19,7 @@ const paymentSchema = z.object({
 const syncPushSchema = z.object({
   transactions: z.array(
     z.object({
-      client_transaction_id: z.string().uuid(),
+      clientTransactionId: z.string().uuid(),
       items: z.array(saleItemSchema).min(1),
       payments: z.array(paymentSchema).min(1),
       customerName: z.string().max(255).nullable().optional(),
@@ -173,7 +173,7 @@ syncRoute.openapi(pushRoute, async (c) => {
     let processed = 0;
 
     for (const t of data.transactions) {
-      const { data: existingSale } = await supabase.from('sales').select('id').eq('business_id', businessId).eq('client_transaction_id', t.client_transaction_id).single();
+      const { data: existingSale } = await supabase.from('sales').select('id').eq('business_id', businessId).eq('client_transaction_id', t.clientTransactionId).single();
       if (existingSale) continue; // Skip existing
 
       let subtotal = 0;
@@ -188,7 +188,7 @@ syncRoute.openapi(pushRoute, async (c) => {
       const { data: sale, error: saleErr } = await supabase.from('sales').insert({
         business_id: businessId,
         warehouse_id: warehouseId,
-        client_transaction_id: t.client_transaction_id,
+        client_transaction_id: t.clientTransactionId,
         invoice_number: invoiceNumber,
         subtotal: subtotal.toString(),
         discount_total: discountTotal.toString(),

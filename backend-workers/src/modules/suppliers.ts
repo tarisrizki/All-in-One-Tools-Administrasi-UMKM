@@ -6,7 +6,7 @@ import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
 const createSupplierSchema = z.object({
   name: z.string().min(1, 'Nama supplier wajib diisi').max(255).openapi({ example: 'PT Supplier Maju' }),
-  contact_name: z.string().max(255).nullable().optional().openapi({ example: 'Budi' }),
+  contactName: z.string().max(255).nullable().optional().openapi({ example: 'Budi' }),
   phone: z.string().max(30).nullable().optional().openapi({ example: '08123456789' }),
   address: z.string().nullable().optional().openapi({ example: 'Jl. Merdeka No 2' }),
   email: z.string().max(255).nullable().optional().openapi({ example: 'budi@supplier.com' }),
@@ -14,7 +14,7 @@ const createSupplierSchema = z.object({
 
 const updateSupplierSchema = createSupplierSchema.extend({
   name: z.string().min(1).max(255).optional(),
-  is_active: z.boolean().optional(),
+  isActive: z.boolean().optional(),
 });
 
 const supplierResponseSchema = z.object({
@@ -140,7 +140,7 @@ suppliersRoute.openapi(createRouteDef, async (c) => {
       .insert({
         business_id: businessId,
         name: dataObj.name,
-        contact_name: dataObj.contact_name,
+        contact_name: dataObj.contactName,
         phone: dataObj.phone,
         address: dataObj.address,
         email: dataObj.email
@@ -166,11 +166,11 @@ suppliersRoute.openapi(updateRouteDef, async (c) => {
 
     const updateData: any = { updated_at: new Date().toISOString() };
     if (dataObj.name !== undefined) updateData.name = dataObj.name;
-    if (dataObj.contact_name !== undefined) updateData.contact_name = dataObj.contact_name;
+    if (dataObj.contactName !== undefined) updateData.contact_name = dataObj.contactName;
     if (dataObj.phone !== undefined) updateData.phone = dataObj.phone;
     if (dataObj.address !== undefined) updateData.address = dataObj.address;
     if (dataObj.email !== undefined) updateData.email = dataObj.email;
-    if (dataObj.is_active !== undefined) updateData.is_active = dataObj.is_active;
+    if (dataObj.isActive !== undefined) updateData.is_active = dataObj.isActive;
 
     const { data, error } = await supabase
       .from('suppliers')

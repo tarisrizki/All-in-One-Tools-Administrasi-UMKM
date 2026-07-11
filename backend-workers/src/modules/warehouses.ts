@@ -7,12 +7,12 @@ import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 const createWarehouseSchema = z.object({
   name: z.string().min(1, 'Nama gudang wajib diisi').max(255).openapi({ example: 'Gudang Pusat' }),
   address: z.string().nullable().optional().openapi({ example: 'Jl. Merdeka No 1' }),
-  is_default: z.boolean().optional().openapi({ example: true }),
+  isDefault: z.boolean().optional().openapi({ example: true }),
 });
 
 const updateWarehouseSchema = createWarehouseSchema.extend({
   name: z.string().min(1).max(255).optional().openapi({ example: 'Gudang Cabang' }),
-  is_active: z.boolean().optional().openapi({ example: true }),
+  isActive: z.boolean().optional().openapi({ example: true }),
 });
 
 const warehouseResponseSchema = z.object({
@@ -146,7 +146,7 @@ warehousesRoute.openapi(createRouteDef, async (c) => {
         business_id: businessId,
         name: dataObj.name,
         address: dataObj.address,
-        is_default: dataObj.is_default || false,
+        is_default: dataObj.isDefault || false,
       })
       .select();
 
@@ -169,8 +169,8 @@ warehousesRoute.openapi(updateRouteDef, async (c) => {
     const updateData: any = { updated_at: new Date().toISOString() };
     if (dataObj.name !== undefined) updateData.name = dataObj.name;
     if (dataObj.address !== undefined) updateData.address = dataObj.address;
-    if (dataObj.is_default !== undefined) updateData.is_default = dataObj.is_default;
-    if (dataObj.is_active !== undefined) updateData.is_active = dataObj.is_active;
+    if (dataObj.isDefault !== undefined) updateData.is_default = dataObj.isDefault;
+    if (dataObj.isActive !== undefined) updateData.is_active = dataObj.isActive;
 
     const { data, error } = await supabase
       .from('warehouses')

@@ -7,13 +7,13 @@ import bwipjs from 'bwip-js';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi').max(255).openapi({ example: 'Kopi Susu' }),
-  category_id: z.string().uuid().nullable().optional().openapi({ example: null }),
+  categoryId: z.string().uuid().nullable().optional().openapi({ example: null }),
   sku: z.string().max(100).nullable().optional().openapi({ example: 'SKU-001' }),
   barcode: z.string().max(100).nullable().optional().openapi({ example: 'BC-001' }),
-  cost_price: z.number().min(0).openapi({ example: 8000 }),
-  sell_price: z.number().min(0).openapi({ example: 15000 }),
-  min_stock: z.number().min(0).default(5).openapi({ example: 5 }),
-  initial_stock: z.number().min(0).default(0).openapi({ example: 100 }),
+  costPrice: z.number().min(0).openapi({ example: 8000 }),
+  sellPrice: z.number().min(0).openapi({ example: 15000 }),
+  minStock: z.number().min(0).default(5).openapi({ example: 5 }),
+  initialStock: z.number().min(0).default(0).openapi({ example: 100 }),
 });
 
 const productResponseSchema = z.object({
@@ -222,8 +222,8 @@ productsRoute.openapi(createRouteDef, async (c) => {
     const warehouseId = whData.id;
 
     // Validate category
-    if (dataObj.category_id) {
-      const { data: cat, error: catErr } = await supabase.from('categories').select('id').eq('id', dataObj.category_id).eq('business_id', businessId).single();
+    if (dataObj.categoryId) {
+      const { data: cat, error: catErr } = await supabase.from('categories').select('id').eq('id', dataObj.categoryId).eq('business_id', businessId).single();
       if (catErr || !cat) throw new Error("Kategori tidak valid atau bukan milik bisnis ini");
     }
 
@@ -232,13 +232,13 @@ productsRoute.openapi(createRouteDef, async (c) => {
       .from('products')
       .insert({
         business_id: businessId,
-        category_id: dataObj.category_id || null,
+        category_id: dataObj.categoryId || null,
         sku: dataObj.sku || null,
         barcode: dataObj.barcode || null,
         name: dataObj.name,
-        cost_price: dataObj.cost_price.toString(),
-        sell_price: dataObj.sell_price.toString(),
-        min_stock: dataObj.min_stock,
+        cost_price: dataObj.costPrice.toString(),
+        sell_price: dataObj.sellPrice.toString(),
+        min_stock: dataObj.minStock,
       })
       .select()
       .single();
@@ -251,7 +251,7 @@ productsRoute.openapi(createRouteDef, async (c) => {
       .insert({
         product_id: newProduct.id,
         warehouse_id: warehouseId,
-        quantity: dataObj.initial_stock,
+        quantity: dataObj.initialStock,
       });
 
     if (stockError) {
@@ -259,7 +259,7 @@ productsRoute.openapi(createRouteDef, async (c) => {
       // We don't rollback since we are simulating REST transaction, just log it.
     }
 
-    const result = { ...newProduct, stock: dataObj.initial_stock };
+    const result = { ...newProduct, stock: dataObj.initialStock };
     return c.json({ success: true, data: keysToCamel(result) }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal menyimpan produk");

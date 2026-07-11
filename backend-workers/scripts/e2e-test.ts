@@ -98,7 +98,7 @@ async function main() {
     name: "Kasir E2E",
     phone: `082${Math.floor(Math.random() * 100000000)}`,
     password: "password123",
-    role_id: cashierRole.id
+    roleId: cashierRole.id
   };
   const empRes = await fetch(`${baseUrl}/employees`, {
     method: 'POST',
@@ -142,8 +142,8 @@ async function main() {
   console.log("\nExecuting Step F: Create Debt");
   const debtPayload = {
     type: "piutang",
-    entity_name: "Pelanggan E2E",
-    entity_phone: "0899999999",
+    entityName: "Pelanggan E2E",
+    entityPhone: "0899999999",
     amount: 50000,
     notes: "Hutang bon warung"
   };
