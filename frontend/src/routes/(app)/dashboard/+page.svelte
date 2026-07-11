@@ -8,6 +8,8 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { RefreshCcw, Settings, LogOut } from '@lucide/svelte';
 
+	import { appModeState } from '$lib/stores/appMode.svelte';
+
 	import StatsGrid from '$lib/components/dashboard/StatsGrid.svelte';
 	import SalesChart from '$lib/components/dashboard/SalesChart.svelte';
 	import RecentActivity from '$lib/components/dashboard/RecentActivity.svelte';
@@ -102,25 +104,55 @@
 		</div>
 
 		<!-- Stats Grid -->
-		<StatsGrid isPending={dashboardQuery.isPending} data={dashboardQuery.data} />
+		{#if appModeState.mode === 'full'}
+			<StatsGrid isPending={dashboardQuery.isPending} data={dashboardQuery.data} />
+		{:else}
+			<!-- Simplified stats for simple mode -->
+			<div class="mb-6 grid grid-cols-2 gap-4">
+				<div class="p-5 rounded-2xl bg-brand text-white shadow-md">
+					<div class="text-xs font-mono opacity-80 uppercase tracking-widest mb-1">Penjualan Hari Ini</div>
+					<div class="text-2xl font-bold font-mono">
+						{dashboardQuery.isPending ? '...' : (dashboardQuery.data?.todaySales ? 'Rp ' + dashboardQuery.data.todaySales.toLocaleString('id-ID') : 'Rp 0')}
+					</div>
+				</div>
+				<div class="p-5 rounded-2xl bg-paper border border-border shadow-sm">
+					<div class="text-xs font-mono text-ink-soft uppercase tracking-widest mb-1">Transaksi Hari Ini</div>
+					<div class="text-2xl font-bold font-mono text-ink">
+						{dashboardQuery.isPending ? '...' : (dashboardQuery.data?.todayCount || 0)}
+					</div>
+				</div>
+			</div>
+		{/if}
 
 		<!-- Body: Chart + Quick Access -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+			
+			{#if appModeState.mode === 'simple'}
+				<!-- RIGHT: Quick Access (Moved to top for simple mode) -->
+				<div class="lg:col-span-3">
+					<QuickAccess />
+				</div>
+			{/if}
+
 			<!-- LEFT: Chart & Activity -->
 			<div class="lg:col-span-2 space-y-6">
-				<SalesChart
-					isPending={dashboardQuery.isPending}
-					weeklyData={dashboardQuery.data?.weeklyData}
-				/>
-				<Separator />
+				{#if appModeState.mode === 'full'}
+					<SalesChart
+						isPending={dashboardQuery.isPending}
+						weeklyData={dashboardQuery.data?.weeklyData}
+					/>
+					<Separator />
+				{/if}
 				<RecentActivity
 					isPending={dashboardQuery.isPending}
 					transactions={dashboardQuery.data?.recentTransactions}
 				/>
 			</div>
 
-			<!-- RIGHT: Quick Access -->
-			<QuickAccess />
+			{#if appModeState.mode === 'full'}
+				<!-- RIGHT: Quick Access -->
+				<QuickAccess />
+			{/if}
 		</div>
 	</div>
 </main>

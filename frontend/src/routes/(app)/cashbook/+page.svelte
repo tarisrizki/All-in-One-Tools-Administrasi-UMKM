@@ -77,7 +77,7 @@
 										<Table.Cell class="whitespace-nowrap text-ink-soft font-mono text-sm">
 											{formatDateTime(entry.created_at)}
 										</Table.Cell>
-										<Table.Cell class="font-semibold text-ink">{entry.description}</Table.Cell>
+										<Table.Cell class="font-semibold text-ink">{entry.note || '-'}</Table.Cell>
 										<Table.Cell
 											class="text-right font-bold font-mono {entry.type === 'in'
 												? 'text-success'

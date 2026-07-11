@@ -224,7 +224,7 @@ salesRoute.openapi(listRoute, async (c) => {
   try {
     let query = supabase
       .from('sales')
-      .select('*, customers(name)', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('business_id', businessId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limitNum - 1);
@@ -254,13 +254,23 @@ salesRoute.openapi(listRoute, async (c) => {
       }
     }
 
+    // Fetch customers manually
+    let custMap: Record<string, string> = {};
+    const customerIds = (rows || []).map((r: any) => r.customer_id).filter(Boolean);
+    if (customerIds.length > 0) {
+      const { data: custRows } = await supabase.from('customers').select('id, name').in('id', customerIds);
+      for (const c of custRows || []) {
+        custMap[c.id] = c.name;
+      }
+    }
+
     const formattedRows = (rows || []).map((r: any) => ({
       id: r.id,
       invoice_number: r.invoice_number,
       grand_total: r.grand_total,
       status: r.status,
       created_at: r.created_at,
-      customer_name: r.customers?.name || null,
+      customer_name: r.customer_id ? (custMap[r.customer_id] || 'Pelanggan Umum') : null,
       payment_method: methodMap[r.id] || '-'
     }));
 
@@ -478,7 +488,7 @@ salesRoute.openapi(documentRoute, async (c) => {
     // 1. Fetch sale data
     const { data: sale, error: saleErr } = await supabase
       .from('sales')
-      .select('*, customers(name, phone)')
+      .select('*')
       .eq('id', id)
       .eq('business_id', businessId)
       .single();
@@ -499,6 +509,13 @@ salesRoute.openapi(documentRoute, async (c) => {
       .single();
 
     const businessName = biz?.name || "Toko Anda";
+
+    let cust = { name: 'Pelanggan Umum', phone: '' };
+    if (sale.customer_id) {
+       const { data: cData } = await supabase.from('customers').select('name, phone').eq('id', sale.customer_id).single();
+       if (cData) cust = cData;
+    }
+    sale.customers = cust;
 
     // 4. Generate PDF
     const pdfDoc = await PDFDocument.create();
@@ -601,14 +618,18 @@ salesRoute.openapi(sendWaRoute, async (c) => {
   try {
     const { data: sale, error } = await supabase
       .from('sales')
-      .select('invoice_number, grand_total, customers(name, phone)')
+      .select('invoice_number, grand_total, customer_id')
       .eq('id', id)
       .eq('business_id', businessId)
       .single();
 
     if (error || !sale) return c.json({ success: false, error: { message: "Transaksi tidak ditemukan" } }, 404);
     
-    const customer: any = sale.customers;
+    let customer: any = { name: 'Pelanggan Umum', phone: null };
+    if (sale.customer_id) {
+      const { data: cData } = await supabase.from('customers').select('name, phone').eq('id', sale.customer_id).single();
+      if (cData) customer = cData;
+    }
     if (!customer?.phone) return c.json({ success: false, error: { message: "Pelanggan tidak memiliki nomor telepon" } }, 400);
 
     const phone = customer.phone;
@@ -656,14 +677,18 @@ salesRoute.openapi(sendEmailRoute, async (c) => {
   try {
     const { data: sale, error } = await supabase
       .from('sales')
-      .select('invoice_number, grand_total, customers(name, email)')
+      .select('invoice_number, grand_total, customer_id')
       .eq('id', id)
       .eq('business_id', businessId)
       .single();
 
     if (error || !sale) return c.json({ success: false, error: { message: "Transaksi tidak ditemukan" } }, 404);
     
-    const customer: any = sale.customers;
+    let customer: any = { name: 'Pelanggan Umum', email: null };
+    if (sale.customer_id) {
+      const { data: cData } = await supabase.from('customers').select('name, email').eq('id', sale.customer_id).single();
+      if (cData) customer = cData;
+    }
     if (!customer?.email) return c.json({ success: false, error: { message: "Pelanggan tidak memiliki email valid" } }, 400);
 
     const email = customer.email;
