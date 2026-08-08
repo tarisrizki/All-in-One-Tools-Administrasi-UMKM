@@ -6,7 +6,10 @@ import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '
 const roleSchema = z.object({
   name: z.string().min(1, "Nama role wajib diisi").max(50),
   description: z.string().nullable().optional(),
-  permissions: z.array(z.string())
+  permissions: z.array(z.string()).refine(
+    (perms) => !perms.includes('*'),
+    { message: "Permission wildcard '*' tidak diizinkan —只能用 daftar permission spesifik" }
+  )
 });
 
 const roleResponseSchema = z.object({

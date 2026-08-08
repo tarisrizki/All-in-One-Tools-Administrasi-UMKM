@@ -118,8 +118,16 @@ const remindRoute = createRoute({
   responses: {
     200: {
       content: { 'application/json': { schema: MessageSuccessSchema } },
-      description: 'Berhasil',
+      description: 'Pengingat terkirim',
     },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Data tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    }
   },
 });
 
@@ -257,6 +265,15 @@ debtsRoute.openapi(deleteRoute, async (c) => {
 
 debtsRoute.post('/:id/remind', requirePermission('debts.manage'));
 debtsRoute.openapi(remindRoute, async (c) => {
+  const supabase = getSupabase(c.env);
+  const businessId = c.get('businessId');
+  const { id } = c.req.valid('param');
+
+  // IDOR guard — pastikan debt milik bisnis ini
+  const { data: debt } = await supabase
+    .from('debts').select('id').eq('id', id).eq('business_id', businessId).single();
+  if (!debt) return c.json({ success: false, error: { message: "Data tidak ditemukan" } }, 404);
+
   return c.json({ success: true, message: "Pengingat WA berhasil dikirim (simulasi)" }, 200);
 });
 
@@ -299,7 +316,9 @@ debtsRoute.openapi(payRoute, async (c) => {
     }
 
     let paymentAmount = amount;
-    if (paymentAmount > currentRemaining) paymentAmount = currentRemaining;
+    if (paymentAmount > currentRemaining) {
+      return c.json({ success: false, error: { message: `Jumlah pembayaran (Rp ${paymentAmount.toLocaleString('id-ID')}) melebihi sisa tagihan (Rp ${currentRemaining.toLocaleString('id-ID')})` } }, 400);
+    }
     const newRemaining = currentRemaining - paymentAmount;
     let newStatus = debt.status;
 

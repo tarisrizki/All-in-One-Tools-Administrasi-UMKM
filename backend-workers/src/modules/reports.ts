@@ -174,6 +174,19 @@ export const reportsRoute = new OpenAPIHono<{ Bindings: any, Variables: Variable
 
 reportsRoute.use('*', authMiddleware);
 
+// Helper: convert WIB date string ke UTC timestamp.
+// Indonesia (WIB) = UTC+7. startDay → 00:00 WIB → UTC (minus 7 jam).
+// endDay → 23:59:59 WIB → UTC (next day 00:00 minus 1 detik, minus 7 jam).
+const toUTC = (dateStr: string, endOfDay = false): string => {
+  const d = new Date(dateStr + 'T00:00:00');
+  const offsetMs = 7 * 60 * 60 * 1000; // WIB = UTC+7
+  if (endOfDay) {
+    // 23:59:59 WIB = next day 00:00 UTC minus 1 detik
+    return new Date(d.getTime() + 24 * 60 * 60 * 1000 - 1000 - offsetMs).toISOString();
+  }
+  return new Date(d.getTime() - offsetMs).toISOString();
+};
+
 reportsRoute.get('/profit-loss', requirePermission('reports.read'));
 reportsRoute.openapi(profitLossRoute, async (c) => {
   const supabase = getSupabase(c.env);
@@ -186,9 +199,9 @@ reportsRoute.openapi(profitLossRoute, async (c) => {
     let itemsQuery = supabase.from('sale_items').select('qty, sales!inner(business_id, status, created_at, id), products(cost_price)').eq('sales.business_id', businessId).neq('sales.status', 'void');
 
     if (startDate && endDate) {
-      salesQuery = salesQuery.gte('created_at', `${startDate} 00:00:00`).lte('created_at', `${endDate} 23:59:59`);
+      salesQuery = salesQuery.gte('created_at', toUTC(startDate)).lte('created_at', toUTC(endDate, true));
       cashbookQuery = cashbookQuery.gte('entry_date', startDate).lte('entry_date', endDate);
-      itemsQuery = itemsQuery.gte('sales.created_at', `${startDate} 00:00:00`).lte('sales.created_at', `${endDate} 23:59:59`);
+      itemsQuery = itemsQuery.gte('sales.created_at', toUTC(startDate)).lte('sales.created_at', toUTC(endDate, true));
     }
 
     const [salesRes, cashbookRes, itemsRes] = await Promise.all([
@@ -241,10 +254,10 @@ reportsRoute.openapi(cashFlowRoute, async (c) => {
     let purchasesQuery = supabase.from('purchase_orders').select('total_amount').eq('business_id', businessId);
 
     if (startDate && endDate) {
-      salesQuery = salesQuery.gte('created_at', `${startDate} 00:00:00`).lte('created_at', `${endDate} 23:59:59`);
+      salesQuery = salesQuery.gte('created_at', toUTC(startDate)).lte('created_at', toUTC(endDate, true));
       cashbookQuery = cashbookQuery.gte('entry_date', startDate).lte('entry_date', endDate);
       debtsQuery = debtsQuery.gte('payment_date', startDate).lte('payment_date', endDate);
-      purchasesQuery = purchasesQuery.gte('created_at', `${startDate} 00:00:00`).lte('created_at', `${endDate} 23:59:59`);
+      purchasesQuery = purchasesQuery.gte('created_at', toUTC(startDate)).lte('created_at', toUTC(endDate, true));
     }
 
     const [salesRes, cashbookRes, debtsRes, purchasesRes] = await Promise.all([salesQuery, cashbookQuery, debtsQuery, purchasesQuery]);
@@ -296,8 +309,8 @@ reportsRoute.openapi(salesReportRoute, async (c) => {
     let itemsQuery = supabase.from('sale_items').select('qty, price, products(id, name), sales!inner(business_id, status, created_at)').eq('sales.business_id', businessId).neq('sales.status', 'void');
 
     if (startDate && endDate) {
-      salesQuery = salesQuery.gte('created_at', `${startDate} 00:00:00`).lte('created_at', `${endDate} 23:59:59`);
-      itemsQuery = itemsQuery.gte('sales.created_at', `${startDate} 00:00:00`).lte('sales.created_at', `${endDate} 23:59:59`);
+      salesQuery = salesQuery.gte('created_at', toUTC(startDate)).lte('created_at', toUTC(endDate, true));
+      itemsQuery = itemsQuery.gte('sales.created_at', toUTC(startDate)).lte('sales.created_at', toUTC(endDate, true));
     }
 
     const [salesRes, itemsRes] = await Promise.all([salesQuery, itemsQuery]);
@@ -380,12 +393,11 @@ reportsRoute.openapi(dashboardRoute, async (c) => {
   const businessId = c.get('businessId');
 
   try {
-    // Current date logic might slightly drift depending on timezone in JS vs Postgres,
-    // but for simple approximation in Workers without full raw SQL:
-    const today = new Date().toISOString().split('T')[0];
-    const sevenDaysAgoDate = new Date();
-    sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-    const sevenDaysAgo = sevenDaysAgoDate.toISOString();
+    // Date logic: Indonesia WIB (UTC+7).
+    // today = mulai hari ini 00:00 WIB, sevenDaysAgo = 7 hari yang lalu 00:00 WIB
+    const now = new Date();
+    const today = new Date(now.getTime() - 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000 - 7 * 60 * 60 * 1000).toISOString();
 
     const [todayRes, weeklyRes] = await Promise.all([
       supabase.from('sales').select('grand_total').eq('business_id', businessId).neq('status', 'void').gte('created_at', `${today} 00:00:00`),
