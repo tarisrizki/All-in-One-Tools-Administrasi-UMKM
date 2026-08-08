@@ -1,7 +1,7 @@
 /**
  * Password hashing menggunakan Web Crypto API (PBKDF2-SHA256).
  * Native di Cloudflare Workers — tanpa dependency eksternal.
- * Lebih cepat & hemat CPU dibanding bcryptjs (pure JS).
+ * Iterasi tinggi untuk ketahanan brute-force.
  */
 
 const ITERATIONS = 100_000;
@@ -48,8 +48,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 	if (parts.length !== 4 || parts[0] !== 'pbkdf2') {
 		// Fallback: cek format bcrypt lama ($2a$ / $2b$)
 		if (stored.startsWith('$2')) {
-			// Compatibility: bcrypt hash lama — tidak bisa diverifikasi tanpa bcryptjs
-			// Return false, user harus reset password
+			// Compatibility: hash lama dari bcrypt — return false, user perlu reset password
 			return false;
 		}
 		return false;
