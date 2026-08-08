@@ -205,9 +205,9 @@
 							{#if isTyping}
 								<div class="flex justify-start">
 									<div class="p-3 bg-white border border-border rounded-2xl rounded-bl-sm shadow-sm flex gap-1">
-										<div class="w-2 h-2 rounded-full bg-brand/40 animate-bounce"></div>
-										<div class="w-2 h-2 rounded-full bg-brand/40 animate-bounce" style="animation-delay: 0.1s"></div>
-										<div class="w-2 h-2 rounded-full bg-brand/40 animate-bounce" style="animation-delay: 0.2s"></div>
+										<div class="w-2 h-2 rounded-full bg-brand/40 animate-pulse"></div>
+										<div class="w-2 h-2 rounded-full bg-brand/40 animate-pulse" style="animation-delay: 0.15s"></div>
+										<div class="w-2 h-2 rounded-full bg-brand/40 animate-pulse" style="animation-delay: 0.3s"></div>
 									</div>
 								</div>
 							{/if}
