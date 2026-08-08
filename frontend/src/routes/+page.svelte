@@ -224,7 +224,7 @@
 					style="clip-path: polygon(0 0,100% 0,100% 93%,94% 100%,88% 93%,82% 100%,76% 93%,70% 100%,64% 93%,58% 100%,52% 93%,46% 100%,40% 93%,34% 100%,28% 93%,22% 100%,16% 93%,10% 100%,4% 93%,0 100%)">
 					<div class="text-center mb-4">
 						<div class="font-bold text-[15px] text-ink tracking-wide">BERES KASIR</div>
-						<div class="text-[10.5px] text-ink-faint mt-0.5">Jl. Merdeka No. 12 · 09 Agu 2026 14:32</div>
+						<div class="text-[11px] text-ink-faint mt-0.5">Jl. Merdeka No. 12 · 09 Agu 2026 14:32</div>
 					</div>
 					{#each [['Kopi Susu x2','36.000'],['Nasi Goreng x1','25.000'],['Air Mineral x2','10.000']] as [item, price]}
 						<div class="flex justify-between text-[12.5px] py-1.5 border-b border-dashed border-border">{item}<span class="font-bold text-ink">{price}</span></div>
@@ -245,20 +245,20 @@
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
 			<div class="text-center text-white">
 				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">{stat1.toLocaleString('id-ID')}+</span>
-				<span class="text-[13px] text-white/70 mt-1 block">Pelaku Usaha Aktif</span>
+				<span class="text-[13px] text-white/85 mt-1 block">Pelaku Usaha Aktif</span>
 			</div>
 			<div class="text-center text-white">
 				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">{stat2 >= 1000000 ? '2jt+' : stat2.toLocaleString('id-ID') + '+'}</span>
-				<span class="text-[13px] text-white/70 mt-1 block">Transaksi per Bulan</span>
+				<span class="text-[13px] text-white/85 mt-1 block">Transaksi per Bulan</span>
 			</div>
 			<div class="text-center text-white">
 				<div class="text-[#C9891A] text-[15px] mb-1">★★★★★</div>
 				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">4.9/5</span>
-				<span class="text-[13px] text-white/70 mt-1 block">Rating Pengguna</span>
+				<span class="text-[13px] text-white/85 mt-1 block">Rating Pengguna</span>
 			</div>
 			<div class="text-center text-white">
 				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">24/7</span>
-				<span class="text-[13px] text-white/70 mt-1 block">Bantuan Siap Membantu</span>
+				<span class="text-[13px] text-white/85 mt-1 block">Bantuan Siap Membantu</span>
 			</div>
 		</div>
 	</div>
@@ -275,13 +275,14 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-[22px]">
 			{#each features as f, i}
 				<div
-					class="bg-paper border border-border rounded-[14px] p-7 reveal hover:shadow-[0_10px_28px_rgba(20,22,45,.09)] transition-all duration-200 hover:-translate-y-1 {i === 0 ? 'lg:col-span-4' : i === 5 ? 'lg:col-span-6' : 'lg:col-span-2'}"
-					style="border-left: 3px solid {f.color}"
+					class="bg-paper border border-border rounded-[14px] p-7 reveal hover:border-ink/15 transition-colors duration-200 {i === 0 ? 'lg:col-span-4' : i === 5 ? 'lg:col-span-6' : 'lg:col-span-2'}"
 				>
-					<div class="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style="background: {f.tint}; color: {f.color}">
-						<f.icon class="w-5 h-5" />
+					<div class="flex items-center gap-3.5 mb-5">
+						<div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {f.tint}; color: {f.color}">
+							<f.icon class="w-5 h-5" />
+						</div>
+						<h3 class="font-sans font-bold text-[19px] text-ink">{f.title}</h3>
 					</div>
-					<h3 class="font-grotesk font-bold text-[19px] text-ink mb-2">{f.title}</h3>
 					<p class="text-ink-soft text-[14.5px] mb-4">{f.desc}</p>
 					<ul class="space-y-1 {i === 0 || i === 5 ? 'sm:grid sm:grid-cols-2 sm:gap-x-8' : ''}">
 						{#each f.items as item}
@@ -296,13 +297,13 @@
 		</div>
 
 		<!-- Integration card (wide) -->
-		<div class="bg-paper border border-border rounded-[14px] p-7 reveal" style="border-left: 3px solid #C9891A">
+		<div class="bg-paper border border-border rounded-[14px] p-7 reveal hover:border-ink/15 transition-colors">
 			<div class="flex items-center gap-5 flex-wrap">
-				<div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style="background: #FBF0DA; color: #C9891A">
+				<div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background: #FBF0DA; color: #C9891A">
 					<Plug class="w-5 h-5" />
 				</div>
 				<div class="flex-1 min-w-[240px]">
-					<h3 class="font-grotesk font-bold text-[19px] text-ink mb-1">Integrasi & Konektivitas</h3>
+					<h3 class="font-sans font-bold text-[19px] text-ink mb-1">Integrasi & Konektivitas</h3>
 					<p class="text-ink-soft text-[14.5px]">Terhubung dengan tools yang sudah biasa Anda pakai, seperti marketplace, WhatsApp, Email, dan payment gateway. Semua sinkron otomatis tanpa input dobel.</p>
 				</div>
 			</div>
@@ -317,16 +318,18 @@
 	<div class="container-base relative z-10">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-white mb-4">Asisten Bisnis Pintar yang Selalu Siap Membantu</h2>
-			<p class="text-[#BFC2E0] text-[1.08rem]">Beres nggak cuma mencatat. Beres membantu Anda mengambil keputusan yang lebih baik untuk usaha, setiap hari.</p>
+			<p class="text-[#D2D5E8] text-[1.08rem]">Beres nggak cuma mencatat. Beres membantu Anda mengambil keputusan yang lebih baik untuk usaha, setiap hari.</p>
 		</div>
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-[18px]">
 			{#each aiFeatures as af}
-				<div class="rounded-[14px] p-6 reveal" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1)">
-					<div class="w-[42px] h-[42px] rounded-[10px] flex items-center justify-center mb-4" style="background: rgba(221,75,30,.18); color: var(--color-cta)">
-						<af.icon class="w-5 h-5" />
+				<div class="rounded-[14px] p-6 reveal" style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12)">
+					<div class="flex items-center gap-2.5 mb-3">
+						<div class="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center flex-shrink-0" style="background: rgba(221,75,30,.18); color: var(--color-cta)">
+							<af.icon class="w-4.5 h-4.5" />
+						</div>
+						<h3 class="font-sans font-bold text-[15.5px] text-white">{af.title}</h3>
 					</div>
-					<h3 class="font-grotesk font-bold text-[15.5px] text-white mb-2">{af.title}</h3>
-					<p class="text-[13.3px] text-[#BFC2E0]">{af.desc}</p>
+					<p class="text-[14px] text-[#D2D5E8] leading-relaxed">{af.desc}</p>
 				</div>
 			{/each}
 		</div>
@@ -347,7 +350,7 @@
 				['Toko Online & Reseller','Pesanan dari Shopee, WA, dan Instagram terkumpul di satu tempat.']
 			] as [title, desc]}
 				<div class="border border-border rounded-[14px] p-7 bg-paper-alt/60 reveal hover:bg-paper transition-colors">
-					<h3 class="font-grotesk font-bold text-[18px] text-ink mb-2">{title}</h3>
+					<h3 class="font-sans font-bold text-[18px] text-ink mb-2">{title}</h3>
 					<p class="text-ink-soft text-[14.5px]">{desc}</p>
 				</div>
 			{/each}
@@ -401,7 +404,7 @@
 			<div class="bg-paper border border-border rounded-[14px] shadow-[0_24px_56px_rgba(20,22,45,.16)] p-8 pb-12 font-mono -rotate-1"
 				style="clip-path: polygon(0 0,100% 0,100% 94%,95% 100%,90% 94%,85% 100%,80% 94%,75% 100%,70% 94%,65% 100%,60% 94%,55% 100%,50% 94%,45% 100%,40% 94%,35% 100%,30% 94%,25% 100%,20% 94%,15% 100%,10% 94%,5% 100%,0 94%)">
 				<h3 class="text-center text-[14px] uppercase tracking-[.06em] mb-1 text-ink font-bold">Struk Perhitungan</h3>
-				<p class="text-center text-[11px] text-ink-faint mb-5">beres.id · kalkulator untung</p>
+				<p class="text-center text-[12px] text-ink-faint mb-5">beres.id · kalkulator untung</p>
 				{#each [['Harga Jual', fmtRp(calcJual)], ['Harga Modal', fmtRp(calcModal)], ['Margin', `${margin}%`], ['Markup', `${markup}%`]] as [label, val]}
 					<div class="flex justify-between text-[13.5px] py-2.5 border-b border-dashed border-border">
 						<span class="text-ink-soft">{label}</span><span class="font-bold text-ink">{val}</span>
@@ -426,7 +429,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 			{#each [['Daftar Akun Gratis','Isi data singkat, langsung bisa dipakai. Tidak ribet, tidak perlu training khusus.'],['Setup Toko dalam 5 Menit','Masukkan data produk & harga. Bisa juga import langsung dari file Excel.'],['Transaksi & Pantau Usaha','Mulai jualan pakai kasir digital, semua laporan otomatis muncul di dashboard.']] as [title, desc], i}
 				<div class="relative pl-2 reveal">
-					<h3 class="font-grotesk font-bold text-[19px] text-ink mb-2.5">{title}</h3>
+					<h3 class="font-sans font-bold text-[19px] text-ink mb-2.5">{title}</h3>
 					<p class="text-ink-soft text-[14.5px]">{desc}</p>
 					{#if i < 2}
 						<div class="hidden md:block absolute top-2.5 -right-4 w-8 h-px bg-border"></div>
@@ -448,7 +451,7 @@
 			{#each testimonials as t}
 				<div class="bg-paper border border-border rounded-[14px] p-6 reveal hover:shadow-md transition-shadow">
 					<div class="text-[#C9891A] text-[13px] mb-3.5">★★★★★</div>
-					<p class="text-[14.5px] text-ink mb-5 italic leading-relaxed">{t.quote}</p>
+					<p class="text-[15px] text-ink mb-5 italic leading-relaxed">{t.quote}</p>
 					<div class="flex items-center gap-3">
 						<div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-[15px] flex-shrink-0" style="background: {t.bg}">{t.initials}</div>
 						<div>
@@ -471,8 +474,7 @@
 		</div>
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-7 items-start max-w-4xl mx-auto">
 			<!-- Free -->
-			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal"
-				style="clip-path: polygon(0 0,100% 0,100% 97%,94% 100%,88% 97%,82% 100%,76% 97%,70% 100%,64% 97%,58% 100%,52% 97%,46% 100%,40% 97%,34% 100%,28% 97%,22% 100%,16% 97%,10% 100%,4% 97%,0 100%)">
+			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal hover:border-ink/20 transition-colors">
 				<div class="font-bold text-[20px] text-ink mb-1.5">Gratis</div>
 				<div class="text-[13.5px] text-ink-soft mb-5">Buat yang baru mulai usaha</div>
 				<div class="font-mono font-bold text-[2.2rem] text-ink mb-1">Rp 0</div>
@@ -486,9 +488,9 @@
 			</div>
 
 			<!-- Pro (featured) -->
-			<div class="relative border-[1.5px] border-brand rounded-[22px] p-8 pb-12 shadow-[0_24px_56px_rgba(20,22,45,.16)] scale-[1.04] reveal"
-				style="background: var(--color-brand); color: white; clip-path: polygon(0 0,100% 0,100% 97%,94% 100%,88% 97%,82% 100%,76% 97%,70% 100%,64% 97%,58% 100%,52% 97%,46% 100%,40% 97%,34% 100%,28% 97%,22% 100%,16% 97%,10% 100%,4% 97%,0 100%)">
-				<div class="absolute -top-4 right-6 bg-cta text-white font-mono text-[11px] font-bold px-3.5 py-1.5 rounded-full rotate-[6deg] shadow-sm uppercase tracking-wider">Paling Populer</div>
+			<div class="relative border-[1.5px] border-brand rounded-[22px] p-8 pb-12 reveal"
+				style="background: var(--color-brand); color: white">
+				<div class="absolute -top-3.5 right-8 bg-cta text-white font-mono text-[11px] font-bold px-3.5 py-1.5 rounded-full rotate-[3deg] shadow-md uppercase tracking-wider">Paling Populer</div>
 				<div class="font-bold text-[20px] mb-1.5">Pro</div>
 				<div class="text-[13.5px] mb-5" style="color: rgba(255,255,255,.75)">Buat usaha yang mau berkembang</div>
 				<div class="font-mono font-bold text-[2.2rem] mb-1">Rp 99rb</div>
@@ -502,8 +504,7 @@
 			</div>
 
 			<!-- Business -->
-			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal"
-				style="clip-path: polygon(0 0,100% 0,100% 97%,94% 100%,88% 97%,82% 100%,76% 97%,70% 100%,64% 97%,58% 100%,52% 97%,46% 100%,40% 97%,34% 100%,28% 97%,22% 100%,16% 97%,10% 100%,4% 97%,0 100%)">
+			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal hover:border-ink/20 transition-colors">
 				<div class="font-bold text-[20px] text-ink mb-1.5">Bisnis</div>
 				<div class="text-[13.5px] text-ink-soft mb-5">Buat usaha dengan banyak cabang</div>
 				<div class="font-mono font-bold text-[2.2rem] text-ink mb-1">Rp 249rb</div>
@@ -555,7 +556,7 @@
 <section class="py-[90px] text-center" style="background: linear-gradient(135deg, var(--color-brand), var(--color-brand-dark))">
 	<div class="container-base">
 		<h2 class="font-grotesk font-bold text-[clamp(1.8rem,1.4rem+1.6vw,2.6rem)] text-white mb-4 reveal">Saatnya Bisnis Anda Naik Level</h2>
-		<p class="text-white/80 text-[1.1rem] max-w-[520px] mx-auto mb-9 reveal">Gabung dengan ribuan pelaku usaha yang sudah bikin urusan toko mereka lebih beres.</p>
+		<p class="text-white/90 text-[1.1rem] max-w-[520px] mx-auto mb-9 reveal">Gabung dengan ribuan pelaku usaha yang sudah bikin urusan toko mereka lebih beres.</p>
 		<div class="flex gap-4 justify-center flex-wrap reveal">
 			<Button href="/auth/register" class="bg-white text-brand hover:bg-white/90 font-bold h-14 px-8 rounded-lg text-[15.5px]">Coba Gratis Sekarang</Button>
 			<Button href="/auth/login" variant="outline" class="h-14 px-8 rounded-lg font-bold text-[15.5px] text-white hover:text-white hover:bg-white/10" style="border-color: rgba(255,255,255,.35)">
@@ -576,7 +577,7 @@
 					<div class="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold text-lg -rotate-6 group-hover:rotate-0 transition-transform">B</div>
 					<span class="font-bold text-[22px] text-white">Beres</span>
 				</a>
-				<p class="text-[14px] text-[#9498B0] mb-5 max-w-[280px] leading-relaxed">Beres membantu pelaku UMKM mengelola seluruh kebutuhan bisnis dalam satu aplikasi yang mudah dipakai, dari kasir sampai laporan keuangan.</p>
+				<p class="text-[14px] text-[#AEB3C8] mb-5 max-w-[280px] leading-relaxed">Beres membantu pelaku UMKM mengelola seluruh kebutuhan bisnis dalam satu aplikasi yang mudah dipakai, dari kasir sampai laporan keuangan.</p>
 			</div>
 			{#each [['Produk',['Kasir & POS','Stok & Gudang','Keuangan','Asisten AI']],['Perusahaan',['Tentang Kami','Blog','Karier','Hubungi Kami']],['Bantuan',['FAQ','Pusat Bantuan','Tutorial','Status Sistem']]] as [title, links]}
 				<div>
@@ -589,7 +590,7 @@
 				</div>
 			{/each}
 		</div>
-		<div class="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-mono text-white/50">
+		<div class="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-mono text-white/60">
 			<span>© {new Date().getFullYear()} Beres. Semua hak cipta dilindungi.</span>
 			<span><a href="/" class="hover:text-white transition-colors">Syarat & Ketentuan</a> · <a href="/" class="hover:text-white transition-colors">Kebijakan Privasi</a></span>
 		</div>
