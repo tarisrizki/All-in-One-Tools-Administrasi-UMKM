@@ -197,7 +197,7 @@
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-14 items-center">
 			<!-- Copy -->
 			<div class="max-w-[620px]">
-				<h1 class="font-grotesk font-bold text-[2.75rem] lg:text-[3.5rem] text-ink mb-5 leading-[1.08]">
+				<h1 class="font-grotesk font-bold text-[2.75rem] lg:text-[3.5rem] text-ink mb-6 leading-[1.08]">
 					Semua Urusan Toko Jadi <span class="text-cta">Beres</span>.
 				</h1>
 				<p class="text-lg lg:text-xl text-ink-soft mb-8 leading-relaxed max-w-lg">
@@ -215,28 +215,28 @@
 
 			<!-- Struk + kartu komposisi (artifact fisik, bukan screenshot) -->
 			<div class="relative min-h-[340px] lg:min-h-[360px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
-				<div class="absolute -top-6 -left-4 lg:-left-14 w-40 p-4 rounded-md bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
+				<div class="absolute -top-9 -left-4 lg:-left-12 w-40 p-4 rounded-lg bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
 					Stok menipis: Gula 20kg
 					<div class="h-1.5 bg-warning/20 rounded-full mt-2 overflow-hidden"><div class="h-full w-2/3 bg-warning rounded-full"></div></div>
 				</div>
-				<div class="absolute -top-2 -right-2 w-44 p-4 rounded-md bg-paper border border-border shadow-lg text-[12px] rotate-3 z-0">
+				<div class="absolute -top-3 -right-3 w-44 p-4 rounded-lg bg-paper border border-border shadow-lg text-[12px] rotate-2 z-0">
 					<div class="flex justify-between font-mono font-bold text-ink mb-1"><span>Penjualan hari ini</span><span class="text-success">↑ 12%</span></div>
 					<div class="font-mono font-bold text-[15px] text-ink">Rp 1.245.000</div>
 					<div class="flex justify-between text-ink-soft mt-2"><span>Transaksi</span><span class="font-mono font-bold text-ink">48</span></div>
 				</div>
 
 				<!-- Struk kasir fisik -->
-				<div class="relative z-10 bg-paper border border-border rounded-lg shadow-2xl p-6 pb-8 font-mono -rotate-1"
+				<div class="relative z-10 bg-paper border border-border rounded-lg shadow-xl p-6 pb-8 font-mono -rotate-1"
 					style="clip-path: polygon(0 0,100% 0,100% 93%,94% 100%,88% 93%,82% 100%,76% 93%,70% 100%,64% 93%,58% 100%,52% 93%,46% 100%,40% 93%,34% 100%,28% 93%,22% 100%,16% 93%,10% 100%,4% 93%,0 100%)">
 					<div class="text-center mb-4">
 						<div class="font-bold text-[15px] text-ink tracking-wide">BERES KASIR</div>
-						<div class="text-[11px] text-ink-faint mt-0.5">Jl. Merdeka No. 12 · 09 Agu 2026 14:32</div>
+						<div class="text-[11px] text-ink-soft mt-0.5">Jl. Merdeka No. 12 · 09 Agu 2026 14:32</div>
 					</div>
 					{#each [['Kopi Susu x2','36.000'],['Nasi Goreng x1','25.000'],['Air Mineral x2','10.000']] as [item, price]}
-						<div class="flex justify-between text-[12.5px] py-1.5 border-b border-dashed border-border">{item}<span class="font-bold text-ink">{price}</span></div>
+						<div class="flex justify-between text-[13px] py-2 border-b border-dashed border-border">{item}<span class="font-bold text-ink">{price}</span></div>
 					{/each}
-					<div class="flex justify-between font-bold py-3 text-[14px]">TOTAL<span>Rp 71.000</span></div>
-					<div class="flex justify-between text-[11px] text-ink-faint">
+					<div class="flex justify-between font-bold py-4 text-[14px]">TOTAL<span>Rp 71.000</span></div>
+					<div class="flex justify-between text-[11px] text-ink-soft">
 						<span>QRIS</span><span class="font-mono">REF-20260809-0031</span>
 					</div>
 				</div>
@@ -278,7 +278,7 @@
 </section>
 
 <!-- ===== FEATURES ===== -->
-<section class="py-24" id="fitur" style="background: var(--color-paper-alt)">
+<section class="pt-12 pb-24" id="fitur" style="background: var(--color-paper-alt)">
 	<div class="container-base">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-ink mb-4">Satu Aplikasi untuk Semua Kebutuhan Usaha Anda</h2>
