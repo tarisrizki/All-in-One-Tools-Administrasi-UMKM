@@ -138,14 +138,14 @@
 	class:shadow-sm={navScrolled}
 	style="background: {navScrolled ? 'rgba(255,255,255,.92)' : 'transparent'}"
 >
-	<div class="container-base h-[76px] flex items-center justify-between">
+	<div class="container-base h-16 flex items-center justify-between">
 		<a href="/" class="flex items-center gap-2.5 min-h-0 group">
 			<div class="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center font-bold text-lg -rotate-6 shadow-sm group-hover:rotate-0 transition-transform flex-shrink-0">B</div>
 			<span class="font-bold text-[22px] text-brand">Beres</span>
 		</a>
 
 		<!-- Desktop Nav -->
-		<nav class="hidden md:flex items-center gap-9">
+		<nav class="hidden md:flex items-center gap-8">
 			{#each [['#fitur','Fitur'],['#cara-kerja','Cara Kerja'],['#kalkulator','Kalkulator'],['#harga','Harga'],['#faq','FAQ']] as [href, label]}
 				<a {href} class="font-semibold text-[15px] text-ink-soft hover:text-brand transition-colors min-h-0">{label}</a>
 			{/each}
@@ -186,30 +186,30 @@
 <main id="main-content">
 
 <!-- ===== HERO ===== -->
-<section class="pt-36 pb-24 overflow-hidden" style="background: var(--color-paper)">
+<section class="pt-28 pb-16 overflow-hidden" style="background: var(--color-paper)">
 	<div class="container-base">
 		<div class="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-14 lg:gap-10 items-center">
 			<!-- Copy -->
 			<div class="max-w-2xl">
-				<h1 class="font-grotesk font-bold text-5xl lg:text-6xl text-ink mb-6 leading-[1.05]">
+				<h1 class="font-grotesk font-bold text-[2.75rem] lg:text-[3.5rem] text-ink mb-5 leading-[1.08]">
 					Semua Urusan Toko Jadi <span class="text-cta">Beres</span>.
 				</h1>
-				<p class="text-lg lg:text-xl text-ink-soft mb-8 leading-relaxed">
+				<p class="text-lg lg:text-xl text-ink-soft mb-8 leading-relaxed max-w-lg">
 					Kasir, stok, keuangan, dan laporan. Semua otomatis dalam satu aplikasi.
 				</p>
 				<div class="flex gap-4 flex-wrap">
-					<Button href="/auth/register" class="bg-cta hover:bg-cta-dark text-white font-bold h-14 px-8 rounded-lg gap-2 text-base shadow-lg">
+					<Button href="/auth/register" class="bg-cta hover:bg-cta-dark text-white font-bold h-12 px-7 rounded-lg gap-2 text-base shadow-lg">
 						Coba Gratis <ArrowRight class="w-5 h-5" />
 					</Button>
-					<Button href="#cara-kerja" variant="outline" class="h-14 px-8 rounded-lg font-bold text-base border-border text-ink hover:border-ink hover:bg-muted/50">
+					<Button href="#cara-kerja" variant="outline" class="h-12 px-7 rounded-lg font-bold text-base border-border text-ink hover:border-ink hover:bg-muted/50">
 						Lihat Cara Kerja
 					</Button>
 				</div>
 			</div>
 
 			<!-- Struk + kartu komposisi (artifact fisik, bukan screenshot) -->
-			<div class="relative min-h-[380px] hidden lg:block ml-auto w-full max-w-md" aria-hidden="true">
-				<div class="absolute top-10 -left-6 w-40 p-4 rounded-md bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-0">
+			<div class="relative min-h-[340px] lg:min-h-[360px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
+				<div class="absolute -top-6 -left-4 lg:-left-14 w-40 p-4 rounded-md bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
 					Stok menipis: Gula 20kg
 					<div class="h-1.5 bg-warning/20 rounded-full mt-2 overflow-hidden"><div class="h-full w-2/3 bg-warning rounded-full"></div></div>
 				</div>
@@ -240,25 +240,32 @@
 </section>
 
 <!-- ===== STATS BAR ===== -->
-<section id="stats-section" class="py-11" style="background: var(--color-brand)">
+<section id="stats-section" class="py-8" style="background: var(--color-brand)">
 	<div class="container-base">
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-			<div class="text-center text-white">
-				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">{stat1.toLocaleString('id-ID')}+</span>
-				<span class="text-[13px] text-white/85 mt-1 block">Pelaku Usaha Aktif</span>
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
+			<div class="text-center text-white min-w-0">
+				<div class="h-12 flex items-center justify-center">
+					<span class="font-mono font-bold text-[clamp(1.4rem,1.1rem+0.9vw,1.9rem)] whitespace-nowrap">{stat1.toLocaleString('id-ID')}+</span>
+				</div>
+				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Pelaku Usaha Aktif</span>
 			</div>
-			<div class="text-center text-white">
-				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">{stat2 >= 1000000 ? '2jt+' : stat2.toLocaleString('id-ID') + '+'}</span>
-				<span class="text-[13px] text-white/85 mt-1 block">Transaksi per Bulan</span>
+			<div class="text-center text-white min-w-0">
+				<div class="h-12 flex items-center justify-center">
+					<span class="font-mono font-bold text-[clamp(1.4rem,1.1rem+0.9vw,1.9rem)] whitespace-nowrap">{stat2 >= 1000000 ? '2jt+' : stat2.toLocaleString('id-ID') + '+'}</span>
+				</div>
+				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Transaksi per Bulan</span>
 			</div>
-			<div class="text-center text-white">
-				<div class="text-[#C9891A] text-[15px] mb-1">★★★★★</div>
-				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">4.9/5</span>
-				<span class="text-[13px] text-white/85 mt-1 block">Rating Pengguna</span>
+			<div class="text-center text-white min-w-0">
+				<div class="h-12 flex items-center justify-center">
+					<span class="text-[#C9891A] text-[15px] leading-none whitespace-nowrap">★★★★★</span>
+				</div>
+				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Rating Pengguna</span>
 			</div>
-			<div class="text-center text-white">
-				<span class="font-mono font-bold text-[clamp(1.5rem,1.2rem+1vw,2.1rem)] block">24/7</span>
-				<span class="text-[13px] text-white/85 mt-1 block">Bantuan Siap Membantu</span>
+			<div class="text-center text-white min-w-0">
+				<div class="h-12 flex items-center justify-center">
+					<span class="font-mono font-bold text-[clamp(1.4rem,1.1rem+0.9vw,1.9rem)] whitespace-nowrap">24/7</span>
+				</div>
+				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Bantuan Siap Membantu</span>
 			</div>
 		</div>
 	</div>
@@ -472,46 +479,46 @@
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-ink mb-4">Pilih Paket Sesuai Kebutuhan Usaha Anda</h2>
 			<p class="text-ink-soft text-[1.08rem]">Semua paket bisa dicoba tanpa risiko. Naik paket kapan saja seiring usaha berkembang.</p>
 		</div>
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-7 items-start max-w-4xl mx-auto">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-7 items-stretch max-w-4xl mx-auto">
 			<!-- Free -->
-			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal hover:border-ink/20 transition-colors">
+			<div class="flex flex-col bg-paper border-[1.5px] border-border rounded-[22px] p-7 reveal hover:border-ink/20 transition-colors">
 				<div class="font-bold text-[20px] text-ink mb-1.5">Gratis</div>
 				<div class="text-[13.5px] text-ink-soft mb-5">Buat yang baru mulai usaha</div>
 				<div class="font-mono font-bold text-[2.2rem] text-ink mb-1">Rp 0</div>
 				<div class="text-[13px] text-ink-soft mb-6">selamanya</div>
-				<ul class="space-y-1.5 mb-7">
+				<ul class="space-y-2.5 mb-7 flex-1">
 					{#each ['Kasir dasar untuk 1 toko','Sampai 50 produk','1 pengguna','Laporan penjualan harian'] as item}
-						<li class="flex items-start gap-2.5 text-[14px] text-ink"><Check class="w-3 h-3 text-success flex-shrink-0 mt-0.5" />{item}</li>
+						<li class="flex items-start gap-2.5 text-[14px] leading-snug text-ink"><Check class="w-3 h-3 text-success flex-shrink-0 mt-0.5" />{item}</li>
 					{/each}
 				</ul>
 				<Button href="/auth/register" variant="outline" class="w-full h-12 font-bold rounded-lg border-border">Mulai Gratis</Button>
 			</div>
 
 			<!-- Pro (featured) -->
-			<div class="relative border-[1.5px] border-brand rounded-[22px] p-8 pb-12 reveal"
+			<div class="relative flex flex-col border-[1.5px] border-brand rounded-[22px] p-7 reveal"
 				style="background: var(--color-brand); color: white">
-				<div class="absolute -top-3.5 right-8 bg-cta text-white font-mono text-[11px] font-bold px-3.5 py-1.5 rounded-full rotate-[3deg] shadow-md uppercase tracking-wider">Paling Populer</div>
+				<div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-cta text-white font-mono text-[11px] font-bold px-3.5 py-1.5 rounded-full shadow-md uppercase tracking-wider whitespace-nowrap">Paling Populer</div>
 				<div class="font-bold text-[20px] mb-1.5">Pro</div>
-				<div class="text-[13.5px] mb-5" style="color: rgba(255,255,255,.75)">Buat usaha yang mau berkembang</div>
+				<div class="text-[13.5px] mb-5" style="color: rgba(255,255,255,.8)">Buat usaha yang mau berkembang</div>
 				<div class="font-mono font-bold text-[2.2rem] mb-1">Rp 99rb</div>
-				<div class="text-[13px] mb-6" style="color: rgba(255,255,255,.75)">per bulan</div>
-				<ul class="space-y-1.5 mb-7">
+				<div class="text-[13px] mb-6" style="color: rgba(255,255,255,.8)">per bulan</div>
+				<ul class="space-y-2.5 mb-7 flex-1">
 					{#each ['Semua fitur paket Gratis','Produk & transaksi tanpa batas','Sampai 5 pengguna','Semua laporan keuangan','Integrasi WhatsApp & QRIS','Cetak barcode & label'] as item}
-						<li class="flex items-start gap-2.5 text-[14px]"><Check class="w-3 h-3 flex-shrink-0 mt-0.5" style="color: #C9891A" />{item}</li>
+						<li class="flex items-start gap-2.5 text-[14px] leading-snug"><Check class="w-3 h-3 flex-shrink-0 mt-0.5" style="color: #C9891A" />{item}</li>
 					{/each}
 				</ul>
 				<Button href="/auth/register" class="w-full h-12 font-bold rounded-lg bg-white text-brand hover:bg-white/90">Coba Gratis 14 Hari</Button>
 			</div>
 
 			<!-- Business -->
-			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal hover:border-ink/20 transition-colors">
+			<div class="flex flex-col bg-paper border-[1.5px] border-border rounded-[22px] p-7 reveal hover:border-ink/20 transition-colors">
 				<div class="font-bold text-[20px] text-ink mb-1.5">Bisnis</div>
 				<div class="text-[13.5px] text-ink-soft mb-5">Buat usaha dengan banyak cabang</div>
 				<div class="font-mono font-bold text-[2.2rem] text-ink mb-1">Rp 249rb</div>
 				<div class="text-[13px] text-ink-soft mb-6">per bulan</div>
-				<ul class="space-y-1.5 mb-7">
+				<ul class="space-y-2.5 mb-7 flex-1">
 					{#each ['Semua fitur paket Pro','Multi-cabang & multi-gudang','Pengguna tanpa batas','Asisten AI lengkap','Integrasi marketplace','Dukungan prioritas'] as item}
-						<li class="flex items-start gap-2.5 text-[14px] text-ink"><Check class="w-3 h-3 text-success flex-shrink-0 mt-0.5" />{item}</li>
+						<li class="flex items-start gap-2.5 text-[14px] leading-snug text-ink"><Check class="w-3 h-3 text-success flex-shrink-0 mt-0.5" />{item}</li>
 					{/each}
 				</ul>
 				<Button variant="outline" class="w-full h-12 font-bold rounded-lg border-border">Hubungi Kami</Button>
