@@ -1,5 +1,7 @@
 # Catatan Migrasi Backend (Node.js/Fastify -> Cloudflare Workers + Supabase)
 
+> **Update (v1.1):** Migrasi ke Workers + Supabase tetap menjadi jalur utama, tetapi **bukan satu-satunya**. Karena Hono multi-runtime dan frontend adalah SvelteKit statis, stack yang sama bisa dihosting **self-host di Proxmox/VPS** (backend via Node.js, DB via PostgreSQL vanilla, frontend via nginx) tanpa perubahan kode. Lihat `DEPLOY.md` §7 untuk panduan + security checklist.
+
 ## Perubahan Arsitektur
 1. **Hosting API**: API backend sebelumnya dijalankan menggunakan Fastify di dalam kontainer Docker. Sekarang telah sepenuhnya dimigrasikan ke Cloudflare Workers (`backend-workers`).
 2. **Database**: PostgreSQL lokal yang dijalankan melalui Docker telah digantikan oleh **Supabase**. Modul-modul backend berkomunikasi dengan Supabase secara langsung menggunakan Supabase JS Client (`@supabase/supabase-js`) atau REST API.

@@ -353,6 +353,69 @@ kill -9 <PID>
 
 ---
 
+## 7. Opsi Self-Host di Proxmox / VPS (Non-Serverless)
+
+Aplikasi **tidak wajib** full serverless. Karena Hono multi-runtime dan frontend berupa SvelteKit statis murni, seluruh stack bisa dihosting di VPS / laptop bekas Anda yang menjalankan Proxmox. Gunakan opsi ini jika ingin kontrol penuh, biaya tetap, atau data tidak keluar dari infrastruktur sendiri.
+
+### 7.1 Topologi
+
+```
+Proxmox (VPS / laptop bekas)
+├── LXC/VM "db"      → PostgreSQL 15+ (jalankan supabase-rls.sql)
+├── LXC/VM "api"     → backend-workers (Hono via Node.js + systemd)
+└── LXC/VM "web"     → nginx: serve dist/ frontend + reverse-proxy /api ke "api"
+```
+
+### 7.2 Langkah
+
+```bash
+# 1. DB — buat user & database, lalu jalankan schema (idempotent)
+sudo -u postgres psql -c "CREATE USER umkm WITH PASSWORD '<kuat>';"
+sudo -u postgres psql -c "CREATE DATABASE umkm OWNER umkm;"
+psql "postgres://umkm:<kuat>@localhost/umkm" -f supabase-rls.sql
+
+# 2. Backend — build & jalankan sebagai service
+cd backend-workers
+npm ci
+npm run build          # pastikan build menghasilkan bundle Node (Hono)
+# systemd unit men-set env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET, ALLOWED_ORIGIN
+
+# 3. Frontend — build statis, serve via nginx
+cd frontend
+npm ci
+PUBLIC_API_URL=https://kasir.domain-anda.com npm run build
+# hasil di dist/ → root nginx
+```
+
+nginx `location /api` di-reverse-proxy ke `http://127.0.0.1:8787` (backend Node). Pastikan `ALLOWED_ORIGIN` = domain frontend.
+
+### 7.3 Security Checklist (WAJIB — berlaku juga untuk jalur serverless)
+
+- [ ] **TLS only** — nginx/Caddy dengan sertifikat Let's Encrypt; blokir port 80 non-redirect, matikan HTTP/1.0 plaintext
+- [ ] **Firewall** — `ufw allow 443/tcp`, `80/tcp` (redirect), `22/tcp` (ubah port SSH + key-only); semua port lain ditutup. PostgreSQL **hanya** bind `127.0.0.1`, jangan pernah expose ke internet
+- [ ] **fail2ban** — proteksi SSH & nginx (login brute force)
+- [ ] **Secrets** — `SUPABASE_SERVICE_ROLE_KEY` & `JWT_SECRET` di-set via systemd `EnvironmentFile` ber-permission `600 root`, **tidak pernah** di file yang di-commit atau di env build frontend (prefix `PUBLIC_` = publik)
+- [ ] **JWT_SECRET** minimal 32 byte acak (`openssl rand -base64 32`), simpan di tempat terpisah dari DB
+- [ ] **Backup** — cron `pg_dump` harian + offsite (rsync ke tempat lain); test restore berkala
+- [ ] **Update rutin** — `apt update && apt upgrade`, dan `npm audit` di kedua package.json
+- [ ] **Rate limit & body limit** — aktifkan rate limit (KV di Workers / `express-rate-limit`-style di Node) & batasi ukuran body (sync push sudah dibatasi 100 transaksi)
+- [ ] **Dokumentasi API** — `/docs` & `/openapi.json` wajib Basic Auth (`DOCS_USERNAME`/`DOCS_PASSWORD` kuat), sama seperti di Workers
+- [ ] **Log monitoring** — pantau `/health`, error rate, dan percobaan login gagal
+
+### 7.4 Trade-off Self-Host vs Serverless
+
+| Aspek | Serverless (Workers + Supabase) | Self-Host (Proxmox) |
+|---|---|---|
+| Biaya | pay-per-use, free tier cukup untuk MVP | tetap (listrik+VPS), murah di laptop bekas |
+| Ops | hampir nol (managed) | Anda pegang: update OS, backup, TLS, failover |
+| Data residency | di Supabase/Cloudflare | 100% di infrastruktur sendiri |
+| Scaling | otomatis | manual (tambah resource LXC) |
+| Keamanan | dikelola provider + hardening Anda | hardening sepenuhnya tanggung jawab Anda (lihat 7.3) |
+
+> **Rekomendasi:** mulai dari serverless untuk iterasi cepat; pindah ke self-host saat butuh kontrol data/biaya tetap — kode yang sama, hanya cara hosting yang berbeda.
+
+---
+
 ## Checklist Deploy Production
 
 - [ ] Supabase project sudah dibuat

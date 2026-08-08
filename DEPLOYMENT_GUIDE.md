@@ -2,6 +2,8 @@
 
 Selamat! Aplikasi Anda sudah *production-ready*. Berikut adalah langkah-langkah praktis untuk menaikkan aplikasi ini ke VPS (Virtual Private Server) Anda secara mandiri menggunakan **Docker Compose** atau **Coolify** (berdasarkan spesifikasi di dokumen arsitektur Anda).
 
+> **Catatan:** Aplikasi tidak wajib full serverless. Bisa dihosting di **VPS / laptop bekas dengan Proxmox** (LXC/VM). Untuk opsi self-host langsung tanpa Docker, lihat **DEPLOY.md §7** (termasuk **Security Checklist wajib**: TLS-only, firewall, fail2ban, secrets via systemd, backup pg_dump, dan PostgreSQL yang hanya bind localhost — jangan pernah expose ke internet).
+
 ## Persiapan Server (VPS)
 1. **Sewa VPS**: Minimal RAM 2GB (direkomendasikan 4GB), OS Ubuntu 22.04 / 24.04 LTS.
 2. **Domain**: Siapkan nama domain (contoh: `umkmku.com`) dan arahkan (A Record) DNS ke IP publik VPS Anda.
