@@ -9,25 +9,20 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit({
 			compilerOptions: {
-				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: adapter({
+				routes: {
+					include: ['/*'],
+					exclude: ['<all>']
+				}
+			})
 		}),
 		SvelteKitPWA({
 			srcDir: './src',
 			mode: 'development',
 			strategies: 'generateSW',
-			/* FIX (desain "masih jelek" & terasa lambat): devOptions.enabled=true
-			   membuat service worker aktif & mem-precache asset bahkan saat dev.
-			   Efeknya: setelah kode diubah, browser masih bisa menyajikan CSS/JS
-			   LAMA dari cache SW — persis gejala di screenshot (padding, warna,
-			   posisi ikon tidak sesuai kode terbaru). SW tetap otomatis aktif
-			   penuh di build production (strategies: generateSW di atas tidak
-			   berubah) — ini HANYA menonaktifkan SW selama development lokal.
-			   Kalau sebelumnya sempat mengaktifkan SW versi lama: buka DevTools
-			   → Application → Service Workers → Unregister, lalu hard refresh. */
 			devOptions: {
 				enabled: false,
 				type: 'module',
