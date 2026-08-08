@@ -140,8 +140,8 @@
 >
 	<div class="container-base h-[76px] flex items-center justify-between">
 		<a href="/" class="flex items-center gap-2.5 min-h-0 group">
-			<div class="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center font-bold font-grotesk text-lg -rotate-6 shadow-sm group-hover:rotate-0 transition-transform flex-shrink-0">B</div>
-			<span class="font-grotesk font-bold text-[22px] text-brand">Beres</span>
+			<div class="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center font-bold text-lg -rotate-6 shadow-sm group-hover:rotate-0 transition-transform flex-shrink-0">B</div>
+			<span class="font-bold text-[22px] text-brand">Beres</span>
 		</a>
 
 		<!-- Desktop Nav -->
@@ -223,7 +223,7 @@
 				<div class="relative z-10 bg-paper border border-border rounded-lg shadow-2xl p-6 pb-8 font-mono -rotate-1"
 					style="clip-path: polygon(0 0,100% 0,100% 93%,94% 100%,88% 93%,82% 100%,76% 93%,70% 100%,64% 93%,58% 100%,52% 93%,46% 100%,40% 93%,34% 100%,28% 93%,22% 100%,16% 93%,10% 100%,4% 93%,0 100%)">
 					<div class="text-center mb-4">
-						<div class="font-grotesk font-bold text-[15px] text-ink tracking-wide">BERES KASIR</div>
+						<div class="font-bold text-[15px] text-ink tracking-wide">BERES KASIR</div>
 						<div class="text-[10.5px] text-ink-faint mt-0.5">Jl. Merdeka No. 12 · 09 Agu 2026 14:32</div>
 					</div>
 					{#each [['Kopi Susu x2','36.000'],['Nasi Goreng x1','25.000'],['Air Mineral x2','10.000']] as [item, price]}
@@ -268,7 +268,6 @@
 <section class="py-24" id="fitur" style="background: var(--color-paper-alt)">
 	<div class="container-base">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
-			<span class="eyebrow mb-4">Semua Ada di Sini</span>
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-ink mb-4">Satu Aplikasi untuk Semua Kebutuhan Usaha Anda</h2>
 			<p class="text-ink-soft text-[1.08rem]">Dari transaksi harian sampai laporan keuangan bulanan, semua fitur yang usaha Anda butuhkan sudah tersedia dalam satu tempat.</p>
 		</div>
@@ -317,7 +316,6 @@
 		style="background: radial-gradient(circle, rgba(221,75,30,.25), transparent 70%)"></div>
 	<div class="container-base relative z-10">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
-			<span class="eyebrow mb-4">Ditenagai AI</span>
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-white mb-4">Asisten Bisnis Pintar yang Selalu Siap Membantu</h2>
 			<p class="text-[#BFC2E0] text-[1.08rem]">Beres nggak cuma mencatat. Beres membantu Anda mengambil keputusan yang lebih baik untuk usaha, setiap hari.</p>
 		</div>
@@ -452,7 +450,7 @@
 					<div class="text-[#C9891A] text-[13px] mb-3.5">★★★★★</div>
 					<p class="text-[14.5px] text-ink mb-5 italic leading-relaxed">{t.quote}</p>
 					<div class="flex items-center gap-3">
-						<div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white font-grotesk text-[15px] flex-shrink-0" style="background: {t.bg}">{t.initials}</div>
+						<div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-[15px] flex-shrink-0" style="background: {t.bg}">{t.initials}</div>
 						<div>
 							<div class="font-bold text-[13.5px] text-ink">{t.name}</div>
 							<div class="text-[12px] text-ink-soft">{t.biz}</div>
@@ -475,7 +473,7 @@
 			<!-- Free -->
 			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal"
 				style="clip-path: polygon(0 0,100% 0,100% 97%,94% 100%,88% 97%,82% 100%,76% 97%,70% 100%,64% 97%,58% 100%,52% 97%,46% 100%,40% 97%,34% 100%,28% 97%,22% 100%,16% 97%,10% 100%,4% 97%,0 100%)">
-				<div class="font-grotesk font-bold text-[20px] text-ink mb-1.5">Gratis</div>
+				<div class="font-bold text-[20px] text-ink mb-1.5">Gratis</div>
 				<div class="text-[13.5px] text-ink-soft mb-5">Buat yang baru mulai usaha</div>
 				<div class="font-mono font-bold text-[2.2rem] text-ink mb-1">Rp 0</div>
 				<div class="text-[13px] text-ink-soft mb-6">selamanya</div>
@@ -491,7 +489,7 @@
 			<div class="relative border-[1.5px] border-brand rounded-[22px] p-8 pb-12 shadow-[0_24px_56px_rgba(20,22,45,.16)] scale-[1.04] reveal"
 				style="background: var(--color-brand); color: white; clip-path: polygon(0 0,100% 0,100% 97%,94% 100%,88% 97%,82% 100%,76% 97%,70% 100%,64% 97%,58% 100%,52% 97%,46% 100%,40% 97%,34% 100%,28% 97%,22% 100%,16% 97%,10% 100%,4% 97%,0 100%)">
 				<div class="absolute -top-4 right-6 bg-cta text-white font-mono text-[11px] font-bold px-3.5 py-1.5 rounded-full rotate-[6deg] shadow-sm uppercase tracking-wider">Paling Populer</div>
-				<div class="font-grotesk font-bold text-[20px] mb-1.5">Pro</div>
+				<div class="font-bold text-[20px] mb-1.5">Pro</div>
 				<div class="text-[13.5px] mb-5" style="color: rgba(255,255,255,.75)">Buat usaha yang mau berkembang</div>
 				<div class="font-mono font-bold text-[2.2rem] mb-1">Rp 99rb</div>
 				<div class="text-[13px] mb-6" style="color: rgba(255,255,255,.75)">per bulan</div>
@@ -506,7 +504,7 @@
 			<!-- Business -->
 			<div class="bg-paper border-[1.5px] border-border rounded-[22px] p-8 pb-12 reveal"
 				style="clip-path: polygon(0 0,100% 0,100% 97%,94% 100%,88% 97%,82% 100%,76% 97%,70% 100%,64% 97%,58% 100%,52% 97%,46% 100%,40% 97%,34% 100%,28% 97%,22% 100%,16% 97%,10% 100%,4% 97%,0 100%)">
-				<div class="font-grotesk font-bold text-[20px] text-ink mb-1.5">Bisnis</div>
+				<div class="font-bold text-[20px] text-ink mb-1.5">Bisnis</div>
 				<div class="text-[13.5px] text-ink-soft mb-5">Buat usaha dengan banyak cabang</div>
 				<div class="font-mono font-bold text-[2.2rem] text-ink mb-1">Rp 249rb</div>
 				<div class="text-[13px] text-ink-soft mb-6">per bulan</div>
@@ -525,7 +523,6 @@
 <section class="py-24" id="faq" style="background: var(--color-paper-alt)">
 	<div class="container-base">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
-			<span class="eyebrow mb-4">Pertanyaan Umum</span>
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-ink">Masih Ada yang Ingin Ditanyakan?</h2>
 		</div>
 		<div class="max-w-[780px] mx-auto reveal">
@@ -576,8 +573,8 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 mb-14">
 			<div>
 				<a href="/" class="flex items-center gap-2 mb-4 min-h-0 group">
-					<div class="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold font-grotesk text-lg -rotate-6 group-hover:rotate-0 transition-transform">B</div>
-					<span class="font-grotesk font-bold text-[22px] text-white">Beres</span>
+					<div class="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold text-lg -rotate-6 group-hover:rotate-0 transition-transform">B</div>
+					<span class="font-bold text-[22px] text-white">Beres</span>
 				</a>
 				<p class="text-[14px] text-[#9498B0] mb-5 max-w-[280px] leading-relaxed">Beres membantu pelaku UMKM mengelola seluruh kebutuhan bisnis dalam satu aplikasi yang mudah dipakai, dari kasir sampai laporan keuangan.</p>
 			</div>
