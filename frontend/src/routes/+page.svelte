@@ -194,9 +194,9 @@
 <!-- ===== HERO ===== -->
 <section class="pt-24 pb-10 overflow-hidden flex items-center" style="background: var(--color-paper); min-height: calc(100vh - 4rem - var(--stats-h, 8.75rem))">
 	<div class="container-base w-full">
-		<div class="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-14 lg:gap-10 items-center">
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-14 items-center">
 			<!-- Copy -->
-			<div class="max-w-2xl">
+			<div class="max-w-[620px]">
 				<h1 class="font-grotesk font-bold text-[2.75rem] lg:text-[3.5rem] text-ink mb-5 leading-[1.08]">
 					Semua Urusan Toko Jadi <span class="text-cta">Beres</span>.
 				</h1>
@@ -214,7 +214,7 @@
 			</div>
 
 			<!-- Struk + kartu komposisi (artifact fisik, bukan screenshot) -->
-			<div class="relative min-h-[340px] lg:min-h-[360px] mt-12 lg:mt-0 ml-auto w-full max-w-md lg:-translate-y-2" aria-hidden="true">
+			<div class="relative min-h-[340px] lg:min-h-[360px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
 				<div class="absolute -top-6 -left-4 lg:-left-14 w-40 p-4 rounded-md bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
 					Stok menipis: Gula 20kg
 					<div class="h-1.5 bg-warning/20 rounded-full mt-2 overflow-hidden"><div class="h-full w-2/3 bg-warning rounded-full"></div></div>
