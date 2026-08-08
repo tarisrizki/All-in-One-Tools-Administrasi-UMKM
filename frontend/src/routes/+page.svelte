@@ -82,12 +82,6 @@
 	onMount(() => {
 		document.documentElement.classList.add('js-ready');
 
-		// Ukur tinggi stats agar navbar + hero + stats pas mengisi satu viewport
-		const statsEl = document.getElementById('stats-section');
-		if (statsEl) {
-			document.documentElement.style.setProperty('--stats-h', statsEl.offsetHeight + 'px');
-		}
-
 		// Scroll effects
 		window.addEventListener('scroll', () => {
 			const y = window.scrollY;
@@ -191,16 +185,19 @@
 
 <main id="main-content">
 
+<!-- First viewport: navbar fixed + hero + stats pas 100vh, stats terkunci di bawah tanpa gap -->
+<div class="flex flex-col" style="min-height: 100vh">
+
 <!-- ===== HERO ===== -->
-<section class="pt-24 pb-10 overflow-hidden flex items-center" style="background: var(--color-paper); min-height: calc(100vh - 4rem - var(--stats-h, 8.75rem))">
+<section class="pt-20 pb-12 overflow-hidden flex flex-1 items-center" style="background: var(--color-paper)">
 	<div class="container-base w-full">
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-14 items-center">
 			<!-- Copy -->
 			<div class="max-w-[620px]">
-				<h1 class="font-grotesk font-bold text-[2.75rem] lg:text-[3.5rem] text-ink mb-6 leading-[1.08]">
+				<h1 class="font-grotesk font-bold text-[2.5rem] lg:text-[3.25rem] text-ink mb-5 leading-[1.08]">
 					Semua Urusan Toko Jadi <span class="text-cta">Beres</span>.
 				</h1>
-				<p class="text-lg lg:text-xl text-ink-soft mb-8 leading-relaxed max-w-lg">
+				<p class="text-lg lg:text-xl text-ink-soft mb-7 leading-relaxed max-w-lg">
 					Kasir, stok, keuangan, dan laporan. Semua otomatis dalam satu aplikasi.
 				</p>
 				<div class="flex gap-4 flex-wrap">
@@ -214,7 +211,7 @@
 			</div>
 
 			<!-- Struk + kartu komposisi (artifact fisik, bukan screenshot) -->
-			<div class="relative min-h-[340px] lg:min-h-[360px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
+			<div class="relative min-h-[300px] lg:min-h-[320px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
 				<div class="absolute -top-7 -left-14 w-40 p-4 rounded-lg bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
 					Stok menipis: Gula 20kg
 					<div class="h-1.5 bg-warning/20 rounded-full mt-2 overflow-hidden"><div class="h-full w-2/3 bg-warning rounded-full"></div></div>
@@ -246,7 +243,7 @@
 </section>
 
 <!-- ===== STATS BAR ===== -->
-<section id="stats-section" class="py-8" style="background: var(--color-brand)">
+<section id="stats-section" class="py-8 shrink-0" style="background: var(--color-brand)">
 	<div class="container-base">
 		<div class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
 			<div class="text-center text-white min-w-0">
@@ -277,8 +274,10 @@
 	</div>
 </section>
 
+</div><!-- /first viewport -->
+
 <!-- ===== FEATURES ===== -->
-<section class="pt-12 pb-24" id="fitur" style="background: var(--color-paper-alt)">
+<section class="pt-16 pb-24" id="fitur" style="background: var(--color-paper-alt)">
 	<div class="container-base">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-ink mb-4">Satu Aplikasi untuk Semua Kebutuhan Usaha Anda</h2>
