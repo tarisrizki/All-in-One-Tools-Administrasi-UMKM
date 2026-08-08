@@ -165,12 +165,13 @@ employeesRoute.openapi(createRouteDef, async (c) => {
       return c.json({ success: false, error: { message: "Batas paket gratis (20 item) sudah tercapai" } }, 403);
     }
 
-    // Validate role
+    // Validate role — HANYA role milik bisnis ini (cegah privilege escalation:
+    // role global seperti admin/cashier ber-wildcard '*' tidak boleh di-assign ke user lain)
     const { data: role, error: roleErr } = await supabase
       .from('roles')
       .select('id')
       .eq('id', dataObj.role_id)
-      .or(`business_id.is.null,business_id.eq.${businessId}`)
+      .eq('business_id', businessId)
       .single();
     if (roleErr || !role) throw new Error("Role tidak valid atau bukan milik bisnis ini");
 

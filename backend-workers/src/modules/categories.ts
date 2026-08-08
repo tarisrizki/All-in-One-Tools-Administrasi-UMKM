@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
 const categorySchema = z.object({
@@ -113,6 +113,12 @@ export const categoriesRoute = new OpenAPIHono<{ Bindings: any, Variables: Varia
 
 // Gunakan authMiddleware yang asli untuk melindungi semua endpoint categories
 categoriesRoute.use('*', authMiddleware);
+
+// Izin: list = products.read, modifikasi = products.write (kategori bagian dari produk)
+categoriesRoute.get('/', requirePermission('products.read'));
+categoriesRoute.post('/', requirePermission('products.write'));
+categoriesRoute.put('/:id', requirePermission('products.write'));
+categoriesRoute.delete('/:id', requirePermission('products.write'));
 
 categoriesRoute.openapi(categoriesListRoute, async (c) => {
   const supabase = getSupabase(c.env);
