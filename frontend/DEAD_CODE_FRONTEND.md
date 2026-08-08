@@ -25,7 +25,6 @@ Dokumen ini mencatat dead code yang ditemukan tapi tidak dihapus karena belum 10
 - `fly` transition digunakan - VALID
 
 ## Production Console Statements (acceptable - using console.error)
-Berikut console statements yang dibiarkan karena penting untuk debugging produksi:
 - `sync.svelte.ts:58` - `console.error('Sync failed:', error)` - penting untuk monitoring
 - `sync.svelte.ts:85,88` - error handling
 - `sync.svelte.ts:129` - network error
@@ -37,12 +36,12 @@ Berikut console statements yang dibiarkan karena penting untuk debugging produks
 ## Deleted (Confirmed Dead Code)
 - `src/lib/components/dashboard/ActionTile.svelte` - orphan, tidak di-import dimanapun
 
-## Fixed Imports
-- `src/routes/(app)/dashboard/+page.svelte` - removed unused `logout`, `goto`, `appModeState`
-- `src/lib/components/pos/ProductGrid.svelte` - removed unused `animate` import
-
 ## Removed Console.log
 - `src/lib/stores/sync.svelte.ts` - removed `console.log` di lines 83, 126 (debug noise)
+
+## Earlier Mistake (Fixed)
+- Initially marked `logout`, `goto`, `appModeState` as unused in dashboard/+page.svelte - WRONG, they're used in template
+- Initially marked `animate` as unused in ProductGrid.svelte - WRONG, it's used in motionEntrance function
 
 ---
 Generated: 2024-08-08
