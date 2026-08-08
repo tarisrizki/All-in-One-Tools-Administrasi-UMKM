@@ -8,7 +8,7 @@ import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '
 const saleItemSchema = z.object({
   productId: z.string().uuid(),
   qty: z.number().min(1),
-  price: z.number().min(0),
+  price: z.number().min(0).optional(),
   discount: z.number().min(0).default(0),
 });
 
@@ -19,12 +19,13 @@ const paymentSchema = z.object({
 
 const saleSchema = z.object({
   clientTransactionId: z.string().uuid().optional(),
-  items: z.array(saleItemSchema).min(1),
-  payments: z.array(paymentSchema).min(1),
+  items: z.array(saleItemSchema).min(1).max(200),
+  payments: z.array(paymentSchema).min(1).max(10),
   customerName: z.string().max(255).optional().nullable(),
   customerPhone: z.string().max(30).optional().nullable(),
   customerId: z.string().uuid().optional().nullable(),
   redeemPoints: z.number().min(0).optional().default(0),
+  priceListId: z.string().uuid().optional().nullable(), // Optional: wholesale price list
 });
 
 const salesListResponseSchema = z.object({
@@ -218,8 +219,8 @@ salesRoute.openapi(listRoute, async (c) => {
   const { search, from, to, page, limit } = c.req.valid('query');
   
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
-  const limitNum = Math.min(Math.max(parseInt(limit || '20', 10) || 20, 1), 100);
-  const offset = (pageNum - 1) * limitNum;
+    const limitNum = Math.min(Math.max(parseInt(limit || '20', 10) || 20, 1), 200);
+    const offset = (pageNum - 1) * limitNum;
 
   try {
     let query = supabase
@@ -296,48 +297,98 @@ salesRoute.openapi(createRouteDef, async (c) => {
     const clientTxId = dataObj.clientTransactionId || crypto.randomUUID();
 
     // 1. Gudang default
-    const { data: whRes } = await supabase
-      .from('warehouses')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_default', true)
-      .limit(1)
-      .single();
-    if (!whRes) throw new Error("Gudang tidak ditemukan");
-    const warehouseId = whRes.id;
+        const { data: whRes } = await supabase
+          .from('warehouses')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('is_default', true)
+          .limit(1)
+          .single();
+        if (!whRes) throw new Error("Gudang tidak ditemukan");
+        const warehouseId = whRes.id;
 
-    // 2. Validasi kepemilikan produk + ambil harga resmi dari DB.
-    // Harga dari client TIDAK dipakai (client bisa set price=0 → transaksi tanpa bayar).
-    const productIds = dataObj.items.map((i) => i.productId);
-    if (productIds.length > 0) {
-      const { data: validProducts, error: vpError } = await supabase
-        .from('products')
-        .select('id, sell_price')
-        .eq('business_id', businessId)
-        .in('id', productIds);
-      if (vpError || !validProducts || validProducts.length !== productIds.length) {
-        throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
-      }
+        // 2. Validasi kepemilikan produk + ambil harga (retail/wholesale via get_applicable_price)
+        const productIds = dataObj.items.map((i) => i.productId);
+        const priceListId = dataObj.priceListId || null;
+    
+        if (productIds.length > 0) {
+          const { data: validProducts, error: vpError } = await supabase
+            .from('products')
+            .select('id, sell_price')
+            .eq('business_id', businessId)
+            .in('id', productIds);
+          if (vpError || !validProducts || validProducts.length !== productIds.length) {
+            throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
+          }
 
-      const priceMap = new Map(validProducts.map((p: any) => [p.id, parseFloat(p.sell_price) || 0]));
-      for (const item of dataObj.items) {
-        const dbPrice = priceMap.get(item.productId);
-        if (dbPrice === undefined) throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
-        item.price = dbPrice;
-        // Diskon tidak boleh melebihi harga produk (cegah grandTotal negatif)
-        if (item.discount > dbPrice) {
-          throw new Error(`Diskon melebihi harga produk untuk item ${item.productId}`);
-        }
-      }
-    }
+          // Untuk setiap item: dapatkan harga berlaku (retail/wholesale) dan batch FEFO
+          const enrichedItems = [];
+          for (const item of dataObj.items) {
+            const product = validProducts.find((p: any) => p.id === item.productId);
+            if (!product) throw new Error(`Produk ${item.productId} tidak valid`);
 
-    // 3. Totals (harga sudah diverifikasi dari DB)
-    let subtotal = 0;
-    let discountTotal = 0;
-    for (const item of dataObj.items) {
-      subtotal += item.price * item.qty;
-      discountTotal += item.discount * item.qty;
-    }
+            // Dapatkan harga yang berlaku (retail atau wholesale)
+            const { data: priceData, error: priceErr } = await supabase.rpc('get_applicable_price', {
+              p_business_id: businessId,
+              p_product_id: item.productId,
+              p_qty: item.qty,
+              p_price_list_id: priceListId,
+            });
+        
+            let finalPrice: number;
+            let priceSource = 'retail';
+            let priceListName: string | null = null;
+        
+            if (priceErr) throw priceErr;
+            if (priceData && priceData.length > 0) {
+              finalPrice = Number(priceData[0].price);
+              priceSource = priceData[0].source;
+              priceListName = priceData[0].price_list_name;
+            } else {
+              finalPrice = parseFloat(product.sell_price) || 0;
+            }
+
+            // Diskon tidak boleh melebihi harga produk
+            if (item.discount > finalPrice) {
+              throw new Error(`Diskon melebihi harga produk untuk item ${item.productId}`);
+            }
+
+            // Dapatkan batch FEFO untuk item ini
+            const { data: batchData, error: batchErr } = await supabase.rpc('consume_batch_fefo', {
+              p_business_id: businessId,
+              p_product_id: item.productId,
+              p_qty: item.qty,
+              p_warehouse_id: warehouseId,
+            });
+        
+            let batchId: string | null = null;
+            if (batchErr) {
+              // Jika error batch (stok batch tidak cukup), fallback ke validasi stok biasa
+              // process_sale akan handle validasi stok product_stock
+              console.warn('Batch FEFO not available, falling back to product_stock:', batchErr.message);
+            } else if (batchData && batchData.length > 0) {
+              // Ambil batch_id pertama (FEFO - earliest expiry)
+              batchId = batchData[0].batch_id;
+            }
+
+            enrichedItems.push({
+              productId: item.productId,
+              qty: item.qty,
+              price: finalPrice,
+              discount: item.discount,
+              batchId,
+              priceSource,
+              priceListName,
+            });
+          }
+
+          // 3. Totals (harga sudah diverifikasi dari DB)
+          let subtotal = 0;
+          let discountTotal = 0;
+          for (const item of enrichedItems) {
+            subtotal += item.price * item.qty;
+            discountTotal += item.discount * item.qty;
+          }
 
     // 4. Loyalty points
     let appliedRedeemPoints = 0;
@@ -367,35 +418,38 @@ salesRoute.openapi(createRouteDef, async (c) => {
 
     // 5. Proses seluruh transaksi dalam SATU transaksi DB (atomic, rollback jika gagal).
     // process_sale() di supabase-rls.sql menangani: idempotency, insert sale + items,
-    // pengurangan stok (FOR UPDATE, tolak negatif), payments, status, piutang, loyalty.
-    const { count: saleCount } = await supabase
-      .from('sales')
-      .select('*', { count: 'exact', head: true })
-      .eq('business_id', businessId);
-    const invoiceNumber = `INV/${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}/${String((saleCount || 0) + 1).padStart(5, '0')}-${crypto.randomUUID().slice(0, 6)}`;
+        // pengurangan stok (FOR UPDATE, tolak negatif), payments, status, piutang, loyalty.
+        const { count: saleCount } = await supabase
+          .from('sales')
+          .select('*', { count: 'exact', head: true })
+          .eq('business_id', businessId);
+        const invoiceNumber = `INV/${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}/${String((saleCount || 0) + 1).padStart(5, '0')}-${crypto.randomUUID().slice(0, 6)}`;
 
-    const { data: result, error: rpcError } = await supabase.rpc('process_sale', {
-      p_business_id: businessId,
-      p_warehouse_id: warehouseId,
-      p_customer_id: dataObj.customerId || null,
-      p_client_transaction_id: clientTxId,
-      p_invoice_number: invoiceNumber,
-      p_subtotal: subtotal,
-      p_discount_total: discountTotal,
-      p_grand_total: grandTotal,
-      p_created_by: userId,
-      p_items: dataObj.items.map((i) => ({
-        product_id: i.productId,
-        qty: i.qty,
-        price: i.price,
-        discount: i.discount,
-      })),
-      p_payments: dataObj.payments.map((p) => ({ method: p.method, amount: p.amount })),
-      p_redeem_points: appliedRedeemPoints,
-      p_earned_points: earnedPoints,
-      p_customer_name: dataObj.customerName || null,
-      p_customer_phone: dataObj.customerPhone || null,
-    });
+        const { data: result, error: rpcError } = await supabase.rpc('process_sale', {
+          p_business_id: businessId,
+          p_warehouse_id: warehouseId,
+          p_customer_id: dataObj.customerId || null,
+          p_client_transaction_id: clientTxId,
+          p_invoice_number: invoiceNumber,
+          p_subtotal: subtotal,
+          p_discount_total: discountTotal,
+          p_grand_total: grandTotal,
+          p_created_by: userId,
+          p_items: enrichedItems.map((i) => ({
+            product_id: i.productId,
+            qty: i.qty,
+            price: i.price,
+            discount: i.discount,
+            batch_id: i.batchId,
+            price_source: i.priceSource,
+            price_list_name: i.priceListName,
+          })),
+          p_payments: dataObj.payments.map((p) => ({ method: p.method, amount: p.amount })),
+          p_redeem_points: appliedRedeemPoints,
+          p_earned_points: earnedPoints,
+          p_customer_name: dataObj.customerName || null,
+          p_customer_phone: dataObj.customerPhone || null,
+        });
 
     if (rpcError) throw rpcError;
 

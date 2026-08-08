@@ -20,8 +20,8 @@ const syncPushSchema = z.object({
   transactions: z.array(
     z.object({
       client_transaction_id: z.string().uuid(),
-      items: z.array(saleItemSchema).min(1),
-      payments: z.array(paymentSchema).min(1),
+      items: z.array(saleItemSchema).min(1).max(200),
+      payments: z.array(paymentSchema).min(1).max(10),
       customerName: z.string().max(255).nullable().optional(),
       customerPhone: z.string().max(30).nullable().optional(),
       notes: z.string().nullable().optional(),
@@ -33,22 +33,28 @@ const pullRoute = createRoute({
   tags: ['Sync'],
   method: 'get',
   path: '/pull',
-  description: 'Menarik data terbaru dari server (sinkronisasi)',
+  description: 'Menarik data terbaru dari server (sinkronisasi) - dukung pagination dengan limit+cursor',
   request: {
-    query: z.object({ since: z.string().optional() }),
+    query: z.object({
+      since: z.string().optional(),
+      limit: z.coerce.number().int().min(1).max(500).default(100),
+      cursor: z.string().optional(),
+    }),
   },
   responses: {
     200: {
-      content: { 
-        'application/json': { 
+      content: {
+        'application/json': {
           schema: createSuccessSchema(z.object({
             products: z.array(z.unknown()),
             categories: z.array(z.unknown()),
             customers: z.array(z.unknown()),
-          })) 
-        } 
+            nextCursor: z.string().nullable(),
+            hasMore: z.boolean(),
+          })),
+        },
       },
-      description: 'Data sync pull',
+      description: 'Data sync pull dengan pagination',
     },
     400: {
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -69,8 +75,19 @@ const pushRoute = createRoute({
   },
   responses: {
     200: {
-      content: { 'application/json': { schema: MessageSuccessSchema } },
-      description: 'Berhasil push',
+      content: {
+        'application/json': {
+          schema: createSuccessSchema(z.object({
+            results: z.array(z.object({
+              index: z.number(),
+              clientTransactionId: z.string(),
+              success: z.boolean(),
+              error: z.string().nullable(),
+            })),
+          })),
+        },
+      },
+      description: 'Berhasil push - return array per-item results',
     },
     400: {
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -87,23 +104,40 @@ syncRoute.use('*', authMiddleware);
 syncRoute.openapi(pullRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const { since } = c.req.valid('query');
+  const { since, limit = 100, cursor } = c.req.valid('query');
 
   try {
-    let pQuery = supabase.from('products').select('id, business_id, category_id, sku, barcode, name, description, unit, sell_price, min_stock, image_url, is_active, updated_at, product_stock(quantity)').eq('business_id', businessId);
-    let cQuery = supabase.from('categories').select('*').eq('business_id', businessId);
-    let custQuery = supabase.from('customers').select('*, sales(grand_total, status)').eq('business_id', businessId);
+    const baseSince = since ? new Date(since).toISOString() : '1970-01-01T00:00:00.000Z';
 
-    if (since) {
-      // Validasi format tanggal — tolak input tidak valid agar sinkronisasi tidak silently gagal
-      const parsed = new Date(since);
-      if (isNaN(parsed.getTime())) {
-        return c.json({ success: false, error: { message: "Parameter 'since' tidak valid (format ISO tanggal)" } }, 400);
-      }
-      const sinceDate = parsed.toISOString();
-      pQuery = pQuery.gte('updated_at', sinceDate);
-      cQuery = cQuery.gte('updated_at', sinceDate);
-      custQuery = custQuery.gte('updated_at', sinceDate);
+    let pQuery = supabase
+      .from('products')
+      .select('id, business_id, category_id, sku, barcode, name, description, unit, sell_price, min_stock, image_url, is_active, updated_at, product_stock(quantity)')
+      .eq('business_id', businessId)
+      .gte('updated_at', baseSince)
+      .order('updated_at', { ascending: true })
+      .limit(limit + 1);
+
+    let cQuery = supabase
+      .from('categories')
+      .select('*')
+      .eq('business_id', businessId)
+      .gte('updated_at', baseSince)
+      .order('updated_at', { ascending: true })
+      .limit(limit + 1);
+
+    let custQuery = supabase
+      .from('customers')
+      .select('*, sales(grand_total, status)')
+      .eq('business_id', businessId)
+      .gte('updated_at', baseSince)
+      .order('updated_at', { ascending: true })
+      .limit(limit + 1);
+
+    if (cursor) {
+      const cursorDate = new Date(cursor).toISOString();
+      pQuery = pQuery.gt('updated_at', cursorDate);
+      cQuery = cQuery.gt('updated_at', cursorDate);
+      custQuery = custQuery.gt('updated_at', cursorDate);
     }
 
     const [productsRes, categoriesRes, customersRes] = await Promise.all([pQuery, cQuery, custQuery]);
@@ -139,12 +173,32 @@ syncRoute.openapi(pullRoute, async (c) => {
       return { ...custData, totalSpent, tier };
     });
 
+    // Determine next cursor and hasMore
+    const allItems = [
+      ...formattedProducts,
+      ...(categoriesRes.data || []),
+      ...formattedCustomers
+    ].sort((a, b) => new Date(a.updatedAt || a.updated_at).getTime() - new Date(b.updatedAt || b.updated_at).getTime());
+
+    const hasMore = allItems.length > limit;
+    const pageItems = hasMore ? allItems.slice(0, limit) : allItems;
+    const nextCursor = hasMore && pageItems.length > 0 
+      ? (pageItems[pageItems.length - 1].updatedAt || pageItems[pageItems.length - 1].updated_at) 
+      : null;
+
+    // Split back into categories for response
+    const products = pageItems.filter(i => i.categoryId !== undefined);
+    const categories = pageItems.filter(i => i.categoryId === undefined && i.tier === undefined);
+    const customers = pageItems.filter(i => i.tier !== undefined);
+
     return c.json({
       success: true,
       data: keysToCamel({
-        products: formattedProducts,
-        categories: categoriesRes.data || [],
-        customers: formattedCustomers
+        products,
+        categories,
+        customers,
+        nextCursor,
+        hasMore,
       })
     }, 200);
   } catch (err: any) {
@@ -175,8 +229,7 @@ syncRoute.openapi(pushRoute, async (c) => {
       }
     }
 
-    let processed = 0;
-    const failed: Array<{ index: number; clientTransactionId: string; error: string }> = [];
+    const results: Array<{ index: number; clientTransactionId: string; success: boolean; error: string | null }> = [];
 
     for (let idx = 0; idx < data.transactions.length; idx++) {
       const t = data.transactions[idx];
@@ -232,37 +285,27 @@ syncRoute.openapi(pushRoute, async (c) => {
             .eq('client_transaction_id', t.client_transaction_id)
             .maybeSingle();
           if (existing) {
-            processed++;
+            results.push({ index: idx, clientTransactionId: t.client_transaction_id, success: true, error: null });
             continue;
           }
           // Bukan duplikat transaksi → kegagalan nyata (kemungkinan collision nomor invoice)
-          failed.push({ index: idx, clientTransactionId: t.client_transaction_id, error: rpcErr.message || 'Gagal memproses transaksi' });
+          results.push({ index: idx, clientTransactionId: t.client_transaction_id, success: false, error: rpcErr.message || 'Gagal memproses transaksi' });
           continue;
         }
-        failed.push({ index: idx, clientTransactionId: t.client_transaction_id, error: rpcErr.message || 'Gagal memproses transaksi' });
+        results.push({ index: idx, clientTransactionId: t.client_transaction_id, success: false, error: rpcErr.message || 'Gagal memproses transaksi' });
         continue;
       }
 
       if (result?.duplicate) {
         // Idempotent — transaksi sudah ada sebelumnya
-        processed++;
+        results.push({ index: idx, clientTransactionId: t.client_transaction_id, success: true, error: null });
         continue;
       }
 
-      processed++;
+      results.push({ index: idx, clientTransactionId: t.client_transaction_id, success: true, error: null });
     }
 
-    if (failed.length > 0) {
-      return c.json({
-        success: false,
-        error: {
-          message: `${failed.length} transaksi gagal dari ${data.transactions.length} total`,
-          details: failed,
-        }
-      }, 400);
-    }
-
-    return c.json({ success: true, message: `Berhasil push ${processed} transaksi` }, 200);
+    return c.json({ success: true, data: { results } }, 200);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal mendorong sinkronisasi");
     return c.json({ success: false, error: { message: msg } }, 400);

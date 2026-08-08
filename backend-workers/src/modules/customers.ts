@@ -31,7 +31,9 @@ const listRoute = createRoute({
   description: 'Mendapatkan daftar pelanggan',
   request: {
     query: z.object({
-      search: z.string().optional().openapi({ example: 'budi' })
+      search: z.string().optional().openapi({ example: 'budi' }),
+      page: z.string().optional(),
+      limit: z.string().optional(),
     })
   },
   responses: {
@@ -142,20 +144,25 @@ customersRoute.get('/', requirePermission('customers.read'));
 customersRoute.openapi(listRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const { search } = c.req.valid('query');
+  const { search, page, limit } = c.req.valid('query');
+
+  const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit || '20', 10) || 20, 1), 200);
+  const offset = (pageNum - 1) * limitNum;
 
   try {
     let query = supabase
       .from('customers')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('business_id', businessId)
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .range(offset, offset + limitNum - 1);
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
     }
 
-    const { data: customersData, error: customersError } = await query;
+    const { data: customersData, error: customersError, count } = await query;
     if (customersError) throw customersError;
 
     // Fetch sales to calculate totalSpent
@@ -164,7 +171,7 @@ customersRoute.openapi(listRoute, async (c) => {
       .select('customer_id, grand_total')
       .eq('business_id', businessId)
       .eq('status', 'paid');
-    
+   
     if (salesError) throw salesError;
 
     // Aggregate sales per customer
@@ -184,7 +191,7 @@ customersRoute.openapi(listRoute, async (c) => {
       };
     });
 
-    return c.json({ success: true, data: result }, 200);
+    return c.json({ success: true, data: result, pagination: { page: pageNum, limit: limitNum, total: count || 0 } }, 200);
   } catch (err: any) {
     console.error("Customers GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil daftar pelanggan" } }, 500);

@@ -38,7 +38,9 @@ const listRoute = createRoute({
   description: 'Mendapatkan daftar produk',
   request: {
     query: z.object({
-      search: z.string().optional()
+      search: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
     })
   },
   responses: {
@@ -119,6 +121,38 @@ const qrcodeRoute = createRoute({
     400: {
       content: { 'application/json': { schema: ErrorResponseSchema } },
       description: 'Gagal generate QR Code'
+    }
+  }
+});
+
+const expiringRoute = createRoute({
+  method: 'get',
+  path: '/expiring',
+  tags: ['Products'],
+  description: 'Mendapatkan produk/batch yang akan expired (FEFO)',
+  request: {
+    query: z.object({
+      days: z.string().optional().default('30'),
+    })
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.array(z.object({
+        id: z.string().uuid(),
+        product_id: z.string().uuid(),
+        product_name: z.string(),
+        batch_number: z.string(),
+        expiry_date: z.string(),
+        quantity: z.number(),
+        unit_cost: z.number().or(z.string()),
+        received_at: z.string(),
+        days_until_expiry: z.number(),
+      }))) } },
+      description: 'Daftar batch yang mendekati expired (FEFO)'
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error'
     }
   }
 });
@@ -332,5 +366,26 @@ productsRoute.openapi(qrcodeRoute, async (c) => {
     return c.body(buffer as any, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal generate QR Code" } }, 400);
+  }
+});
+
+productsRoute.get('/expiring', requirePermission('products.read'));
+productsRoute.openapi(expiringRoute, async (c) => {
+  const supabase = getSupabase(c.env);
+  const businessId = c.get('businessId');
+  const { days } = c.req.valid('query');
+
+  try {
+    const { data, error } = await supabase.rpc('get_expiring_batches', {
+      p_business_id: businessId,
+      p_days: parseInt(days || '30', 10),
+    });
+
+    if (error) throw error;
+
+    return c.json({ success: true, data: data || [] }, 200);
+  } catch (err: any) {
+    console.error("Products expiring error:", err);
+    return c.json({ success: false, error: { message: "Gagal mengambil data expiring" } }, 500);
   }
 });

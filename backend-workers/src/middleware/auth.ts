@@ -3,6 +3,27 @@ import type { Context, Next } from 'hono';
 import { getSupabase } from '../utils/supabase';
 import { getEnv } from '../utils/env';
 
+// Cache untuk is_active user (60s TTL)
+const isActiveCache = new Map<string, { value: boolean; expiresAt: number }>();
+
+async function checkUserActive(supabase: any, userId: string): Promise<boolean> {
+  const now = Date.now();
+  const cached = isActiveCache.get(userId);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('is_active')
+    .eq('id', userId)
+    .single();
+
+  const isActive = !error && data?.is_active === true;
+  isActiveCache.set(userId, { value: isActive, expiresAt: now + 60 * 1000 });
+  return isActive;
+}
+
 export const authMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -47,10 +68,17 @@ export const authMiddleware = async (c: Context, next: Next) => {
 export const requirePermission = (requiredPermission: string) => {
   return async (c: Context, next: Next) => {
     try {
+      const userId = c.get('userId');
       const roleId = c.get('roleId');
       if (!roleId) return c.json({ success: false, error: { message: 'Tidak ada informasi peran' } }, 401);
 
+      // Cek is_active user (cache 60s)
       const supabase = getSupabase(c.env);
+      const isActive = await checkUserActive(supabase, userId);
+      if (!isActive) {
+        return c.json({ success: false, error: { message: 'Akun dinonaktifkan' } }, 401);
+      }
+
       const { data, error } = await supabase
         .from('roles')
         .select('permissions')

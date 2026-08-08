@@ -1,0 +1,14 @@
+-- ============================================================
+-- WS-01: Kontrak roles (P0)
+-- Migration: tambah business_id nullable atau tabel relasi user_roles
+-- Jika memakai nullable foreign key, jalankan ALTER TABLE terlebih dulu.
+-- Pastikan role CRUD masih berfungsi, seed tetap jalan.
+-- ============================================================
+-- DROP POLICY IF EXISTS "User Business Scope" ON roles;
+-- CREATE POLICY "User Business Scope" ON roles
+--   FOR SELECT USING (business_id IN (SELECT business_id FROM users WHERE id = %I))
+--   WITH CHECK (business_id IN (SELECT business_id FROM users WHERE id = %I));
+-- 
+-- ALTER TABLE roles ADD COLUMN business_id uuid REFERENCES users(id) ON DELETE SET NULL;
+-- 
+-- CREATE INDEX idx_roles_business_id ON roles(business_id);

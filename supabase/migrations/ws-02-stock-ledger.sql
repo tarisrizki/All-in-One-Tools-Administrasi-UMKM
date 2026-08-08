@@ -1,0 +1,58 @@
+-- ============================================================\n-- WS-02: Stock Movement Ledger (P0)\n-- Immutable stock movement ledger for POS sale/purchase/opname/reversal\n-- ============================================================
+-- Pastikan role CRUD masih berfungsi, seed tetap jalan.
+-- ============================================================
+-- DROP POLICY IF EXISTS "User Business Scope" ON roles;
+-- CREATE POLICY "User Business Scope" ON roles
+--   FOR SELECT USING (business_id IN (SELECT business_id FROM users WHERE id = %I))
+--   WITH CHECK (business_id IN (SELECT business_id FROM users WHERE id = %I));
+-- 
+-- ALTER TABLE roles ADD COLUMN business_id uuid REFERENCES users(id) ON DELETE SET NULL;
+-- 
+-- CREATE INDEX idx_roles_business_id ON roles(business_id);-- Stock Ledger Entry fields
+--   voucher_type      : 'sales_invoice' | 'purchase_order' | 'stock_opname' | 'adjustment'
+--   voucher_no        : FK to sales_invoice.id | purchase_order.id | stock_opname.id | stock_adjustment.id
+--   item_code         : product.code
+--   warehouse_id      : warehouse.id
+--   quantity_delta    : positive for input/receipt, negative for output/issue
+--   unit_cost         : product.cost_price (weighted avg)
+--   source_type       : 'sale' | 'purchase' | 'opname' | 'adjustment'
+--   source_id         : sale.id | purchase_order.id | stock_opname.id | stock_adjustment.id
+--   source_line_id    : sale_item.id (for sale/purchase) | NULL for opname/adjustment
+--   is_cancelled      : boolean (default false)
+--   created_by        : user.id (role owner)
+--   created_at        : timestamptz default now()
+--   description       : text (store transaction description)
+-- ------------------------------------------------------------
+-- Example trigger for auto-generated ledger entry in process_sale()
+-- ------------------------------------------------------------
+-- CREATE OR REPLACE FUNCTION log_stock_movement(
+--   p_voucher_type text,
+--   p_voucher_no   uuid,
+--   p_item_code    text,
+--   p_warehouse_id uuid,
+--   p_qty_delta    numeric,
+--   p_unit_cost    numeric,
+--   p_source_type  text,
+--   p_source_id    uuid,
+--   p_source_line_id uuid,
+--   p_created_by   uuid
+-- ) RETURNS void AS $$
+-- BEGIN
+--   INSERT INTO stock_ledgers (
+--     voucher_type, voucher_no, item_code, warehouse_id,
+--     qty_delta, unit_cost, source_type, source_id,
+--     source_line_id, is_cancelled, created_by
+--   ) VALUES (
+--     p_voucher_type, p_voucher_no, p_item_code, p_warehouse_id,
+--     p_qty_delta, p_unit_cost, p_source_type, p_source_id,
+--     p_source_line_id, FALSE, p_created_by
+--   );
+--   -- Atomic update of product_stock projection (prevent negative stock)
+--   UPDATE product_stock
+--     SET quantity = GREATEST(0, quantity + p_qty_delta)
+--   WHERE business_id = (SELECT business_id FROM users WHERE id = current_setting('userId')::uuid)
+--     AND product_code = p_item_code
+--     AND warehouse_id = p_warehouse_id;
+-- END;
+-- $$ LANGUAGE plpgsql SECURITY DEFINER;
+-- GRANT EXECUTE ON FUNCTION log_stock_movement TO public;

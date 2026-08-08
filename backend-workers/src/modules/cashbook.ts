@@ -104,9 +104,9 @@ cashbookRoute.openapi(listRoute, async (c) => {
 
   try {
     const { from, to, page, limit } = c.req.valid('query');
-    const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 100);
-    const offset = (pageNum - 1) * limitNum;
+        const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 200);
+        const offset = (pageNum - 1) * limitNum;
 
     let query = supabase
       .from('cashbook_entries')

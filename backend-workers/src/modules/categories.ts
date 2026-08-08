@@ -22,6 +22,12 @@ const categoriesListRoute = createRoute({
   method: 'get',
   path: '/',
   description: 'Mendapatkan daftar semua kategori milik bisnis',
+  request: {
+    query: z.object({
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    })
+  },
   responses: {
     200: {
       content: { 'application/json': { schema: createSuccessSchema(z.array(categoryResponseSchema)) } },
@@ -123,20 +129,26 @@ categoriesRoute.delete('/:id', requirePermission('products.write'));
 categoriesRoute.openapi(categoriesListRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
+  const { page, limit } = c.req.valid('query');
+
+  const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 200);
+  const offset = (pageNum - 1) * limitNum;
 
   try {
     // Penggunaan .eq('business_id', businessId) sangat krusial karena kita mem-bypass RLS dengan service_role
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('categories')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('business_id', businessId)
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .range(offset, offset + limitNum - 1);
 
     if (error) {
       console.error("Supabase Error:", error);
       throw error;
     }
-    return c.json({ success: true, data: data || [] }, 200);
+    return c.json({ success: true, data: data || [], pagination: { page: pageNum, limit: limitNum, total: count || 0 } }, 200);
   } catch (err: any) {
     console.error("Categories GET error:", err);
     return c.json({ success: false, error: { message: "Gagal mengambil kategori" } }, 500);
