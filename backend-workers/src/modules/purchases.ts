@@ -147,6 +147,9 @@ purchasesRoute.openapi(listRoute, async (c) => {
       .from('purchase_orders')
       .select('*, suppliers(name), warehouses(name)')
       .eq('business_id', businessId)
+      // Scope join ke tabel milik bisnis ini (anti-IDOR via service_role bypass)
+      .eq('suppliers.business_id', businessId)
+      .eq('warehouses.business_id', businessId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -175,6 +178,8 @@ purchasesRoute.openapi(getByIdRoute, async (c) => {
       .select('*, suppliers(name), warehouses(name)')
       .eq('id', id)
       .eq('business_id', businessId)
+      .eq('suppliers.business_id', businessId)
+      .eq('warehouses.business_id', businessId)
       .single();
 
     if (error || !po) return c.json({ success: false, error: { message: "PO tidak ditemukan" } }, 404);

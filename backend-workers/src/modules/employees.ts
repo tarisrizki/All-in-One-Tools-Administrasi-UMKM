@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from '../utils/password';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
 
@@ -174,8 +174,7 @@ employeesRoute.openapi(createRouteDef, async (c) => {
       .single();
     if (roleErr || !role) throw new Error("Role tidak valid atau bukan milik bisnis ini");
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(dataObj.password, salt);
+    const passwordHash = await hashPassword(dataObj.password);
 
     const { data, error } = await supabase
       .from('users')

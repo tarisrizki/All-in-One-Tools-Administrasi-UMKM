@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
-import bcrypt from 'bcryptjs';
+import { hashPassword, verifyPassword } from '../utils/password';
 import { sign, verify } from 'hono/jwt';
 import { authMiddleware } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
@@ -201,8 +201,7 @@ authRoute.openapi(registerRoute, async (c) => {
     const { data: business, error: bizError } = await supabase.from('businesses').insert({ name: businessName, settings: { appMode: 'simple' } }).select().single();
     if (bizError || !business) throw bizError || new Error("Gagal membuat bisnis");
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await hashPassword(password);
 
     const { data: user, error: userError } = await supabase.from('users').insert({
       business_id: business.id,
@@ -260,7 +259,7 @@ authRoute.openapi(loginRoute, async (c) => {
       return c.json({ success: false, error: { code: "UNAUTHORIZED", message: "Nomor HP atau kata sandi salah" } }, 401);
     }
 
-    const match = await bcrypt.compare(password, user.password_hash);
+    const match = await verifyPassword(password, user.password_hash);
     if (!match) {
       return c.json({ success: false, error: { code: "UNAUTHORIZED", message: "Nomor HP atau kata sandi salah" } }, 401);
     }

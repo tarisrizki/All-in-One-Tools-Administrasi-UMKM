@@ -2,7 +2,6 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
 const saleItemSchema = z.object({
@@ -111,7 +110,7 @@ const documentRoute = createRoute({
   tags: ['Sales'],
   method: 'get',
   path: '/{id}/document',
-  description: 'Mendownload struk PDF',
+  description: 'Mendapatkan data struk/invoice untuk dicetak (client-side printing)',
   request: {
     params: z.object({
       id: z.string().uuid()
@@ -119,8 +118,8 @@ const documentRoute = createRoute({
   },
   responses: {
     200: {
-      content: { 'application/pdf': { schema: z.any() } },
-      description: 'PDF Document',
+      content: { 'application/json': { schema: z.any() } },
+      description: 'Data invoice untuk pencetakan',
     },
     404: {
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -421,6 +420,12 @@ salesRoute.openapi(documentRoute, async (c) => {
       .select('*, products(name)')
       .eq('sale_id', id);
 
+    // 2b. Fetch payments
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('method, amount')
+      .eq('sale_id', id);
+
     // 3. Fetch business info
     const { data: biz } = await supabase
       .from('businesses')
@@ -437,86 +442,39 @@ salesRoute.openapi(documentRoute, async (c) => {
     }
     sale.customers = cust;
 
-    // 4. Generate PDF
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4
-    const { width, height } = page.getSize();
-    
-    let y = height - 50;
-    const margin = 50;
-
-    // Header
-    page.drawText(businessName, { x: margin, y, size: 20, font: boldFont });
-    y -= 25;
-    page.drawText('INVOICE', { x: margin, y, size: 16, font: boldFont, color: rgb(0.2, 0.2, 0.2) });
-    y -= 20;
-    page.drawText(`No: ${sale.invoice_number}`, { x: margin, y, size: 10, font });
-    page.drawText(`Tanggal: ${new Date(sale.created_at).toLocaleDateString('id-ID')}`, { x: width - margin - 150, y, size: 10, font });
-    y -= 15;
-    const custName = sale.customers?.name || 'Pelanggan Umum';
-    page.drawText(`Pelanggan: ${custName}`, { x: margin, y, size: 10, font });
-
-    y -= 40;
-
-    // Table Header
-    page.drawText('Barang', { x: margin, y, size: 10, font: boldFont });
-    page.drawText('Qty', { x: margin + 200, y, size: 10, font: boldFont });
-    page.drawText('Harga', { x: margin + 270, y, size: 10, font: boldFont });
-    page.drawText('Diskon', { x: margin + 350, y, size: 10, font: boldFont });
-    page.drawText('Total', { x: width - margin - 70, y, size: 10, font: boldFont });
-    y -= 15;
-
-    // Table Line
-    page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
-    y -= 15;
-
-    // Items
-    for (const item of items || []) {
-       const pName = item.products?.name || 'Item tidak diketahui';
-       const qty = item.qty;
-       const price = Number(item.price);
-       const discount = Number(item.discount || 0);
-       const total = (price - discount) * qty;
-
-       page.drawText(pName.substring(0, 30), { x: margin, y, size: 10, font });
-       page.drawText(qty.toString(), { x: margin + 200, y, size: 10, font });
-       page.drawText(`Rp ${price.toLocaleString('id-ID')}`, { x: margin + 270, y, size: 10, font });
-       page.drawText(`Rp ${discount.toLocaleString('id-ID')}`, { x: margin + 350, y, size: 10, font });
-       page.drawText(`Rp ${total.toLocaleString('id-ID')}`, { x: width - margin - 70, y, size: 10, font });
-       y -= 15;
-    }
-
-    y -= 10;
-    page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
-    y -= 20;
-
-    // Totals
-    page.drawText('Subtotal:', { x: width - margin - 200, y, size: 10, font });
-    page.drawText(`Rp ${Number(sale.subtotal).toLocaleString('id-ID')}`, { x: width - margin - 70, y, size: 10, font });
-    y -= 15;
-    page.drawText('Diskon:', { x: width - margin - 200, y, size: 10, font });
-    page.drawText(`Rp ${Number(sale.discount_total).toLocaleString('id-ID')}`, { x: width - margin - 70, y, size: 10, font });
-    y -= 15;
-    page.drawText('Grand Total:', { x: width - margin - 200, y, size: 12, font: boldFont });
-    page.drawText(`Rp ${Number(sale.grand_total).toLocaleString('id-ID')}`, { x: width - margin - 70, y, size: 12, font: boldFont });
-
-    const pdfBytes = await pdfDoc.save();
-
-    // We must cast Response back since Hono OpenAPI types might expect JSON if it's strict,
-    // but returning Response directly works in Hono. We can cast as any.
-    return new Response(pdfBytes, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="Invoice-${sale.invoice_number.replace(/\//g, '-')}.pdf"`
+    // Kembalikan data invoice lengkap — client-side rendering untuk thermal printer / browser print
+    return c.json({
+      success: true,
+      data: {
+        businessName,
+        invoiceNumber: sale.invoice_number,
+        date: sale.created_at,
+        dateFormatted: new Date(sale.created_at).toLocaleDateString('id-ID', {
+          day: '2-digit', month: 'long', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        }),
+        customerName: sale.customers?.name || 'Pelanggan Umum',
+        items: (items || []).map((item: any) => ({
+          name: item.products?.name || 'Item',
+          qty: item.qty,
+          price: Number(item.price),
+          discount: Number(item.discount || 0),
+          total: (Number(item.price) - Number(item.discount || 0)) * item.qty,
+        })),
+        subtotal: Number(sale.subtotal),
+        discountTotal: Number(sale.discount_total),
+        grandTotal: Number(sale.grand_total),
+        payments: (payments || []).map((p: any) => ({
+          method: p.method,
+          amount: Number(p.amount),
+        })),
+        paymentMethod: payments?.[0]?.method || 'Tunai',
       }
-    }) as any;
+    }, 200);
 
   } catch (err: any) {
-    console.error("PDF Generate Error:", err);
-    return c.json({ success: false, error: { message: "Gagal membuat dokumen PDF" } }, 500);
+    console.error("Invoice document error:", err);
+    return c.json({ success: false, error: { message: "Gagal mengambil data struk" } }, 500);
   }
 });
 

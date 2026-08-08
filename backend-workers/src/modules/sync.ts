@@ -26,7 +26,7 @@ const syncPushSchema = z.object({
       customerPhone: z.string().max(30).nullable().optional(),
       notes: z.string().nullable().optional(),
     })
-  )
+  ).min(1).max(100, "Maksimal 100 transaksi per request")
 });
 
 const pullRoute = createRoute({
@@ -95,9 +95,14 @@ syncRoute.openapi(pullRoute, async (c) => {
     let custQuery = supabase.from('customers').select('*, sales(grand_total, status)').eq('business_id', businessId);
 
     if (since) {
-      const sinceDate = new Date(since).toISOString();
+      // Validasi format tanggal — tolak input tidak valid agar sinkronisasi tidak silently gagal
+      const parsed = new Date(since);
+      if (isNaN(parsed.getTime())) {
+        return c.json({ success: false, error: { message: "Parameter 'since' tidak valid (format ISO tanggal)" } }, 400);
+      }
+      const sinceDate = parsed.toISOString();
       pQuery = pQuery.gte('updated_at', sinceDate);
-      cQuery = cQuery.gte('created_at', sinceDate);
+      cQuery = cQuery.gte('updated_at', sinceDate);
       custQuery = custQuery.gte('updated_at', sinceDate);
     }
 
@@ -171,11 +176,12 @@ syncRoute.openapi(pushRoute, async (c) => {
     }
 
     let processed = 0;
+    const failed: Array<{ index: number; clientTransactionId: string; error: string }> = [];
 
-    for (const t of data.transactions) {
-      const { data: existingSale } = await supabase.from('sales').select('id').eq('business_id', businessId).eq('client_transaction_id', t.client_transaction_id).single();
-      if (existingSale) continue; // Skip existing
+    for (let idx = 0; idx < data.transactions.length; idx++) {
+      const t = data.transactions[idx];
 
+      // Hitung totals
       let subtotal = 0;
       let discountTotal = 0;
       for (const item of t.items) {
@@ -183,75 +189,65 @@ syncRoute.openapi(pushRoute, async (c) => {
         discountTotal += item.discount * item.qty;
       }
       const grandTotal = subtotal - discountTotal;
-      const invoiceNumber = `INV/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${Math.floor(Math.random() * 10000)}`;
 
-      const { data: sale, error: saleErr } = await supabase.from('sales').insert({
-        business_id: businessId,
-        warehouse_id: warehouseId,
-        client_transaction_id: t.client_transaction_id,
-        invoice_number: invoiceNumber,
-        subtotal: subtotal.toString(),
-        discount_total: discountTotal.toString(),
-        grand_total: grandTotal.toString(),
-        created_by: userId,
-      }).select().single();
+      // Nomor invoice: sequential + UUID suffix (anti-collision)
+      const { count: saleCount } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', businessId);
+      const invoiceNumber = `INV/${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}/${String((saleCount || 0) + 1).padStart(5, '0')}-${crypto.randomUUID().slice(0, 6)}`;
 
-      if (saleErr) throw saleErr;
+      // Panggil RPC atomik — idempotent (cek client_transaction_id), stock lock (FOR UPDATE), atomic
+      const { data: result, error: rpcErr } = await supabase.rpc('process_sale', {
+        p_business_id: businessId,
+        p_warehouse_id: warehouseId,
+        p_customer_id: null,
+        p_client_transaction_id: t.client_transaction_id,
+        p_invoice_number: invoiceNumber,
+        p_subtotal: subtotal,
+        p_discount_total: discountTotal,
+        p_grand_total: grandTotal,
+        p_created_by: userId,
+        p_items: t.items.map((i) => ({
+          product_id: i.productId,
+          qty: i.qty,
+          price: i.price,
+          discount: i.discount,
+        })),
+        p_payments: t.payments.map((p) => ({ method: p.method, amount: p.amount })),
+        p_redeem_points: 0,
+        p_earned_points: 0,
+        p_customer_name: t.customerName || null,
+        p_customer_phone: t.customerPhone || null,
+      });
 
-      if (t.items.length > 0) {
-        const saleItemsToInsert = t.items.map(item => ({
-          sale_id: sale.id,
-          product_id: item.productId,
-          qty: item.qty,
-          price: item.price.toString(),
-          discount: item.discount.toString(),
-        }));
-        await supabase.from('sale_items').insert(saleItemsToInsert);
-      }
-
-      for (const item of t.items) {
-        // Safe stock update via RPC is recommended, but doing read-modify-write if RPC doesn't exist
-        // For sync push, we can just call our decrease_stock function if available, but let's do a simple update for now
-        const { data: stockData } = await supabase.from('product_stock').select('quantity').eq('product_id', item.productId).eq('warehouse_id', warehouseId).single();
-        if (stockData) {
-          const newQty = stockData.quantity - item.qty;
-          await supabase.from('product_stock').update({ quantity: newQty, updated_at: new Date().toISOString() }).eq('product_id', item.productId).eq('warehouse_id', warehouseId);
+      if (rpcErr) {
+        // Unique violation (23505) = transaksi sudah ada (race won by another request) → idempotent success
+        if (rpcErr.code === '23505' || (rpcErr.message || '').includes('duplicate')) {
+          processed++;
+          continue;
         }
+        failed.push({ index: idx, clientTransactionId: t.client_transaction_id, error: rpcErr.message || 'Gagal memproses transaksi' });
+        continue;
       }
 
-      let totalPaid = 0;
-      for (const pay of t.payments) {
-        totalPaid += pay.amount;
-      }
-
-      if (t.payments.length > 0) {
-        const paymentsToInsert = t.payments.map(pay => ({
-          sale_id: sale.id,
-          method: pay.method,
-          amount: pay.amount.toString(),
-        }));
-        await supabase.from('payments').insert(paymentsToInsert);
-      }
-
-      const status = totalPaid >= grandTotal ? "paid" : "partial";
-      if (status !== "paid") {
-        await supabase.from('sales').update({ status }).eq('id', sale.id);
-
-        const remainingAmount = grandTotal - totalPaid;
-        await supabase.from('debts').insert({
-          business_id: businessId,
-          type: 'piutang',
-          entity_name: t.customerName || 'Pelanggan Umum',
-          entity_phone: t.customerPhone,
-          amount: remainingAmount.toString(),
-          remaining_amount: remainingAmount.toString(),
-          status: 'unpaid',
-          notes: `Piutang sinkronisasi ${invoiceNumber}`,
-          created_by: userId
-        });
+      if (result?.duplicate) {
+        // Idempotent — transaksi sudah ada sebelumnya
+        processed++;
+        continue;
       }
 
       processed++;
+    }
+
+    if (failed.length > 0) {
+      return c.json({
+        success: false,
+        error: {
+          message: `${failed.length} transaksi gagal dari ${data.transactions.length} total`,
+          details: failed,
+        }
+      }, 400);
     }
 
     return c.json({ success: true, message: `Berhasil push ${processed} transaksi` }, 200);
