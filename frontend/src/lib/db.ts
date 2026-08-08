@@ -60,6 +60,12 @@ export interface PendingTransaction {
 		subtotal: number;
 	}[];
 	redeemPoints?: number;
+	// Outbox sync status fields
+	status?: 'pending' | 'pushed' | 'failed' | 'conflicted';
+	retry_count?: number;
+	last_error?: string;
+	next_retry_at?: number;
+	updated_at?: number;
 }
 
 export class UMKMDatabase extends Dexie {
