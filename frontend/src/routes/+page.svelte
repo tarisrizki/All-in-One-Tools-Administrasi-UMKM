@@ -185,11 +185,11 @@
 
 <main id="main-content">
 
-<!-- First viewport: navbar fixed + hero + stats pas 100vh, stats terkunci di bawah tanpa gap -->
-<div class="flex flex-col" style="min-height: 100vh">
+<!-- First viewport: navbar fixed + hero + stats pas 100vh (desktop), stats terkunci di bawah. Mobile: flow natural. -->
+<div class="flex flex-col lg:min-h-screen">
 
 <!-- ===== HERO ===== -->
-<section class="pt-20 pb-12 overflow-hidden flex flex-1 items-center" style="background: var(--color-paper)">
+<section class="pt-24 lg:pt-20 pb-16 lg:pb-12 overflow-hidden flex flex-1 items-center" style="background: var(--color-paper)">
 	<div class="container-base w-full">
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-14 items-center">
 			<!-- Copy -->
@@ -212,7 +212,7 @@
 
 			<!-- Struk + kartu komposisi (artifact fisik, bukan screenshot) -->
 			<div class="relative min-h-[300px] lg:min-h-[320px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
-				<div class="absolute -top-7 -left-14 w-40 p-4 rounded-lg bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
+				<div class="absolute -top-7 -left-4 lg:-left-14 w-40 p-4 rounded-lg bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
 					Stok menipis: Gula 20kg
 					<div class="h-1.5 bg-warning/20 rounded-full mt-2 overflow-hidden"><div class="h-full w-2/3 bg-warning rounded-full"></div></div>
 				</div>
@@ -277,7 +277,7 @@
 </div><!-- /first viewport -->
 
 <!-- ===== FEATURES ===== -->
-<section class="pt-16 pb-24" id="fitur" style="background: var(--color-paper-alt)">
+<section class="pt-24 pb-24" id="fitur" style="background: var(--color-paper-alt)">
 	<div class="container-base">
 		<div class="max-w-[680px] mx-auto text-center mb-14 reveal">
 			<h2 class="font-grotesk font-bold text-[clamp(1.75rem,1.3rem+2vw,2.65rem)] text-ink mb-4">Satu Aplikasi untuk Semua Kebutuhan Usaha Anda</h2>
