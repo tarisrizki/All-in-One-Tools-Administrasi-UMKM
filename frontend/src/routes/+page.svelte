@@ -215,7 +215,7 @@
 
 			<!-- Struk + kartu komposisi (artifact fisik, bukan screenshot) -->
 			<div class="relative min-h-[340px] lg:min-h-[360px] mt-12 lg:mt-0 ml-auto w-full max-w-md" aria-hidden="true">
-				<div class="absolute -top-9 -left-4 lg:-left-12 w-40 p-4 rounded-lg bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
+				<div class="absolute -top-7 -left-14 w-40 p-4 rounded-lg bg-warning-soft text-ink font-bold text-[13px] -rotate-6 shadow-lg z-20">
 					Stok menipis: Gula 20kg
 					<div class="h-1.5 bg-warning/20 rounded-full mt-2 overflow-hidden"><div class="h-full w-2/3 bg-warning rounded-full"></div></div>
 				</div>
@@ -253,25 +253,25 @@
 				<div class="h-12 flex items-center justify-center">
 					<span class="font-mono font-bold text-[clamp(1.4rem,1.1rem+0.9vw,1.9rem)] whitespace-nowrap">{stat1.toLocaleString('id-ID')}+</span>
 				</div>
-				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Pelaku Usaha Aktif</span>
+				<span class="text-[13px] text-white/85 mt-1.5 block whitespace-nowrap">Pelaku Usaha Aktif</span>
 			</div>
 			<div class="text-center text-white min-w-0">
 				<div class="h-12 flex items-center justify-center">
 					<span class="font-mono font-bold text-[clamp(1.4rem,1.1rem+0.9vw,1.9rem)] whitespace-nowrap">{stat2 >= 1000000 ? '2jt+' : stat2.toLocaleString('id-ID') + '+'}</span>
 				</div>
-				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Transaksi per Bulan</span>
+				<span class="text-[13px] text-white/85 mt-1.5 block whitespace-nowrap">Transaksi per Bulan</span>
 			</div>
 			<div class="text-center text-white min-w-0">
 				<div class="h-12 flex items-center justify-center">
 					<span class="text-[#C9891A] text-[15px] leading-none whitespace-nowrap">★★★★★</span>
 				</div>
-				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Rating Pengguna</span>
+				<span class="text-[13px] text-white/85 mt-1.5 block whitespace-nowrap">Rating Pengguna</span>
 			</div>
 			<div class="text-center text-white min-w-0">
 				<div class="h-12 flex items-center justify-center">
 					<span class="font-mono font-bold text-[clamp(1.4rem,1.1rem+0.9vw,1.9rem)] whitespace-nowrap">24/7</span>
 				</div>
-				<span class="text-[13px] text-white/85 mt-1 block whitespace-nowrap">Bantuan Siap Membantu</span>
+				<span class="text-[13px] text-white/85 mt-1.5 block whitespace-nowrap">Bantuan Siap Membantu</span>
 			</div>
 		</div>
 	</div>
