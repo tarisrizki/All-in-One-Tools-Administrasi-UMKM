@@ -117,8 +117,6 @@
 			query = '';
 		}
 	});
-
-	let flatIdx = 0;
 </script>
 
 {#if open}

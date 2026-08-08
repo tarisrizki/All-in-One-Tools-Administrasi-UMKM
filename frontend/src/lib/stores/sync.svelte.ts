@@ -1,4 +1,4 @@
-import { apiClient, getApiUrl } from '$lib/utils/api';
+import { apiClient } from '$lib/utils/api';
 import { db } from '../db.js';
 import { authState } from './auth.svelte.js';
 import { toast } from 'svelte-sonner';
@@ -80,7 +80,6 @@ async function pushPendingTransactions() {
 			// Successfully pushed, remove from local DB
 			const ids = pending.map(t => t.client_transaction_id);
 			await db.pending_transactions.bulkDelete(ids);
-			console.log(`Successfully synced ${ids.length} transactions`);
 		} else {
 			console.error('Failed to push transactions', res);
 		}
@@ -123,7 +122,6 @@ async function pullLatestData() {
 			if (customers && customers.length > 0) {
 				await db.customers.bulkPut(customers);
 			}
-			console.log(`Pulled ${products?.length || 0} products, ${categories?.length || 0} categories, ${customers?.length || 0} customers`);
 		}
 	} catch (error) {
 		console.error('Network error during pull', error);

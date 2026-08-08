@@ -3,7 +3,7 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import type { LocalProduct } from '$lib/db';
 	import { fade } from 'svelte/transition';
-	import { animate, spring } from '@motionone/dom';
+	import { spring } from '@motionone/dom';
 	import { PackageOpen } from '@lucide/svelte';
 	import { formatRupiah } from '$lib/utils/format';
 

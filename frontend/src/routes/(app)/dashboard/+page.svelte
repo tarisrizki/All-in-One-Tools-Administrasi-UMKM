@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { apiClient, getApiUrl } from '$lib/utils/api';
-	import { authState, logout } from '$lib/stores/auth.svelte';
-	import { goto } from '$app/navigation';
+	import { authState } from '$lib/stores/auth.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { fly } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { RefreshCcw, Settings, LogOut } from '@lucide/svelte';
-
-	import { appModeState } from '$lib/stores/appMode.svelte';
 
 	import StatsGrid from '$lib/components/dashboard/StatsGrid.svelte';
 	import SalesChart from '$lib/components/dashboard/SalesChart.svelte';
