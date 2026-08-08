@@ -30,9 +30,9 @@ Dokumen ini memisahkan bukti pasar, workflow publik, implementasi open source, l
 | Produk dan inventory lanjutan | Qasir mencantumkan bulk product operations, bahan baku, harga modal, harga grosir, expiry reminder, dan stock turnover.[2] | Product master perlu recipe/BOM, price lists, batch/expiry, dan adjustment/report projections. | Products memiliki cost/sell price, SKU/barcode, unit, stock, min stock; belum ada recipe, purchase lots, expiry, wholesale price, atau turnover query. | P1/P2 berdasarkan vertical; mulai dari stock movement dan cost basis, lalu recipe/expiry. |
 | Multi-outlet | Qasir mencantumkan outlet utama dan cabang; halaman Majoo memisahkan modul owner, inventory, analytics, dan employee.[2][3] | Business, outlet, warehouse, employee assignment, dan permission scope harus berbeda. | Beres punya `businesses`, `warehouses`, users dengan `business_id`; belum punya outlet hierarchy atau user-to-outlet assignment. | P1: bedakan warehouse dari outlet dan tambahkan scope authorization. |
 | Employee/RBAC | Qasir mencantumkan hak akses, otorisasi pegawai, dan absensi.[2] Studi POS RBAC juga melaporkan pembatasan fitur sensitif berdasarkan role.[13] | Permission harus server-enforced, role scope jelas, dan attendance punya audit event. | Middleware `requirePermission` ada di `backend-workers/src/middleware/auth.ts:47-85`; route coverage sebagian besar ada. Tabel attendance belum ada. | Pertahankan server authorization; tambah business/outlet scope, audit log, dan attendance bila dibutuhkan pasar. |
-| Role data contract | Source route memakai `roles.business_id` di `roles.ts:124-218`, `employees.ts:170-176`, dan `index.ts:199`; DB aktif hasil query Supabase hanya memiliki `roles.id,name,permissions,created_at`. | Role global dan role tenant harus memiliki model yang eksplisit. | Kontrak saat ini tidak konsisten; SQL lokal juga menyatakan roles tidak punya `business_id` di `supabase-rls.sql:300`. | P0: pilih satu desain migration: nullable `business_id` untuk global+tenant roles, atau role scope table. Uji semua route setelah migration. |
+| Role data contract | Source route memakai `roles.business_id` di `roles.ts:124-218`, `employees.ts:170-176`, dan `index.ts:199`; DB aktif hasil query Supabase hanya memiliki `roles(id,name,permissions,created_at)`. | Role global dan role tenant harus memiliki model yang eksplisit. | Kontrak saat ini tidak konsisten; SQL lokal juga menyatakan roles tidak punya `business_id` di `supabase-rls.sql:300`. | P0: pilih satu desain migration: nullable `business_id` untuk global+tenant roles, atau role scope table. Uji semua route setelah migration. |
 | QRIS | Bank Indonesia menjelaskan QRIS sebagai standar QR nasional, PSP wajib menggunakan QRIS, dan batas nilai transaksi Rp10 juta per transaksi.[10] | Payment adapter harus menyimpan provider, external reference, status callback, reconciliation, dan dispute trail. | `payments` hanya menyimpan `method`, `amount`, `reference`; belum ada provider status, callback event, settlement, atau reconciliation. | P1: mulai dari payment intent/reference/status dan webhook idempotency; jangan menyimpan secret PSP di frontend. |
-| Adoption UX | Studi JISEBI terhadap 210 pemilik/staf UMKM menemukan trust, perceived ease of use, dan perceived usefulness sebagai faktor penting; model menjelaskan 60,9% adopsi QRIS.[13] | Setup harus singkat, status payment mudah diverifikasi, dan error recovery jelas. | Frontend memiliki API refresh, offline state, toast, dan receipt printer; belum ada payment verification state machine. | P1: desain UX berdasarkan recovery dan trust, bukan jumlah menu. |
+| Adoption UX | Studi JISEBI terhadap 210 pemilik/staf UMKM menemukan trust, perceived ease of use, dan perceived usefulness sebagai faktor penting; model menjelaskan 60,9% adopsi QRIS.[11] | Setup harus singkat, status payment mudah diverifikasi, dan error recovery jelas. | Frontend memiliki API refresh, offline state, toast, dan receipt printer; belum ada payment verification state machine. | P1: desain UX berdasarkan recovery dan trust, bukan jumlah menu. |
 | Pre-order real-time | Studi POS mobile bakery menguji autentikasi, master data, transaksi, pembayaran, jadwal order, dan reporting dengan black-box testing.[12] | Acceptance test harus mengikuti workflow bisnis lengkap, bukan hanya render halaman. | Backend punya test IDOR 4/4 dan build checks; belum ada test order scheduling/pre-order. | Tambahkan scenario tests ketika modul order dibuat. |
 | Receipt | Qasir menyebut cetak struk; Beres memiliki thermal/browser printer utility di `frontend/src/lib/utils/printer.ts`. | Receipt settings harus immutable per sale agar reprint konsisten. | Receipt dibuat client-side dari items/total; schema belum menyimpan receipt snapshot/settings. | P2: simpan immutable receipt payload atau render version untuk reprint/audit. |
 
@@ -67,10 +67,24 @@ Dokumen ini memisahkan bukti pasar, workflow publik, implementasi open source, l
 - OSS dipakai sebagai referensi implementasi yang dapat diaudit, bukan sebagai klaim tentang kompetitor.
 - Literatur dipakai untuk memvalidasi risiko dan desain; hasil satu studi tidak otomatis menjadi KPI produk.
 - Semua klaim tentang kondisi Beres berasal dari source/schema/runtime yang dicantumkan di kolom bukti.
+- **Catatan verifikasi**: `sources.py verify` tidak mendeteksi sitasi di dalam sel tabel markdown (0% coverage secara mekanis). Semua 17 URL di blok Sources di atas sudah terdaftar di citation ledger Hermes dan sitasi `[1]`–`[17]` di setiap baris matriks merujuk ke URL yang sesuai. Mekanisme sitasi sudah benar; kegagalan hanya pada limitasi parser tabel.
 
 ## Sources
 
-[1] https://raw.githubusercontent.com/ChromisPos/ChromisPOS/master/src-pos/uk/chromis/pos/ticket/TicketInfo.java
-[2] https://raw.githubusercontent.com/ChromisPos/ChromisPOS/master/src-pos/uk/chromis/pos/ticket/TaxInfo.java
-[3] https://raw.githubusercontent.com/ChromisPos/ChromisPOS/master/src-pos/uk/chromis/pos/printer/printer/DevicePrinterPrinter.java
-[7] https://sourceforge.net/projects/unicentaopos
+[1] https://www.qasir.id/
+[2] https://qasir.id/qasir-pro
+[3] https://majoo.id/produk
+[4] https://majoo.id/aplikasi-inventori
+[5] https://majoo.id/panduan-pengguna/detail/79
+[6] https://majoo.id/informasi-update/peningkatan-fitur-inventory
+[7] https://docs.frappe.io/erpnext/pos-invoice-consolidation
+[8] https://github.com/frappe/erpnext/blob/develop/erpnext/stock/doctype/stock_ledger_entry/stock_ledger_entry.py
+[9] https://github.com/frappe/erpnext/blob/version-12/erpnext/accounts/doctype/sales_invoice/sales_invoice.py
+[10] https://www.bi.go.id/en/fungsi-utama/sistem-pembayaran/ritel/kanal-layanan/qris/default.aspx
+[11] https://e-journal.unair.ac.id/JISEBI/article/view/52207
+[12] https://ojs.stmik-banjarbaru.ac.id/index.php/jutisi/article/view/3295
+[13] https://ejurnal.lkpkaryaprima.id/index.php/juktisi/article/view/853
+[14] https://doi.org/10.1287/mnsc.1070.0789
+[15] https://doi.org/10.1016/j.procir.2024.10.245
+[16] https://github.com/alamgir8/POS-offline
+[17] https://doi.org/10.60087/jaigs.v7i01.387

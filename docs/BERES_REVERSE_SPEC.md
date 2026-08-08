@@ -103,5 +103,39 @@ Fix: Tambah model bertahap sesuai prioritas vertikal.
 - Tambahkan attendance dan task assignment.
 - Tambahkan kitchen ticket/table/queue untuk vertical F&B.
 
+## 8. Peringatan Keamanan Utama
+
+- **Sales harga DB**: server harus ambil harga produk dari DB (`products.sell_price`), bukan dari client. Client bisa set price=0 → transaksi tanpa bayar.
+- **Kosong/23505**: 23505 bisa berarti `client_transaction_id` duplikat (idempotent success) atau collision invoice_number (data loss kalau transaction di-skip tanpa handle). Selalu verifikasi terlebih dahulu.
+- **Search injection**: string search tidak diedit → injection regex. Escape karakter sebelum .or() .ilike()
+- **Dashboard permission**: `/dashboard` route harus pasang `requirePermission('reports.read')` selain route lain.
+- **rateLimit KV**: `c.env.RATE_LIMIT_KV` workers binding → di Node, `kv` undefined → rate limit mati. Gunakan in-memory store atau Redis.
+
+## 9. Peringatan Portabilitas
+
+- **Cloudflare Workers bindings**: `c.env.JWT_SECRET`, `c.env.RATE_LIMIT_KV`, `cf-connecting-ip`, `cfTurnstileResponse` → Node menggunakan `process.env`, `x-forwarded-for`, `Node.crypto`.
+- **Service Role bypass**: semua query Supabase harus filter `business_id` secara eksplisit (kecuali siapa-siapa owner).
+- **`Bindings: any` di `index.ts`**: di Node `@hono/node-server` mengembalikan `c.env` yang terisi; jika `c.env` nggak ada, crash.
+- **`crypto.randomUUID()`**: Node ≥18 butuh, sudah jalan via `node:crypto`.
+- **`getEnv(c)`**: digunakan di `utils/env.ts` → semua module bisa pakai `getEnv(c, 'KEY')` untuk portabilitas Node & Workers.
+
+## 10. Keputusan Pilihan Implementasi
+
+| Item | Prioritas | Keputusan |
+|---|---|---|
+| `roles.business_id` | P0 | Gunakan `business_id nullable` di role, selain `business_id` di user. |
+| Stock movement | P0 | Tambah `stock_movements` ledger immutable. |
+| POS session/closing | P1 | Tambah `pos_sessions`, closing voucher, cash variance. |
+| Outbox sync | P1 | Tambah per-item ack, retry counter, dead-letter. |
+| Order type/table/queue | P2 | Tambah model order lifecycle terpisah. |
+| Batch/expiry/wholesale | P2 | Tambah model terpisah. |
+| Attendance/location/recipe | P2 | Tambah model terpisah. |
+
+## 11. Catatan Terkini
+
+- Selesai implementasi 4 perbaikan keamanan (sales harga DB, 23505 collision, search injection, dashboard permission).
+- Test IDOR 4/4 tetap lolos dan build frontend `✔ done` setelah adapter-static ganti `@sveltejs/adapter-cloudflare`.
+- Tersedia di `C:\Users\Dragon\umkm-audit` setelah commit `4afcdfe` yang sudah terunggah.
+
 ## Approval:
 Audit ini berbasis source, schema aktif, route, middleware, runtime, build, dan literature/OSS pembanding. P0 harus diselesaikan via migration terencana sebelum fitur baru yang bergantung pada role scope.
