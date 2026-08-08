@@ -31,9 +31,9 @@ Yang dibuat oleh script ini:
 
 | Variabel | Lokasi di Dashboard Supabase |
 |---|---|
-| `SUPABASE_URL` | Project Settings > API > Project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Project Settings > API > service_role secret |
-| `JWT_SECRET` | Project Settings > API > JWT Secret |
+| `SUPABASE_URL` | Project Settings > API > Project URL | `https://mtruylleduthzqjtmqzf.supabase.co` (proyek Beres) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Project Settings > API > service_role secret | ambil dari dashboard (tidak tersedia via MCP) |
+| `JWT_SECRET` | Project Settings > API > JWT Secret | string acak panjang |
 
 ---
 
@@ -377,8 +377,13 @@ psql "postgres://umkm:<kuat>@localhost/umkm" -f supabase-rls.sql
 # 2. Backend — build & jalankan sebagai service
 cd backend-workers
 npm ci
-npm run build          # pastikan build menghasilkan bundle Node (Hono)
-# systemd unit men-set env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET, ALLOWED_ORIGIN
+npm run build:node     # bundle Node → dist-node/index.js
+# systemd unit men-set env (atau file EnvironmentFile):
+#   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (dari dashboard Supabase — BUKAN anon key),
+#   JWT_SECRET, ALLOWED_ORIGIN, PORT=8787
+# lalu: node dist-node/index.js
+```
+> **Catatan:** `SUPABASE_SERVICE_ROLE_KEY` **tidak tersedia via MCP** — ambil dari dashboard Supabase (Project Settings > API > service_role). Di runtime Node, secret dibaca dari `process.env` (fallback otomatis via `utils/env.ts`), sama seperti `c.env` di Workers. Rate limit auth otomatis memakai fallback in-memory saat KV tidak ada — brute-force tetap diblokir (5 percobaan → 429).
 
 # 3. Frontend — build statis, serve via nginx
 cd frontend

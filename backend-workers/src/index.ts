@@ -21,13 +21,14 @@ import { settingsRoute } from './modules/settings';
 import { syncRoute } from './modules/sync';
 import { aiRoute } from './modules/ai';
 import { getSupabase } from './utils/supabase';
+import { getEnv } from './utils/env';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
 const app = new OpenAPIHono<{ Bindings: any }>();
 
 app.use('*', logger());
 app.use('*', async (c, next) => {
-  const allowedOrigin = c.env.ALLOWED_ORIGIN || 'http://localhost:5173';
+  const allowedOrigin = getEnv(c, 'ALLOWED_ORIGIN') || 'http://localhost:5173';
   return cors({
     origin: (origin) => {
       return origin === allowedOrigin ? allowedOrigin : null;
@@ -42,8 +43,8 @@ app.use('*', rateLimitMiddleware);
 const docsAuth = async (c: any, next: any) => {
   const hostname = new URL(c.req.url).hostname;
   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-    const username = c.env.DOCS_USERNAME;
-    const password = c.env.DOCS_PASSWORD;
+    const username = getEnv(c, 'DOCS_USERNAME');
+    const password = getEnv(c, 'DOCS_PASSWORD');
     if (username && password) {
       const auth = basicAuth({ username, password });
       return auth(c, next);

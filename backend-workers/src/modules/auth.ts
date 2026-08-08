@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
+import { getEnv } from '../utils/env';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { sign, verify } from 'hono/jwt';
 import { authMiddleware } from '../middleware/auth';
@@ -28,11 +29,11 @@ const REFRESH_TOKEN_TTL = 60 * 60 * 24 * 30; // 30 hari
 async function signTokenPair(c: any, payload: { userId: string; businessId: string; roleId: string }) {
   const accessToken = await sign(
     { ...payload, type: 'access', exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL },
-    c.env.JWT_SECRET, 'HS256'
+    getEnv(c, 'JWT_SECRET')!, 'HS256'
   );
   const refreshToken = await sign(
     { ...payload, type: 'refresh', exp: Math.floor(Date.now() / 1000) + REFRESH_TOKEN_TTL },
-    c.env.JWT_SECRET, 'HS256'
+    getEnv(c, 'JWT_SECRET')!, 'HS256'
   );
   return { accessToken, refreshToken };
 }
@@ -173,7 +174,7 @@ authRoute.openapi(registerRoute, async (c) => {
   try {
     const { phone, password, businessName, cfTurnstileResponse } = c.req.valid('json');
 
-    const turnstileSecret = c.env.TURNSTILE_SECRET_KEY;
+    const turnstileSecret = getEnv(c, 'TURNSTILE_SECRET_KEY');
     if (!turnstileSecret) {
       return c.json({ success: false, error: { code: "SERVER_ERROR", message: "Konfigurasi Turnstile belum diatur di server" } }, 500);
     }
@@ -316,7 +317,7 @@ authRoute.openapi(refreshRoute, async (c) => {
   const { refresh_token } = c.req.valid('json');
 
   try {
-    const decoded = await verify(refresh_token, c.env.JWT_SECRET, 'HS256');
+    const decoded = await verify(refresh_token, getEnv(c, 'JWT_SECRET')!, 'HS256');
     if (!decoded || (decoded as any).type !== 'refresh' || !(decoded as any).userId) {
       return c.json({ success: false, error: { code: "INVALID_REFRESH", message: "Refresh token tidak valid" } }, 401);
     }
@@ -340,7 +341,7 @@ authRoute.openapi(refreshRoute, async (c) => {
         type: 'access',
         exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL,
       },
-      c.env.JWT_SECRET,
+      getEnv(c, 'JWT_SECRET')!,
       'HS256'
     );
 

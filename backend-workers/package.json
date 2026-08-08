@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@hono/node-server": "^2.1.0",
     "@hono/zod-openapi": "^1.4.0",
     "@scalar/hono-api-reference": "^0.11.9",
     "@supabase/supabase-js": "^2.110.2",
@@ -60,7 +61,10 @@
     "zod": "^4.4.3"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:node": "esbuild src/server.node.ts --bundle --platform=node --format=cjs --outfile=dist-node/index.js",
+    "start:node": "node dist-node/index.js",
+    "dev:node": "npx tsx watch src/server.node.ts"
   },
   "keywords": [],
   "author": "",
@@ -71,6 +75,7 @@
     "@cloudflare/workers-types": "^5.20260710.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/bwip-js": "^3.2.3",
+    "tsx": "^4.23.11",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10",
     "wrangler": "^4.110.0"

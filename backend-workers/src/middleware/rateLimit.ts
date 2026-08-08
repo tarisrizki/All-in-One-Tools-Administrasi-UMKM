@@ -1,10 +1,13 @@
 import { Context, Next } from 'hono';
 
-// In-memory cache for general rate limiting (Best effort, resets on isolate restart, 100% free)
+// In-memory cache untuk general rate limiting (Best effort, resets on isolate restart, 100% free)
 const generalRateLimitCache = new Map<string, { count: number; resetAt: number }>();
+// Fallback in-memory untuk auth rate limit saat KV tidak tersedia (Node self-host).
+// Tidak sekuat KV (resets on restart) tapi tetap memblokir brute-force dalam satu proses.
+const authRateLimitCache = new Map<string, { count: number; resetAt: number }>();
 
 export const rateLimitMiddleware = async (c: Context, next: Next) => {
-  const ip = c.req.header('cf-connecting-ip') || 'unknown';
+  const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
   const path = c.req.path;
   const now = Date.now();
 
@@ -18,8 +21,7 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
       
       const key = `rl:auth:${ip}:${phone}`;
       
-      // We use KV for strict, cross-isolate rate limiting on auth endpoints
-      // Note: KV free tier has 1,000 writes/day. We only write on auth attempts to save quota.
+      // Gunakan KV di Workers (cross-isolate), fallback in-memory di Node
       const kv = c.env.RATE_LIMIT_KV;
       if (kv) {
         const recordStr = await kv.get(key);
@@ -40,6 +42,21 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
         // Save back to KV with expiration (minimum TTL in KV is 60 seconds)
         const ttl = Math.max(60, Math.floor((record.resetAt - now) / 1000));
         await kv.put(key, JSON.stringify(record), { expirationTtl: ttl });
+      } else {
+        // Fallback in-memory (Node self-host)
+        let record = authRateLimitCache.get(key);
+        if (!record || now > record.resetAt) {
+          record = { count: 1, resetAt: now + 15 * 60 * 1000 };
+        } else {
+          if (record.count >= 5) {
+            return c.json({ 
+              success: false, 
+              error: { message: 'Terlalu banyak percobaan, coba lagi dalam beberapa menit' } 
+            }, 429);
+          }
+          record.count += 1;
+        }
+        authRateLimitCache.set(key, record);
       }
     } catch (e) {
       // If parsing fails or KV fails, just fall through (let the handler deal with bad request)
@@ -69,6 +86,9 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     if (Math.random() < 0.01) {
       for (const [k, v] of generalRateLimitCache.entries()) {
         if (now > v.resetAt) generalRateLimitCache.delete(k);
+      }
+      for (const [k, v] of authRateLimitCache.entries()) {
+        if (now > v.resetAt) authRateLimitCache.delete(k);
       }
     }
   }

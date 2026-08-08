@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
+import { getEnv } from '../utils/env';
 import { keysToCamel } from '../utils/caseConverter';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
@@ -487,7 +488,7 @@ salesRoute.openapi(sendWaRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const { id } = c.req.valid('param');
-  const waApiKey = c.env.WA_API_KEY;
+  const waApiKey = getEnv(c, 'WA_API_KEY');
 
   if (!waApiKey) {
     return c.json({ success: false, error: { message: "WA_API_KEY belum dikonfigurasi di environment" } }, 400);
@@ -546,7 +547,7 @@ salesRoute.openapi(sendEmailRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const { id } = c.req.valid('param');
-  const emailApiKey = c.env.EMAIL_API_KEY;
+  const emailApiKey = getEnv(c, 'EMAIL_API_KEY');
 
   if (!emailApiKey) {
     return c.json({ success: false, error: { message: "EMAIL_API_KEY belum dikonfigurasi di environment" } }, 400);

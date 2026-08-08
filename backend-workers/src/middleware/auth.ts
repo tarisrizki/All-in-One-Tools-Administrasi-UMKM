@@ -1,6 +1,7 @@
 import { verify } from 'hono/jwt';
 import type { Context, Next } from 'hono';
 import { getSupabase } from '../utils/supabase';
+import { getEnv } from '../utils/env';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header('Authorization');
@@ -11,7 +12,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
   const token = authHeader.split(' ')[1];
   
   // Ambil secret dari environment. Jangan pernah hardcode rahasia di sini!
-  const jwtSecret = c.env.JWT_SECRET;
+  const jwtSecret = getEnv(c, 'JWT_SECRET');
   if (!jwtSecret) {
     console.error("CRITICAL: JWT_SECRET is not set in environment!");
     return c.json({ success: false, error: { message: 'Konfigurasi server bermasalah' } }, 500);

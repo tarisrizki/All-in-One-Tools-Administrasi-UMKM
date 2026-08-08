@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
+import { getEnv } from '../utils/env';
 import { authMiddleware } from '../middleware/auth';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
@@ -236,7 +237,7 @@ aiRoute.openapi(predictionsRoute, async (c) => {
 aiRoute.openapi(summaryRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const apiKey = c.env.GEMINI_API_KEY;
+  const apiKey = getEnv(c, 'GEMINI_API_KEY');
   
   if (!apiKey) {
     return c.json({ success: true, data: { summary: "Konfigurasi **GEMINI_API_KEY** belum diatur oleh pemilik toko." } }, 200);
@@ -273,7 +274,7 @@ aiRoute.openapi(summaryRoute, async (c) => {
 aiRoute.openapi(chatRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
-  const apiKey = c.env.GEMINI_API_KEY;
+  const apiKey = getEnv(c, 'GEMINI_API_KEY');
   
   if (!apiKey) {
     return c.json({ success: true, data: { response: "Maaf, kunci API Gemini belum dikonfigurasi. Harap hubungi administrator." } }, 200);
