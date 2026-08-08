@@ -1,0 +1,1494 @@
+{
+  "communities": {
+    "0": [
+      "adapters",
+      "frontend_src_lib_components_dashboard_statsgrid",
+      "frontend_src_lib_components_emptystate",
+      "frontend_src_lib_components_loadingspinner",
+      "frontend_src_lib_components_pageheader",
+      "frontend_src_lib_components_pos_receiptmodal",
+      "frontend_src_lib_components_reports_cashflowtab",
+      "frontend_src_lib_components_reports_inventorytab",
+      "frontend_src_lib_components_reports_profitlosstab",
+      "frontend_src_lib_components_reports_salestab",
+      "frontend_src_lib_components_settings_appmodecard",
+      "frontend_src_lib_components_settings_backupcard",
+      "frontend_src_lib_components_settings_documentcard",
+      "frontend_src_lib_components_settings_printercard",
+      "frontend_src_lib_components_settings_qriscard",
+      "frontend_src_lib_components_settings_roleform",
+      "frontend_src_lib_components_settings_roleform_handlesubmit",
+      "frontend_src_lib_components_settings_roleform_togglepermission",
+      "frontend_src_lib_components_settings_rolesettingscard",
+      "frontend_src_lib_components_settings_storeprofilecard",
+      "frontend_src_lib_components_tabbar",
+      "frontend_src_lib_components_ui_badge_index",
+      "frontend_src_lib_components_ui_button_index",
+      "frontend_src_lib_components_ui_card_index",
+      "frontend_src_lib_components_ui_input_index",
+      "frontend_src_lib_components_ui_label_index",
+      "frontend_src_lib_components_ui_radio_group_index",
+      "frontend_src_lib_components_ui_textarea_index",
+      "frontend_src_lib_stores_auth_svelte",
+      "frontend_src_lib_stores_auth_svelte_authstate",
+      "frontend_src_lib_stores_auth_svelte_haspermission",
+      "frontend_src_lib_stores_auth_svelte_loadauthfromstorage",
+      "frontend_src_lib_stores_auth_svelte_logout",
+      "frontend_src_lib_utils_api",
+      "frontend_src_lib_utils_api_fetchoptions",
+      "frontend_src_lib_utils_countup",
+      "frontend_src_lib_utils_countup_countup",
+      "frontend_src_lib_utils_format",
+      "frontend_src_lib_utils_format_formatdate",
+      "frontend_src_lib_utils_format_formatdateshort",
+      "frontend_src_lib_utils_format_formatdatetime",
+      "frontend_src_lib_utils_format_formatrupiah",
+      "frontend_src_lib_utils_format_formattime",
+      "frontend_src_lib_utils_format_isoverdue",
+      "frontend_src_lib_utils_printer",
+      "frontend_src_lib_utils_printer_thermalprinter",
+      "frontend_src_routes_app_ai_page",
+      "frontend_src_routes_app_ai_page_parsemarkdown",
+      "frontend_src_routes_app_calculator_page",
+      "frontend_src_routes_app_cashbook_new_page",
+      "frontend_src_routes_app_cashbook_page",
+      "frontend_src_routes_app_customers_new_page",
+      "frontend_src_routes_app_customers_page",
+      "frontend_src_routes_app_debts_id_page",
+      "frontend_src_routes_app_debts_new_page",
+      "frontend_src_routes_app_debts_page",
+      "frontend_src_routes_app_employees_new_page",
+      "frontend_src_routes_app_employees_page",
+      "frontend_src_routes_app_layout_load",
+      "frontend_src_routes_app_layout_ts_frontend_src_routes_app_layout",
+      "frontend_src_routes_app_penjualan_page",
+      "frontend_src_routes_app_products_new_page",
+      "frontend_src_routes_app_products_page",
+      "frontend_src_routes_app_purchases_new_page",
+      "frontend_src_routes_app_purchases_page",
+      "frontend_src_routes_app_reports_page",
+      "frontend_src_routes_app_settings_page",
+      "frontend_src_routes_app_settings_roles_page",
+      "frontend_src_routes_app_suppliers_page",
+      "frontend_src_routes_auth_login_page",
+      "frontend_src_routes_auth_register_page",
+      "frontend_src_routes_layout_load",
+      "frontend_src_routes_layout_prerender",
+      "frontend_src_routes_layout_ssr",
+      "frontend_src_routes_layout_ts_frontend_src_routes_layout",
+      "navigation"
+    ],
+    "1": [
+      "clsx",
+      "frontend_package",
+      "frontend_package_dependencies",
+      "frontend_package_dependencies_bits_ui",
+      "frontend_package_dependencies_clsx",
+      "frontend_package_dependencies_dexie",
+      "frontend_package_dependencies_lucide_svelte",
+      "frontend_package_dependencies_mode_watcher",
+      "frontend_package_dependencies_motionone_dom",
+      "frontend_package_dependencies_svelte_sonner",
+      "frontend_package_dependencies_sveltekit_superforms",
+      "frontend_package_dependencies_tailwind_merge",
+      "frontend_package_dependencies_tailwind_variants",
+      "frontend_package_dependencies_tailwindcss_animate",
+      "frontend_package_dependencies_tanstack_svelte_query",
+      "frontend_package_dependencies_types_uuid",
+      "frontend_package_dependencies_uuid",
+      "frontend_package_dependencies_zod",
+      "frontend_package_json_bits_ui",
+      "frontend_package_json_dexie",
+      "frontend_package_json_mode_watcher",
+      "frontend_package_json_svelte_sonner",
+      "frontend_package_json_sveltekit_superforms",
+      "frontend_package_json_tailwind_variants",
+      "frontend_package_json_uuid",
+      "frontend_package_json_zod",
+      "frontend_package_name",
+      "frontend_package_private",
+      "frontend_package_scripts",
+      "frontend_package_scripts_build",
+      "frontend_package_scripts_check",
+      "frontend_package_scripts_check_watch",
+      "frontend_package_scripts_dev",
+      "frontend_package_scripts_format",
+      "frontend_package_scripts_lint",
+      "frontend_package_scripts_prepare",
+      "frontend_package_scripts_preview",
+      "frontend_package_scripts_test",
+      "frontend_package_scripts_test_e2e",
+      "frontend_package_scripts_test_unit",
+      "frontend_package_type",
+      "frontend_package_version",
+      "lucide_svelte",
+      "motionone_dom",
+      "tailwind_merge",
+      "tailwindcss_animate",
+      "tanstack_svelte_query",
+      "types_uuid"
+    ],
+    "2": [
+      "deploy_nginx",
+      "deploy_proxmox",
+      "doc_backend_workers_github_dependency_audit_md",
+      "doc_backend_workers_refactor_plan_md",
+      "doc_changelog_md",
+      "doc_dead_code_report_md",
+      "doc_deploy_md",
+      "doc_deployment_guide_md",
+      "doc_docs_architecture_md",
+      "doc_docs_frontend_coverage_md",
+      "doc_faq_md",
+      "doc_frontend_readme_md",
+      "doc_frontend_tests_integration_checklist_md",
+      "doc_marketing_md",
+      "doc_migration_notes_md",
+      "doc_readme_md",
+      "doc_release_notes_md",
+      "doc_rollback_md",
+      "domain_attendance",
+      "domain_debt",
+      "domain_discounts",
+      "domain_expiry",
+      "domain_ingredients",
+      "domain_inventory",
+      "domain_loyalty",
+      "domain_order_types",
+      "domain_outlets",
+      "domain_pos",
+      "domain_preorder",
+      "domain_qris",
+      "domain_receipt",
+      "domain_reports",
+      "domain_staff",
+      "domain_tax",
+      "domain_wholesale",
+      "offline_dexie",
+      "security_jwt",
+      "security_rate_limit",
+      "security_rls",
+      "stack_hono",
+      "stack_supabase",
+      "stack_sveltekit",
+      "stack_workers"
+    ],
+    "3": [
+      "backend_workers_package",
+      "backend_workers_package_author",
+      "backend_workers_package_description",
+      "backend_workers_package_devdependencies",
+      "backend_workers_package_devdependencies_cloudflare_vitest_pool_workers",
+      "backend_workers_package_devdependencies_cloudflare_workers_types",
+      "backend_workers_package_devdependencies_tsx",
+      "backend_workers_package_devdependencies_types_bcryptjs",
+      "backend_workers_package_devdependencies_types_bwip_js",
+      "backend_workers_package_devdependencies_typescript",
+      "backend_workers_package_devdependencies_vitest",
+      "backend_workers_package_devdependencies_wrangler",
+      "backend_workers_package_json_typescript",
+      "backend_workers_package_json_vitest",
+      "backend_workers_package_keywords",
+      "backend_workers_package_license",
+      "backend_workers_package_main",
+      "backend_workers_package_name",
+      "backend_workers_package_scripts",
+      "backend_workers_package_scripts_build_node",
+      "backend_workers_package_scripts_dev_node",
+      "backend_workers_package_scripts_start_node",
+      "backend_workers_package_scripts_test",
+      "backend_workers_package_type",
+      "backend_workers_package_version",
+      "cloudflare_vitest_pool_workers",
+      "cloudflare_workers_types",
+      "tsx",
+      "types_bcryptjs",
+      "types_bwip_js",
+      "wrangler"
+    ],
+    "4": [
+      "backend_workers_src_modules_categories",
+      "backend_workers_src_modules_categories_categorieslistroute",
+      "backend_workers_src_modules_categories_categoriesroute",
+      "backend_workers_src_modules_categories_categorycreateroute",
+      "backend_workers_src_modules_categories_categorydeleteroute",
+      "backend_workers_src_modules_categories_categoryresponseschema",
+      "backend_workers_src_modules_categories_categoryschema",
+      "backend_workers_src_modules_categories_categoryupdateroute",
+      "backend_workers_src_modules_categories_variables",
+      "backend_workers_src_modules_settings",
+      "backend_workers_src_modules_settings_appmoderoute",
+      "backend_workers_src_modules_settings_qrisroute",
+      "backend_workers_src_modules_settings_settingsroute",
+      "backend_workers_src_modules_settings_uploadroute",
+      "backend_workers_src_modules_settings_usageroute",
+      "backend_workers_src_modules_settings_variables",
+      "backend_workers_src_modules_warehouses",
+      "backend_workers_src_modules_warehouses_createroutedef",
+      "backend_workers_src_modules_warehouses_createwarehouseschema",
+      "backend_workers_src_modules_warehouses_listroute",
+      "backend_workers_src_modules_warehouses_updateroutedef",
+      "backend_workers_src_modules_warehouses_updatewarehouseschema",
+      "backend_workers_src_modules_warehouses_variables",
+      "backend_workers_src_modules_warehouses_warehouseresponseschema",
+      "backend_workers_src_schemas_common",
+      "backend_workers_src_schemas_common_createsuccessschema",
+      "backend_workers_src_schemas_common_errorresponseschema",
+      "backend_workers_src_schemas_common_messagesuccessschema"
+    ],
+    "5": [
+      "elements",
+      "frontend_src_lib_components_ui_badge_badge",
+      "frontend_src_lib_components_ui_button_button",
+      "frontend_src_lib_components_ui_card_card",
+      "frontend_src_lib_components_ui_card_card_action",
+      "frontend_src_lib_components_ui_card_card_content",
+      "frontend_src_lib_components_ui_card_card_description",
+      "frontend_src_lib_components_ui_card_card_footer",
+      "frontend_src_lib_components_ui_card_card_header",
+      "frontend_src_lib_components_ui_card_card_title",
+      "frontend_src_lib_components_ui_input_input",
+      "frontend_src_lib_components_ui_label_label",
+      "frontend_src_lib_components_ui_radio_group_radio_group",
+      "frontend_src_lib_components_ui_table_index",
+      "frontend_src_lib_components_ui_table_table",
+      "frontend_src_lib_components_ui_table_table_body",
+      "frontend_src_lib_components_ui_table_table_caption",
+      "frontend_src_lib_components_ui_table_table_cell",
+      "frontend_src_lib_components_ui_table_table_footer",
+      "frontend_src_lib_components_ui_table_table_head",
+      "frontend_src_lib_components_ui_table_table_header",
+      "frontend_src_lib_components_ui_table_table_row",
+      "frontend_src_lib_components_ui_textarea_textarea",
+      "frontend_src_lib_utils",
+      "frontend_src_lib_utils_withelementref",
+      "frontend_src_lib_utils_withoutchild",
+      "frontend_src_lib_utils_withoutchildren"
+    ],
+    "6": [
+      "backend_workers_src_index",
+      "backend_workers_src_index_app",
+      "backend_workers_src_index_docsauth",
+      "backend_workers_src_index_scheduled",
+      "backend_workers_src_middleware_ratelimit",
+      "backend_workers_src_middleware_ratelimit_authratelimitcache",
+      "backend_workers_src_middleware_ratelimit_generalratelimitcache",
+      "backend_workers_src_middleware_ratelimit_ratelimitmiddleware",
+      "backend_workers_src_modules_ai",
+      "backend_workers_src_modules_ai_airoute",
+      "backend_workers_src_modules_ai_callgemini",
+      "backend_workers_src_modules_ai_chatroute",
+      "backend_workers_src_modules_ai_checkandincrementaiusage",
+      "backend_workers_src_modules_ai_predictionsroute",
+      "backend_workers_src_modules_ai_summaryroute",
+      "backend_workers_src_modules_ai_variables",
+      "backend_workers_src_modules_health",
+      "backend_workers_src_modules_health_healthresponseschema",
+      "backend_workers_src_modules_health_healthroute",
+      "backend_workers_src_modules_health_route",
+      "backend_workers_src_modules_products_productsroute",
+      "backend_workers_src_modules_warehouses_warehousesroute",
+      "backend_workers_src_utils_supabase",
+      "backend_workers_src_utils_supabase_getsupabase"
+    ],
+    "7": [
+      "supabase_rls",
+      "supabase_rls_businesses",
+      "supabase_rls_cashbook_entries",
+      "supabase_rls_categories",
+      "supabase_rls_customers",
+      "supabase_rls_debt_payments",
+      "supabase_rls_debts",
+      "supabase_rls_pay_debt",
+      "supabase_rls_payments",
+      "supabase_rls_process_sale",
+      "supabase_rls_product_stock",
+      "supabase_rls_products",
+      "supabase_rls_purchase_order_items",
+      "supabase_rls_purchase_orders",
+      "supabase_rls_receive_purchase_order",
+      "supabase_rls_roles",
+      "supabase_rls_sale_items",
+      "supabase_rls_sales",
+      "supabase_rls_set_updated_at",
+      "supabase_rls_suppliers",
+      "supabase_rls_users",
+      "supabase_rls_warehouses",
+      "v_item"
+    ],
+    "8": [
+      "backend_workers_src_modules_reports",
+      "backend_workers_src_modules_reports_cashflowroute",
+      "backend_workers_src_modules_reports_dashboardroute",
+      "backend_workers_src_modules_reports_exportroute",
+      "backend_workers_src_modules_reports_inventoryreportroute",
+      "backend_workers_src_modules_reports_profitlossroute",
+      "backend_workers_src_modules_reports_reportqueryschema",
+      "backend_workers_src_modules_reports_reportsroute",
+      "backend_workers_src_modules_reports_salesreportroute",
+      "backend_workers_src_modules_reports_toutc",
+      "backend_workers_src_modules_reports_variables",
+      "backend_workers_src_modules_sync",
+      "backend_workers_src_modules_sync_paymentschema",
+      "backend_workers_src_modules_sync_pullroute",
+      "backend_workers_src_modules_sync_pushroute",
+      "backend_workers_src_modules_sync_saleitemschema",
+      "backend_workers_src_modules_sync_syncpushschema",
+      "backend_workers_src_modules_sync_syncroute",
+      "backend_workers_src_modules_sync_variables",
+      "backend_workers_src_utils_caseconverter",
+      "backend_workers_src_utils_caseconverter_keystocamel"
+    ],
+    "9": [
+      "backend_workers_src_modules_auth",
+      "backend_workers_src_modules_auth_authresponseschema",
+      "backend_workers_src_modules_auth_authroute",
+      "backend_workers_src_modules_auth_loginroute",
+      "backend_workers_src_modules_auth_loginschema",
+      "backend_workers_src_modules_auth_logoutroute",
+      "backend_workers_src_modules_auth_meresponseschema",
+      "backend_workers_src_modules_auth_meroute",
+      "backend_workers_src_modules_auth_refreshbodyschema",
+      "backend_workers_src_modules_auth_refreshroute",
+      "backend_workers_src_modules_auth_registerroute",
+      "backend_workers_src_modules_auth_registerschema",
+      "backend_workers_src_modules_auth_signtokenpair",
+      "backend_workers_src_modules_auth_variables",
+      "backend_workers_src_utils_password",
+      "backend_workers_src_utils_password_buftohex",
+      "backend_workers_src_utils_password_encoder",
+      "backend_workers_src_utils_password_hashpassword",
+      "backend_workers_src_utils_password_hextobuf",
+      "backend_workers_src_utils_password_verifypassword"
+    ],
+    "10": [
+      "backend_workers_tsconfig",
+      "backend_workers_tsconfig_compileroptions",
+      "backend_workers_tsconfig_compileroptions_allowjs",
+      "backend_workers_tsconfig_compileroptions_allowsyntheticdefaultimports",
+      "backend_workers_tsconfig_compileroptions_checkjs",
+      "backend_workers_tsconfig_compileroptions_forceconsistentcasinginfilenames",
+      "backend_workers_tsconfig_compileroptions_isolatedmodules",
+      "backend_workers_tsconfig_compileroptions_lib",
+      "backend_workers_tsconfig_compileroptions_module",
+      "backend_workers_tsconfig_compileroptions_moduleresolution",
+      "backend_workers_tsconfig_compileroptions_noemit",
+      "backend_workers_tsconfig_compileroptions_resolvejsonmodule",
+      "backend_workers_tsconfig_compileroptions_skiplibcheck",
+      "backend_workers_tsconfig_compileroptions_strict",
+      "backend_workers_tsconfig_compileroptions_target",
+      "backend_workers_tsconfig_compileroptions_types",
+      "backend_workers_tsconfig_include",
+      "ref_cloudflare_workers_types",
+      "ref_es2022",
+      "ref_src"
+    ],
+    "11": [
+      "backend_workers_src_middleware_auth",
+      "backend_workers_src_middleware_auth_authmiddleware",
+      "backend_workers_src_middleware_auth_requirepermission",
+      "backend_workers_src_modules_cashbook",
+      "backend_workers_src_modules_cashbook_cashbookresponseschema",
+      "backend_workers_src_modules_cashbook_cashbookroute",
+      "backend_workers_src_modules_cashbook_cashbookschema",
+      "backend_workers_src_modules_cashbook_createroutedef",
+      "backend_workers_src_modules_cashbook_listroute",
+      "backend_workers_src_modules_cashbook_summaryroute",
+      "backend_workers_src_modules_cashbook_variables",
+      "backend_workers_src_modules_products",
+      "backend_workers_src_modules_products_barcoderoute",
+      "backend_workers_src_modules_products_createroutedef",
+      "backend_workers_src_modules_products_listroute",
+      "backend_workers_src_modules_products_productresponseschema",
+      "backend_workers_src_modules_products_productschema",
+      "backend_workers_src_modules_products_qrcoderoute",
+      "backend_workers_src_modules_products_variables"
+    ],
+    "12": [
+      "frontend_tsconfig",
+      "frontend_tsconfig_compileroptions",
+      "frontend_tsconfig_compileroptions_allowjs",
+      "frontend_tsconfig_compileroptions_checkjs",
+      "frontend_tsconfig_compileroptions_esmoduleinterop",
+      "frontend_tsconfig_compileroptions_forceconsistentcasinginfilenames",
+      "frontend_tsconfig_compileroptions_moduleresolution",
+      "frontend_tsconfig_compileroptions_resolvejsonmodule",
+      "frontend_tsconfig_compileroptions_rewriterelativeimportextensions",
+      "frontend_tsconfig_compileroptions_skiplibcheck",
+      "frontend_tsconfig_compileroptions_sourcemap",
+      "frontend_tsconfig_compileroptions_strict",
+      "frontend_tsconfig_compileroptions_types",
+      "frontend_tsconfig_extends",
+      "ref_svelte_kit_tsconfig_json",
+      "ref_w3c_web_usb"
+    ],
+    "13": [
+      "acorn",
+      "backend_workers_package_dependencies",
+      "backend_workers_package_dependencies_acorn",
+      "backend_workers_package_dependencies_color_string",
+      "backend_workers_package_dependencies_iceberg_js",
+      "backend_workers_package_dependencies_rollup_plugin_node_polyfills",
+      "backend_workers_package_dependencies_sharp",
+      "backend_workers_package_dependencies_undici",
+      "backend_workers_package_dependencies_zod",
+      "backend_workers_package_json_zod",
+      "color_string",
+      "iceberg_js",
+      "rollup_plugin_node_polyfills",
+      "sharp",
+      "undici"
+    ],
+    "14": [
+      "check",
+      "chevron_down",
+      "chevron_up",
+      "frontend_src_lib_components_ui_select_index",
+      "frontend_src_lib_components_ui_select_select",
+      "frontend_src_lib_components_ui_select_select_content",
+      "frontend_src_lib_components_ui_select_select_group",
+      "frontend_src_lib_components_ui_select_select_group_heading",
+      "frontend_src_lib_components_ui_select_select_item",
+      "frontend_src_lib_components_ui_select_select_item_childrenprop",
+      "frontend_src_lib_components_ui_select_select_label",
+      "frontend_src_lib_components_ui_select_select_portal",
+      "frontend_src_lib_components_ui_select_select_scroll_down_button",
+      "frontend_src_lib_components_ui_select_select_scroll_up_button",
+      "frontend_src_lib_components_ui_select_select_trigger"
+    ],
+    "15": [
+      "dom",
+      "frontend_src_lib_components_pos_productgrid",
+      "frontend_src_lib_components_pos_simpleproductgrid",
+      "frontend_src_lib_components_themetoggle",
+      "frontend_src_lib_db",
+      "frontend_src_lib_db_db",
+      "frontend_src_lib_db_localcategory",
+      "frontend_src_lib_db_localcustomer",
+      "frontend_src_lib_db_localproduct",
+      "frontend_src_lib_db_pendingtransaction",
+      "frontend_src_lib_db_umkmdatabase",
+      "frontend_src_lib_db_umkmdatabase_constructor",
+      "frontend_src_routes_app_pos_page",
+      "frontend_src_routes_app_pos_page_if",
+      "frontend_src_routes_app_pos_page_triggersync"
+    ],
+    "16": [
+      "backend_workers_src_modules_sales",
+      "backend_workers_src_modules_sales_createroutedef",
+      "backend_workers_src_modules_sales_documentroute",
+      "backend_workers_src_modules_sales_listroute",
+      "backend_workers_src_modules_sales_paymentschema",
+      "backend_workers_src_modules_sales_qristokenroute",
+      "backend_workers_src_modules_sales_salecreateresponseschema",
+      "backend_workers_src_modules_sales_saleitemschema",
+      "backend_workers_src_modules_sales_saleschema",
+      "backend_workers_src_modules_sales_saleslistresponseschema",
+      "backend_workers_src_modules_sales_salesroute",
+      "backend_workers_src_modules_sales_sendemailroute",
+      "backend_workers_src_modules_sales_sendwaroute",
+      "backend_workers_src_modules_sales_variables"
+    ],
+    "17": [
+      "animate",
+      "frontend_src_lib_components_dashboard_quickaccess",
+      "frontend_src_lib_components_dashboard_recentactivity",
+      "frontend_src_lib_components_dashboard_saleschart",
+      "frontend_src_lib_components_pos_cart",
+      "frontend_src_lib_components_ui_select_select_separator",
+      "frontend_src_lib_components_ui_separator_index",
+      "frontend_src_lib_components_ui_separator_separator",
+      "frontend_src_routes_app_dashboard_page",
+      "frontend_src_routes_page",
+      "frontend_src_routes_page_animatecount",
+      "frontend_src_routes_page_fmtrp",
+      "transition"
+    ],
+    "18": [
+      "frontend_components",
+      "frontend_components_aliases",
+      "frontend_components_aliases_components",
+      "frontend_components_aliases_hooks",
+      "frontend_components_aliases_ui",
+      "frontend_components_aliases_utils",
+      "frontend_components_schema",
+      "frontend_components_style",
+      "frontend_components_tailwind",
+      "frontend_components_tailwind_basecolor",
+      "frontend_components_tailwind_config",
+      "frontend_components_tailwind_css",
+      "frontend_components_tailwind_cssvariables"
+    ],
+    "19": [
+      "frontend_src_lib_components_ui_dialog_dialog",
+      "frontend_src_lib_components_ui_dialog_dialog_close",
+      "frontend_src_lib_components_ui_dialog_dialog_content",
+      "frontend_src_lib_components_ui_dialog_dialog_description",
+      "frontend_src_lib_components_ui_dialog_dialog_footer",
+      "frontend_src_lib_components_ui_dialog_dialog_footer_children",
+      "frontend_src_lib_components_ui_dialog_dialog_header",
+      "frontend_src_lib_components_ui_dialog_dialog_overlay",
+      "frontend_src_lib_components_ui_dialog_dialog_portal",
+      "frontend_src_lib_components_ui_dialog_dialog_title",
+      "frontend_src_lib_components_ui_dialog_dialog_trigger",
+      "frontend_src_lib_components_ui_dialog_index",
+      "x"
+    ],
+    "20": [
+      "frontend_src_lib_components_ui_sheet_index",
+      "frontend_src_lib_components_ui_sheet_sheet",
+      "frontend_src_lib_components_ui_sheet_sheet_close",
+      "frontend_src_lib_components_ui_sheet_sheet_content",
+      "frontend_src_lib_components_ui_sheet_sheet_description",
+      "frontend_src_lib_components_ui_sheet_sheet_footer",
+      "frontend_src_lib_components_ui_sheet_sheet_header",
+      "frontend_src_lib_components_ui_sheet_sheet_overlay",
+      "frontend_src_lib_components_ui_sheet_sheet_portal",
+      "frontend_src_lib_components_ui_sheet_sheet_title",
+      "frontend_src_lib_components_ui_sheet_sheet_trigger",
+      "frontend_src_lib_utils_cn",
+      "frontend_src_lib_utils_withoutchildrenorchild"
+    ],
+    "21": [
+      "backend_workers_src_modules_debts",
+      "backend_workers_src_modules_debts_createroutedef",
+      "backend_workers_src_modules_debts_debtresponseschema",
+      "backend_workers_src_modules_debts_debtschema",
+      "backend_workers_src_modules_debts_debtsroute",
+      "backend_workers_src_modules_debts_deleteroute",
+      "backend_workers_src_modules_debts_getbyidroute",
+      "backend_workers_src_modules_debts_listroute",
+      "backend_workers_src_modules_debts_paymentschema",
+      "backend_workers_src_modules_debts_payroute",
+      "backend_workers_src_modules_debts_remindroute",
+      "backend_workers_src_modules_debts_variables"
+    ],
+    "22": [
+      "frontend_src_lib_components_appsidebar",
+      "frontend_src_lib_components_appsidebar_active",
+      "frontend_src_lib_components_bottomnav",
+      "frontend_src_lib_components_commandpalette",
+      "frontend_src_lib_queryclient",
+      "frontend_src_lib_queryclient_queryclient",
+      "frontend_src_lib_stores_commandpalette_svelte",
+      "frontend_src_lib_stores_commandpalette_svelte_openpalette",
+      "frontend_src_lib_stores_commandpalette_svelte_palettestate",
+      "frontend_src_routes_app_layout_svelte_frontend_src_routes_app_layout",
+      "stores",
+      "svelte_query"
+    ],
+    "23": [
+      "frontend_src_lib_components_pos_paymentmodal",
+      "frontend_src_lib_components_pos_paymentmodal_addpaymentmethod",
+      "frontend_src_lib_components_pos_paymentmodal_changeamount",
+      "frontend_src_lib_components_pos_paymentmodal_finaltotal",
+      "frontend_src_lib_components_pos_paymentmodal_getmethodlabel",
+      "frontend_src_lib_components_pos_paymentmodal_handlesubmit",
+      "frontend_src_lib_components_pos_paymentmodal_hasqris",
+      "frontend_src_lib_components_pos_paymentmodal_maxpoints",
+      "frontend_src_lib_components_pos_paymentmodal_pointdiscount",
+      "frontend_src_lib_components_pos_paymentmodal_remaining",
+      "frontend_src_lib_components_pos_paymentmodal_removepaymentmethod",
+      "frontend_src_lib_components_pos_paymentmodal_totalpaid"
+    ],
+    "24": [
+      "frontend_src_lib_stores_auth_svelte_setauth",
+      "frontend_src_lib_stores_sync_svelte",
+      "frontend_src_lib_stores_sync_svelte_initsyncmanager",
+      "frontend_src_lib_stores_sync_svelte_pulllatestdata",
+      "frontend_src_lib_stores_sync_svelte_pushpendingtransactions",
+      "frontend_src_lib_stores_sync_svelte_syncstate",
+      "frontend_src_lib_stores_sync_svelte_triggersync",
+      "frontend_src_lib_utils_api_apiclient",
+      "frontend_src_lib_utils_api_getapiurl",
+      "frontend_src_lib_utils_api_tryrefreshtoken",
+      "frontend_src_routes_auth_login_page_if",
+      "frontend_src_routes_auth_register_page_if"
+    ],
+    "25": [
+      "backend_workers_src_modules_employees",
+      "backend_workers_src_modules_employees_createroutedef",
+      "backend_workers_src_modules_employees_employeecreateresponseschema",
+      "backend_workers_src_modules_employees_employeecreateschema",
+      "backend_workers_src_modules_employees_employeeresponseschema",
+      "backend_workers_src_modules_employees_employeesroute",
+      "backend_workers_src_modules_employees_employeestatusresponseschema",
+      "backend_workers_src_modules_employees_employeeupdatestatusschema",
+      "backend_workers_src_modules_employees_listroute",
+      "backend_workers_src_modules_employees_updatestatusroutedef",
+      "backend_workers_src_modules_employees_variables"
+    ],
+    "26": [
+      "backend_workers_src_modules_purchases",
+      "backend_workers_src_modules_purchases_createroutedef",
+      "backend_workers_src_modules_purchases_getbyidroute",
+      "backend_workers_src_modules_purchases_listroute",
+      "backend_workers_src_modules_purchases_purchaseitemschema",
+      "backend_workers_src_modules_purchases_purchaseresponseschema",
+      "backend_workers_src_modules_purchases_purchaseschema",
+      "backend_workers_src_modules_purchases_purchasesroute",
+      "backend_workers_src_modules_purchases_purchasestatusschema",
+      "backend_workers_src_modules_purchases_updatestatusroutedef",
+      "backend_workers_src_modules_purchases_variables"
+    ],
+    "27": [
+      "backend_workers_src_modules_customers",
+      "backend_workers_src_modules_customers_calculatetier",
+      "backend_workers_src_modules_customers_createroutedef",
+      "backend_workers_src_modules_customers_customerresponseschema",
+      "backend_workers_src_modules_customers_customerschema",
+      "backend_workers_src_modules_customers_customersroute",
+      "backend_workers_src_modules_customers_getbyidroute",
+      "backend_workers_src_modules_customers_listroute",
+      "backend_workers_src_modules_customers_updateroutedef",
+      "backend_workers_src_modules_customers_variables"
+    ],
+    "28": [
+      "backend_workers_src_modules_roles",
+      "backend_workers_src_modules_roles_createroutedef",
+      "backend_workers_src_modules_roles_deleteroute",
+      "backend_workers_src_modules_roles_listroute",
+      "backend_workers_src_modules_roles_roleresponseschema",
+      "backend_workers_src_modules_roles_roleschema",
+      "backend_workers_src_modules_roles_rolesroute",
+      "backend_workers_src_modules_roles_updateroute",
+      "backend_workers_src_modules_roles_variables"
+    ],
+    "29": [
+      "backend_workers_src_modules_suppliers",
+      "backend_workers_src_modules_suppliers_createroutedef",
+      "backend_workers_src_modules_suppliers_createsupplierschema",
+      "backend_workers_src_modules_suppliers_listroute",
+      "backend_workers_src_modules_suppliers_supplierresponseschema",
+      "backend_workers_src_modules_suppliers_suppliersroute",
+      "backend_workers_src_modules_suppliers_updateroutedef",
+      "backend_workers_src_modules_suppliers_updatesupplierschema",
+      "backend_workers_src_modules_suppliers_variables"
+    ],
+    "30": [
+      "frontend_static_manifest",
+      "frontend_static_manifest_background_color",
+      "frontend_static_manifest_description",
+      "frontend_static_manifest_display",
+      "frontend_static_manifest_icons",
+      "frontend_static_manifest_name",
+      "frontend_static_manifest_short_name",
+      "frontend_static_manifest_start_url",
+      "frontend_static_manifest_theme_color"
+    ],
+    "31": [
+      "backend_workers_test_idor_test",
+      "backend_workers_test_idor_test_createchain",
+      "backend_workers_test_idor_test_mockeq",
+      "backend_workers_test_idor_test_mockin",
+      "backend_workers_test_idor_test_mockinsert",
+      "backend_workers_test_idor_test_mockselect",
+      "backend_workers_test_idor_test_tablemocks"
+    ],
+    "32": [
+      "circle_check",
+      "frontend_src_lib_components_ui_sonner_index",
+      "frontend_src_lib_components_ui_sonner_sonner",
+      "info",
+      "loader_2",
+      "octagon_x",
+      "triangle_alert"
+    ],
+    "33": [
+      "eslint",
+      "eslint_plugin_svelte",
+      "frontend_package_devdependencies",
+      "frontend_package_devdependencies_eslint",
+      "frontend_package_devdependencies_eslint_plugin_svelte",
+      "frontend_package_devdependencies_typescript",
+      "frontend_package_json_typescript"
+    ],
+    "34": [
+      "frontend_src_lib_stores_appmode_svelte",
+      "frontend_src_lib_stores_appmode_svelte_appmode",
+      "frontend_src_lib_stores_appmode_svelte_appmodestate",
+      "frontend_src_lib_stores_appmode_svelte_loadappmodefromstorage",
+      "frontend_src_lib_stores_appmode_svelte_setappmode",
+      "frontend_src_lib_stores_appmode_svelte_syncappmodefromserver"
+    ],
+    "35": [
+      "frontend_src_lib_utils_printer_escposprinter",
+      "frontend_src_lib_utils_printer_escposprinter_connect",
+      "frontend_src_lib_utils_printer_escposprinter_disconnect",
+      "frontend_src_lib_utils_printer_escposprinter_isconnected",
+      "frontend_src_lib_utils_printer_escposprinter_printbrowserreceipt",
+      "frontend_src_lib_utils_printer_escposprinter_printreceipt"
+    ],
+    "36": [
+      "migrate_landing",
+      "migrate_landing_bodymatch",
+      "migrate_landing_fs",
+      "migrate_landing_htmlcontent",
+      "migrate_landing_scriptmatch",
+      "migrate_landing_stylematch"
+    ],
+    "37": [
+      "frontend_src_service_worker",
+      "frontend_src_service_worker_addfilestocache",
+      "frontend_src_service_worker_assets",
+      "frontend_src_service_worker_deleteoldcaches",
+      "frontend_src_service_worker_respond"
+    ],
+    "38": [
+      "backend_workers_generate_token",
+      "backend_workers_generate_token_jwt",
+      "backend_workers_generate_token_payload",
+      "backend_workers_generate_token_token"
+    ],
+    "39": [
+      "backend_workers_test_api",
+      "backend_workers_test_api_https",
+      "backend_workers_test_api_request",
+      "backend_workers_test_api_test"
+    ],
+    "40": [
+      "backend_workers_scripts_check_counts",
+      "backend_workers_scripts_check_counts_check",
+      "backend_workers_scripts_check_counts_supabase"
+    ],
+    "41": [
+      "backend_workers_scripts_e2e_test",
+      "backend_workers_scripts_e2e_test_delay",
+      "backend_workers_scripts_e2e_test_main"
+    ],
+    "42": [
+      "backend_workers_scripts_fix_demo",
+      "backend_workers_scripts_fix_demo_fixdemoaccount",
+      "backend_workers_scripts_fix_demo_supabase"
+    ],
+    "43": [
+      "backend_workers_scripts_fix_demo_rich",
+      "backend_workers_scripts_fix_demo_rich_injectrichdemodata",
+      "backend_workers_scripts_fix_demo_rich_supabase"
+    ],
+    "44": [
+      "backend_workers_scripts_fix_demo_rich2",
+      "backend_workers_scripts_fix_demo_rich2_injectrichdemodata",
+      "backend_workers_scripts_fix_demo_rich2_supabase"
+    ],
+    "45": [
+      "backend_workers_scripts_fix_fk",
+      "backend_workers_scripts_fix_fk_run",
+      "backend_workers_scripts_fix_fk_s"
+    ],
+    "46": [
+      "backend_workers_scripts_patch_sales",
+      "backend_workers_scripts_patch_sales_content",
+      "backend_workers_scripts_patch_sales_salestspath"
+    ],
+    "47": [
+      "backend_workers_scripts_revert_keystocamel",
+      "backend_workers_scripts_revert_keystocamel_replacer",
+      "backend_workers_scripts_revert_keystocamel_snake_case"
+    ],
+    "48": [
+      "backend_workers_scripts_test_cron",
+      "backend_workers_scripts_test_cron_supabase",
+      "backend_workers_scripts_test_cron_testcron"
+    ],
+    "49": [
+      "backend_workers_scripts_test_sales_error",
+      "backend_workers_scripts_test_sales_error_run",
+      "backend_workers_scripts_test_sales_error_s"
+    ],
+    "50": [
+      "backend_workers_scripts_test_schema",
+      "backend_workers_scripts_test_schema_check",
+      "backend_workers_scripts_test_schema_supabase"
+    ],
+    "51": [
+      "backend_workers_test_rl",
+      "backend_workers_test_rl_data",
+      "backend_workers_test_rl_test"
+    ],
+    "52": [
+      "frontend_src_lib_components_ui_scroll_area_index",
+      "frontend_src_lib_components_ui_scroll_area_scroll_area",
+      "frontend_src_lib_components_ui_scroll_area_scroll_area_scrollbar"
+    ],
+    "53": [
+      "acorn_walk",
+      "backend_workers_package_dependencies_acorn_walk"
+    ],
+    "54": [
+      "as_table",
+      "backend_workers_package_dependencies_as_table"
+    ],
+    "55": [
+      "backend_workers_package_dependencies_blake3_wasm",
+      "blake3_wasm"
+    ],
+    "56": [
+      "backend_workers_package_dependencies_bwip_js",
+      "bwip_js"
+    ],
+    "57": [
+      "backend_workers_package_dependencies_color",
+      "color"
+    ],
+    "58": [
+      "backend_workers_package_dependencies_color_convert",
+      "color_convert"
+    ],
+    "59": [
+      "backend_workers_package_dependencies_color_name",
+      "color_name"
+    ],
+    "60": [
+      "backend_workers_package_dependencies_cookie",
+      "cookie"
+    ],
+    "61": [
+      "backend_workers_package_dependencies_data_uri_to_buffer",
+      "data_uri_to_buffer"
+    ],
+    "62": [
+      "backend_workers_package_dependencies_defu",
+      "defu"
+    ],
+    "63": [
+      "backend_workers_package_dependencies_detect_libc",
+      "detect_libc"
+    ],
+    "64": [
+      "backend_workers_package_dependencies_dotenv",
+      "dotenv"
+    ],
+    "65": [
+      "backend_workers_package_dependencies_esbuild",
+      "esbuild"
+    ],
+    "66": [
+      "backend_workers_package_dependencies_escape_string_regexp",
+      "escape_string_regexp"
+    ],
+    "67": [
+      "backend_workers_package_dependencies_estree_walker",
+      "estree_walker"
+    ],
+    "68": [
+      "backend_workers_package_dependencies_exit_hook",
+      "exit_hook"
+    ],
+    "69": [
+      "backend_workers_package_dependencies_exsolve",
+      "exsolve"
+    ],
+    "70": [
+      "backend_workers_package_dependencies_get_source",
+      "get_source"
+    ],
+    "71": [
+      "backend_workers_package_dependencies_glob_to_regexp",
+      "glob_to_regexp"
+    ],
+    "72": [
+      "backend_workers_package_dependencies_hono",
+      "hono"
+    ],
+    "73": [
+      "backend_workers_package_dependencies_hono_node_server",
+      "hono_node_server"
+    ],
+    "74": [
+      "backend_workers_package_dependencies_hono_zod_openapi",
+      "hono_zod_openapi"
+    ],
+    "75": [
+      "backend_workers_package_dependencies_is_arrayish",
+      "is_arrayish"
+    ],
+    "76": [
+      "backend_workers_package_dependencies_jsonwebtoken",
+      "jsonwebtoken"
+    ],
+    "77": [
+      "backend_workers_package_dependencies_magic_string",
+      "magic_string"
+    ],
+    "78": [
+      "backend_workers_package_dependencies_mime",
+      "mime"
+    ],
+    "79": [
+      "backend_workers_package_dependencies_miniflare",
+      "miniflare"
+    ],
+    "80": [
+      "backend_workers_package_dependencies_mustache",
+      "mustache"
+    ],
+    "81": [
+      "backend_workers_package_dependencies_ohash",
+      "ohash"
+    ],
+    "82": [
+      "backend_workers_package_dependencies_path_to_regexp",
+      "path_to_regexp"
+    ],
+    "83": [
+      "backend_workers_package_dependencies_pathe",
+      "pathe"
+    ],
+    "84": [
+      "backend_workers_package_dependencies_printable_characters",
+      "printable_characters"
+    ],
+    "85": [
+      "backend_workers_package_dependencies_rollup_plugin_inject",
+      "rollup_plugin_inject"
+    ],
+    "86": [
+      "backend_workers_package_dependencies_rollup_pluginutils",
+      "rollup_pluginutils"
+    ],
+    "87": [
+      "backend_workers_package_dependencies_scalar_hono_api_reference",
+      "scalar_hono_api_reference"
+    ],
+    "88": [
+      "backend_workers_package_dependencies_semver",
+      "semver"
+    ],
+    "89": [
+      "backend_workers_package_dependencies_simple_swizzle",
+      "simple_swizzle"
+    ],
+    "90": [
+      "backend_workers_package_dependencies_source_map",
+      "source_map"
+    ],
+    "91": [
+      "backend_workers_package_dependencies_sourcemap_codec",
+      "sourcemap_codec"
+    ],
+    "92": [
+      "backend_workers_package_dependencies_stacktracey",
+      "stacktracey"
+    ],
+    "93": [
+      "backend_workers_package_dependencies_stoppable",
+      "stoppable"
+    ],
+    "94": [
+      "backend_workers_package_dependencies_supabase_supabase_js",
+      "supabase_supabase_js"
+    ],
+    "95": [
+      "backend_workers_package_dependencies_tslib",
+      "tslib"
+    ],
+    "96": [
+      "backend_workers_package_dependencies_ufo",
+      "ufo"
+    ],
+    "97": [
+      "backend_workers_package_dependencies_unenv",
+      "unenv"
+    ],
+    "98": [
+      "backend_workers_package_dependencies_workerd",
+      "workerd"
+    ],
+    "99": [
+      "backend_workers_package_dependencies_ws",
+      "ws"
+    ],
+    "100": [
+      "backend_workers_package_dependencies_youch",
+      "youch"
+    ],
+    "101": [
+      "backend_workers_scripts_add_tags",
+      "backend_workers_scripts_add_tags_capitalize"
+    ],
+    "102": [
+      "backend_workers_scripts_test_resend",
+      "backend_workers_scripts_test_resend_testresend"
+    ],
+    "103": [
+      "circle",
+      "frontend_src_lib_components_ui_radio_group_radio_group_item"
+    ],
+    "104": [
+      "eslint_config_prettier",
+      "frontend_package_devdependencies_eslint_config_prettier"
+    ],
+    "105": [
+      "eslint_js",
+      "frontend_package_devdependencies_eslint_js"
+    ],
+    "106": [
+      "frontend_eslint_config",
+      "frontend_eslint_config_gitignorepath"
+    ],
+    "107": [
+      "frontend_package_devdependencies_globals",
+      "globals"
+    ],
+    "108": [
+      "frontend_package_devdependencies_internationalized_date",
+      "internationalized_date"
+    ],
+    "109": [
+      "frontend_package_devdependencies_playwright_test",
+      "playwright_test"
+    ],
+    "110": [
+      "frontend_package_devdependencies_prettier",
+      "prettier"
+    ],
+    "111": [
+      "frontend_package_devdependencies_prettier_plugin_svelte",
+      "prettier_plugin_svelte"
+    ],
+    "112": [
+      "frontend_package_devdependencies_prettier_plugin_tailwindcss",
+      "prettier_plugin_tailwindcss"
+    ],
+    "113": [
+      "frontend_package_devdependencies_svelte",
+      "frontend_package_json_svelte"
+    ],
+    "114": [
+      "frontend_package_devdependencies_svelte_check",
+      "svelte_check"
+    ],
+    "115": [
+      "frontend_package_devdependencies_sveltejs_adapter_static",
+      "sveltejs_adapter_static"
+    ],
+    "116": [
+      "frontend_package_devdependencies_sveltejs_kit",
+      "sveltejs_kit"
+    ],
+    "117": [
+      "frontend_package_devdependencies_sveltejs_vite_plugin_svelte",
+      "sveltejs_vite_plugin_svelte"
+    ],
+    "118": [
+      "frontend_package_devdependencies_tailwindcss",
+      "tailwindcss"
+    ],
+    "119": [
+      "frontend_package_devdependencies_tailwindcss_vite",
+      "tailwindcss_vite"
+    ],
+    "120": [
+      "frontend_package_devdependencies_types_node",
+      "types_node"
+    ],
+    "121": [
+      "frontend_package_devdependencies_types_w3c_web_usb",
+      "types_w3c_web_usb"
+    ],
+    "122": [
+      "frontend_package_devdependencies_types_web_bluetooth",
+      "types_web_bluetooth"
+    ],
+    "123": [
+      "frontend_package_devdependencies_typescript_eslint",
+      "typescript_eslint"
+    ],
+    "124": [
+      "frontend_package_devdependencies_vite",
+      "vite"
+    ],
+    "125": [
+      "frontend_package_devdependencies_vite_plugin_pwa",
+      "vite_plugin_pwa"
+    ],
+    "126": [
+      "frontend_package_devdependencies_vite_pwa_sveltekit",
+      "vite_pwa_sveltekit"
+    ],
+    "127": [
+      "frontend_package_devdependencies_vitest",
+      "frontend_package_json_vitest"
+    ],
+    "128": [
+      "frontend_package_devdependencies_workbox_window",
+      "workbox_window"
+    ],
+    "129": [
+      "frontend_prettier_config",
+      "frontend_prettier_config_config"
+    ],
+    "130": [
+      "frontend_src_app_d",
+      "frontend_src_app_d_app"
+    ],
+    "131": [
+      "backend_workers_scripts_find_snake"
+    ],
+    "132": [
+      "bits_ui_bits_ui"
+    ],
+    "133": [
+      "dexie_dexie"
+    ],
+    "134": [
+      "doc_github_issue_templates_bug_report_md"
+    ],
+    "135": [
+      "doc_github_issue_templates_feature_request_md"
+    ],
+    "136": [
+      "frontend_playwright_config"
+    ],
+    "137": [
+      "frontend_src_lib_index"
+    ],
+    "138": [
+      "frontend_src_routes_layout_svelte_frontend_src_routes_layout"
+    ],
+    "139": [
+      "frontend_tests_auth_e2e"
+    ],
+    "140": [
+      "frontend_tests_finance_e2e"
+    ],
+    "141": [
+      "frontend_tests_master_e2e"
+    ],
+    "142": [
+      "frontend_tests_pos_e2e"
+    ],
+    "143": [
+      "frontend_tests_purchases_e2e"
+    ],
+    "144": [
+      "frontend_vite_config"
+    ],
+    "145": [
+      "lucide_svelte_svelte"
+    ],
+    "146": [
+      "mode_watcher_mode_watcher"
+    ],
+    "147": [
+      "svelte_sonner_svelte_sonner"
+    ],
+    "148": [
+      "svelte_svelte"
+    ],
+    "149": [
+      "sveltekit_superforms_sveltekit_superforms"
+    ],
+    "150": [
+      "tailwind_variants_tailwind_variants"
+    ],
+    "151": [
+      "uuid_uuid"
+    ],
+    "152": [
+      "zod_zod"
+    ]
+  },
+  "cohesion": {
+    "0": 0.09368421052631579,
+    "1": 0.041666666666666664,
+    "2": 0.21483942414174972,
+    "3": 0.06451612903225806,
+    "4": 0.09259259259259259,
+    "5": 0.1452991452991453,
+    "6": 0.11594202898550725,
+    "7": 0.22134387351778656,
+    "8": 0.10476190476190476,
+    "9": 0.12631578947368421,
+    "10": 0.1,
+    "11": 0.1286549707602339,
+    "12": 0.125,
+    "13": 0.13333333333333333,
+    "14": 0.17142857142857143,
+    "15": 0.1523809523809524,
+    "16": 0.14285714285714285,
+    "17": 0.20512820512820512,
+    "18": 0.15384615384615385,
+    "19": 0.16666666666666666,
+    "20": 0.1794871794871795,
+    "21": 0.16666666666666666,
+    "22": 0.21212121212121213,
+    "23": 0.16666666666666666,
+    "24": 0.2878787878787879,
+    "25": 0.18181818181818182,
+    "26": 0.18181818181818182,
+    "27": 0.2,
+    "28": 0.2222222222222222,
+    "29": 0.2222222222222222,
+    "30": 0.2222222222222222,
+    "31": 0.2857142857142857,
+    "32": 0.2857142857142857,
+    "33": 0.2857142857142857,
+    "34": 0.3333333333333333,
+    "35": 0.3333333333333333,
+    "36": 0.3333333333333333,
+    "37": 0.5,
+    "38": 0.5,
+    "39": 0.6666666666666666,
+    "40": 0.6666666666666666,
+    "41": 1.0,
+    "42": 0.6666666666666666,
+    "43": 0.6666666666666666,
+    "44": 0.6666666666666666,
+    "45": 0.6666666666666666,
+    "46": 0.6666666666666666,
+    "47": 1.0,
+    "48": 0.6666666666666666,
+    "49": 0.6666666666666666,
+    "50": 0.6666666666666666,
+    "51": 0.6666666666666666,
+    "52": 0.6666666666666666,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0,
+    "68": 1.0,
+    "69": 1.0,
+    "70": 1.0,
+    "71": 1.0,
+    "72": 1.0,
+    "73": 1.0,
+    "74": 1.0,
+    "75": 1.0,
+    "76": 1.0,
+    "77": 1.0,
+    "78": 1.0,
+    "79": 1.0,
+    "80": 1.0,
+    "81": 1.0,
+    "82": 1.0,
+    "83": 1.0,
+    "84": 1.0,
+    "85": 1.0,
+    "86": 1.0,
+    "87": 1.0,
+    "88": 1.0,
+    "89": 1.0,
+    "90": 1.0,
+    "91": 1.0,
+    "92": 1.0,
+    "93": 1.0,
+    "94": 1.0,
+    "95": 1.0,
+    "96": 1.0,
+    "97": 1.0,
+    "98": 1.0,
+    "99": 1.0,
+    "100": 1.0,
+    "101": 1.0,
+    "102": 1.0,
+    "103": 1.0,
+    "104": 1.0,
+    "105": 1.0,
+    "106": 1.0,
+    "107": 1.0,
+    "108": 1.0,
+    "109": 1.0,
+    "110": 1.0,
+    "111": 1.0,
+    "112": 1.0,
+    "113": 1.0,
+    "114": 1.0,
+    "115": 1.0,
+    "116": 1.0,
+    "117": 1.0,
+    "118": 1.0,
+    "119": 1.0,
+    "120": 1.0,
+    "121": 1.0,
+    "122": 1.0,
+    "123": 1.0,
+    "124": 1.0,
+    "125": 1.0,
+    "126": 1.0,
+    "127": 1.0,
+    "128": 1.0,
+    "129": 1.0,
+    "130": 1.0,
+    "131": 1.0,
+    "132": 1.0,
+    "133": 1.0,
+    "134": 1.0,
+    "135": 1.0,
+    "136": 1.0,
+    "137": 1.0,
+    "138": 1.0,
+    "139": 1.0,
+    "140": 1.0,
+    "141": 1.0,
+    "142": 1.0,
+    "143": 1.0,
+    "144": 1.0,
+    "145": 1.0,
+    "146": 1.0,
+    "147": 1.0,
+    "148": 1.0,
+    "149": 1.0,
+    "150": 1.0,
+    "151": 1.0,
+    "152": 1.0
+  },
+  "gods": [
+    {
+      "id": "backend_workers_src_utils_supabase_getsupabase",
+      "label": "getSupabase()",
+      "degree": 22
+    },
+    {
+      "id": "domain_pos",
+      "label": "Sistem Kasir POS",
+      "degree": 20
+    },
+    {
+      "id": "backend_workers_src_middleware_auth_authmiddleware",
+      "label": "authMiddleware()",
+      "degree": 17
+    },
+    {
+      "id": "backend_workers_src_schemas_common_errorresponseschema",
+      "label": "ErrorResponseSchema",
+      "degree": 17
+    },
+    {
+      "id": "backend_workers_src_schemas_common_createsuccessschema",
+      "label": "createSuccessSchema()",
+      "degree": 17
+    },
+    {
+      "id": "backend_workers_src_middleware_auth_requirepermission",
+      "label": "requirePermission()",
+      "degree": 15
+    },
+    {
+      "id": "backend_workers_tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 15
+    },
+    {
+      "id": "frontend_package_scripts",
+      "label": "scripts",
+      "degree": 12
+    },
+    {
+      "id": "frontend_tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 12
+    },
+    {
+      "id": "frontend_src_lib_utils_api_apiclient",
+      "label": "apiClient()",
+      "degree": 11
+    }
+  ],
+  "surprises": [
+    {
+      "source": "SvelteKit 5 frontend",
+      "target": "Nginx static frontend",
+      "source_files": [
+        "CHANGELOG.md",
+        "DEPLOY.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "supports",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "Hono API framework",
+      "target": "Self-host Proxmox/VPS",
+      "source_files": [
+        "CHANGELOG.md",
+        "DEPLOY.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "supports",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "setAppMode()",
+      "target": "apiClient()",
+      "source_files": [
+        "frontend/src/lib/stores/appMode.svelte.ts",
+        "frontend/src/lib/utils/api.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities; peripheral node `setAppMode()` unexpectedly reaches hub `apiClient()`"
+    },
+    {
+      "source": "scheduled()",
+      "target": "getSupabase()",
+      "source_files": [
+        "backend-workers/src/index.ts",
+        "backend-workers/src/utils/supabase.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "peripheral node `scheduled()` unexpectedly reaches hub `getSupabase()`"
+    },
+    {
+      "source": "requirePermission()",
+      "target": "getSupabase()",
+      "source_files": [
+        "backend-workers/src/middleware/auth.ts",
+        "backend-workers/src/utils/supabase.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `Community 13` to `Community 3`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 58`, `Community 59`, `Community 60`, `Community 61`, `Community 62`, `Community 63`, `Community 64`, `Community 65`, `Community 66`, `Community 67`, `Community 68`, `Community 69`, `Community 70`, `Community 71`, `Community 72`, `Community 73`, `Community 74`, `Community 75`, `Community 76`, `Community 77`, `Community 78`, `Community 79`, `Community 80`, `Community 81`, `Community 82`, `Community 83`, `Community 84`, `Community 85`, `Community 86`, `Community 87`, `Community 88`, `Community 89`, `Community 90`, `Community 91`, `Community 92`, `Community 93`, `Community 94`, `Community 95`, `Community 96`, `Community 97`, `Community 98`, `Community 99`, `Community 100`?",
+      "why": "High betweenness centrality (0.024) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `Community 33` to `Community 128`, `Community 1`, `Community 104`, `Community 105`, `Community 107`, `Community 108`, `Community 109`, `Community 110`, `Community 111`, `Community 112`, `Community 113`, `Community 114`, `Community 115`, `Community 116`, `Community 117`, `Community 118`, `Community 119`, `Community 120`, `Community 121`, `Community 122`, `Community 123`, `Community 124`, `Community 125`, `Community 126`, `Community 127`?",
+      "why": "High betweenness centrality (0.010) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 6 inferred relationships involving `Sistem Kasir POS` (e.g. with `Tipe order dan biaya layanan` and `Kasbon dan cicilan piutang`) actually correct?",
+      "why": "`Sistem Kasir POS` has 6 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 16 inferred relationships involving `authMiddleware()` (e.g. with `ai.ts` and `modules/auth.ts`) actually correct?",
+      "why": "`authMiddleware()` has 16 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `jwt`, `payload`, `token` to the rest of the system?",
+      "why": "358 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09368421052631579 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.041666666666666664 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

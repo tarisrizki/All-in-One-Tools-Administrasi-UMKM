@@ -142,7 +142,9 @@ productsRoute.openapi(listRoute, async (c) => {
       .order('created_at', { ascending: false });
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`);
+      // Escape special regex characters in search to prevent injection
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query = query.or(`name.ilike.%.${escaped}%,sku.ilike.%.${escaped}%,barcode.ilike.%.${escaped}%`);
     }
 
     const { data: productsData, error: productsError } = await query;

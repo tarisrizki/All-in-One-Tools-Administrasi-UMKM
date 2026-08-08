@@ -306,25 +306,37 @@ salesRoute.openapi(createRouteDef, async (c) => {
     if (!whRes) throw new Error("Gudang tidak ditemukan");
     const warehouseId = whRes.id;
 
-    // 2. Totals
-    let subtotal = 0;
-    let discountTotal = 0;
-    for (const item of dataObj.items) {
-      subtotal += item.price * item.qty;
-      discountTotal += item.discount * item.qty;
-    }
-
-    // 3. Validasi kepemilikan produk
+    // 2. Validasi kepemilikan produk + ambil harga resmi dari DB.
+    // Harga dari client TIDAK dipakai (client bisa set price=0 → transaksi tanpa bayar).
     const productIds = dataObj.items.map((i) => i.productId);
     if (productIds.length > 0) {
       const { data: validProducts, error: vpError } = await supabase
         .from('products')
-        .select('id')
+        .select('id, sell_price')
         .eq('business_id', businessId)
         .in('id', productIds);
       if (vpError || !validProducts || validProducts.length !== productIds.length) {
         throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
       }
+
+      const priceMap = new Map(validProducts.map((p: any) => [p.id, parseFloat(p.sell_price) || 0]));
+      for (const item of dataObj.items) {
+        const dbPrice = priceMap.get(item.productId);
+        if (dbPrice === undefined) throw new Error("Terdapat produk yang tidak valid atau bukan milik bisnis ini");
+        item.price = dbPrice;
+        // Diskon tidak boleh melebihi harga produk (cegah grandTotal negatif)
+        if (item.discount > dbPrice) {
+          throw new Error(`Diskon melebihi harga produk untuk item ${item.productId}`);
+        }
+      }
+    }
+
+    // 3. Totals (harga sudah diverifikasi dari DB)
+    let subtotal = 0;
+    let discountTotal = 0;
+    for (const item of dataObj.items) {
+      subtotal += item.price * item.qty;
+      discountTotal += item.discount * item.qty;
     }
 
     // 4. Loyalty points

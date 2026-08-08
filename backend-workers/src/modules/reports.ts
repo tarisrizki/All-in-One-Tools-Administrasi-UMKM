@@ -388,6 +388,7 @@ reportsRoute.openapi(inventoryReportRoute, async (c) => {
   }
 });
 
+reportsRoute.get('/dashboard', requirePermission('reports.read'));
 reportsRoute.openapi(dashboardRoute, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');

@@ -222,9 +222,21 @@ syncRoute.openapi(pushRoute, async (c) => {
       });
 
       if (rpcErr) {
-        // Unique violation (23505) = transaksi sudah ada (race won by another request) → idempotent success
+        // 23505 = unique violation. Bisa berarti client_transaction_id duplikat (idempotent success),
+        // atau collision invoice_number (data loss kalau di-skip diam-diam). Verifikasi dulu.
         if (rpcErr.code === '23505' || (rpcErr.message || '').includes('duplicate')) {
-          processed++;
+          const { data: existing } = await supabase
+            .from('sales')
+            .select('id')
+            .eq('business_id', businessId)
+            .eq('client_transaction_id', t.client_transaction_id)
+            .maybeSingle();
+          if (existing) {
+            processed++;
+            continue;
+          }
+          // Bukan duplikat transaksi → kegagalan nyata (kemungkinan collision nomor invoice)
+          failed.push({ index: idx, clientTransactionId: t.client_transaction_id, error: rpcErr.message || 'Gagal memproses transaksi' });
           continue;
         }
         failed.push({ index: idx, clientTransactionId: t.client_transaction_id, error: rpcErr.message || 'Gagal memproses transaksi' });

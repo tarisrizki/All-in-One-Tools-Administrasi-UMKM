@@ -4,13 +4,16 @@
 
 type Env = Record<string, any>;
 
-export function getEnv(c: { env?: Env }, key: string): string | undefined {
-  const v = c.env?.[key] ?? process.env[key];
-  return v;
+type EnvSource = { env?: Env } | Env | undefined;
+
+export function getEnv(source: EnvSource, key: string): string | undefined {
+  const env = source && 'env' in source ? source.env : source;
+  return env?.[key] ?? process.env[key];
 }
 
-export function getEnvOrThrow(c: { env?: Env }, key: string): string {
-  const v = getEnv(c, key);
+export function getEnvOrThrow(source: EnvSource, key: string): string {
+  const v = getEnv(source, key);
   if (!v) throw new Error(`Missing ${key} in environment variables`);
   return v;
 }
+
