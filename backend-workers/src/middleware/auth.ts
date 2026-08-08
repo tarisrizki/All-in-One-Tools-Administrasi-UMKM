@@ -18,13 +18,18 @@ export const authMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    // Verifikasi JWT asli, bukan sekadar memalsukan header
-    const decoded = await verify(token, jwtSecret, 'HS256');
-    
-    // Pastikan payload memiliki struktur yang diharapkan
-    if (!decoded.userId || !decoded.businessId || !decoded.roleId) {
-      throw new Error('Payload token tidak valid');
-    }
+      // Verifikasi JWT asli, bukan sekadar memalsukan header
+      const decoded = await verify(token, jwtSecret, 'HS256');
+
+      // Tolak refresh token yang dipakai sebagai access token
+      if ((decoded as any).type && (decoded as any).type !== 'access') {
+        throw new Error('Token type tidak valid');
+      }
+
+      // Pastikan payload memiliki struktur yang diharapkan
+      if (!decoded.userId || !decoded.businessId || !decoded.roleId) {
+        throw new Error('Payload token tidak valid');
+      }
 
     // Set context variable agar bisa dipakai oleh route berikutnya
     c.set('userId', decoded.userId);

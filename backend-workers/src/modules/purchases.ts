@@ -283,6 +283,21 @@ purchasesRoute.openapi(updateStatusRouteDef, async (c) => {
   try {
     const { status } = c.req.valid('json');
 
+    if (status === 'received') {
+      // Atomik via RPC: kunci PO, tolak jika sudah received, update stok dalam satu transaksi.
+      const { data: result, error: rpcErr } = await supabase.rpc('receive_purchase_order', {
+        p_po_id: id,
+        p_business_id: businessId,
+      });
+      if (rpcErr) {
+        const msg = rpcErr.message || '';
+        if (msg.includes('tidak ditemukan')) return c.json({ success: false, error: { message: 'PO tidak ditemukan' } }, 404);
+        if (msg.includes('sudah diterima')) return c.json({ success: false, error: { message: msg } }, 400);
+        throw rpcErr;
+      }
+      return c.json({ success: true, data: result }, 200);
+    }
+
     const { data: po } = await supabase.from('purchase_orders').select('*').eq('id', id).eq('business_id', businessId).single();
     if (!po) return c.json({ success: false, error: { message: "PO tidak ditemukan" } }, 404);
     if (po.status === "received") return c.json({ success: false, error: { message: "PO yang sudah diterima tidak dapat diubah statusnya" } }, 400);
@@ -293,36 +308,6 @@ purchasesRoute.openapi(updateStatusRouteDef, async (c) => {
       .eq('id', id)
       .select()
       .single();
-
-    if (status === "received") {
-      const { data: itemsRes } = await supabase.from('purchase_order_items').select('*').eq('po_id', id);
-      
-      const qtyByProduct = new Map<string, number>();
-      for (const item of (itemsRes || [])) {
-        qtyByProduct.set(item.product_id, (qtyByProduct.get(item.product_id) || 0) + item.qty);
-      }
-
-      for (const [productId, quantity] of qtyByProduct.entries()) {
-        const { data: stockData } = await supabase
-          .from('product_stock')
-          .select('quantity')
-          .eq('product_id', productId)
-          .eq('warehouse_id', po.warehouse_id)
-          .single();
-          
-        if (stockData) {
-          await supabase
-            .from('product_stock')
-            .update({ quantity: stockData.quantity + quantity, updated_at: new Date().toISOString() })
-            .eq('product_id', productId)
-            .eq('warehouse_id', po.warehouse_id);
-        } else {
-          await supabase
-            .from('product_stock')
-            .insert({ product_id: productId, warehouse_id: po.warehouse_id, quantity: quantity });
-        }
-      }
-    }
 
     return c.json({ success: true, data: updatedPo }, 200);
   } catch (err: any) {

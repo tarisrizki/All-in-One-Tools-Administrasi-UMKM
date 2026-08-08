@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import bcrypt from 'bcryptjs';
-import { sign } from 'hono/jwt';
+import { sign, verify } from 'hono/jwt';
 import { authMiddleware } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '../schemas/common';
 
@@ -17,8 +17,29 @@ const loginSchema = z.object({
   password: z.string().min(6).max(255),
 });
 
+const refreshBodySchema = z.object({
+  refresh_token: z.string().min(1),
+});
+
+const ACCESS_TOKEN_TTL = 60 * 60 * 8; // 8 jam
+
+const REFRESH_TOKEN_TTL = 60 * 60 * 24 * 30; // 30 hari
+
+async function signTokenPair(c: any, payload: { userId: string; businessId: string; roleId: string }) {
+  const accessToken = await sign(
+    { ...payload, type: 'access', exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL },
+    c.env.JWT_SECRET, 'HS256'
+  );
+  const refreshToken = await sign(
+    { ...payload, type: 'refresh', exp: Math.floor(Date.now() / 1000) + REFRESH_TOKEN_TTL },
+    c.env.JWT_SECRET, 'HS256'
+  );
+  return { accessToken, refreshToken };
+}
+
 const authResponseSchema = z.object({
   token: z.string(),
+  refreshToken: z.string().optional(),
   user_id: z.string().uuid(),
   business_id: z.string().uuid(),
   business_name: z.string().optional(),
@@ -113,11 +134,20 @@ const refreshRoute = createRoute({
   tags: ['Auth'],
   method: 'post',
   path: '/refresh',
-  description: 'Refresh token',
+  description: 'Refresh access token menggunakan refresh token',
+  request: {
+    body: {
+      content: { 'application/json': { schema: refreshBodySchema } },
+    },
+  },
   responses: {
-    501: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.object({ token: z.string() })) } },
+      description: 'Token baru',
+    },
+    401: {
       content: { 'application/json': { schema: ErrorResponseSchema } },
-      description: 'Belum diimplementasi',
+      description: 'Refresh token tidak valid',
     },
   },
 });
@@ -196,24 +226,24 @@ authRoute.openapi(registerRoute, async (c) => {
       description: "Kategori default"
     });
 
-    const token = await sign({
-      userId: user.id,
-      businessId: business.id,
-      roleId: ownerRole.id,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 1 week
-    }, c.env.JWT_SECRET, 'HS256');
+    const { accessToken, refreshToken } = await signTokenPair(c, {
+          userId: user.id,
+          businessId: business.id,
+          roleId: ownerRole.id,
+        });
 
-    return c.json({ 
-      success: true, 
-      data: { 
-        token, 
-        user_id: user.id, 
-        business_id: business.id,
-        business_name: business.name,
-        app_mode: 'simple',
-        permissions: ownerRole.permissions
-      } 
-    }, 201);
+        return c.json({ 
+          success: true, 
+          data: { 
+            token: accessToken,
+            refreshToken,
+            user_id: user.id, 
+            business_id: business.id,
+            business_name: business.name,
+            app_mode: 'simple',
+            permissions: ownerRole.permissions
+          } 
+        }, 201);
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal mendaftar");
     return c.json({ success: false, error: { code: "REGISTER_FAILED", message } }, 400);
@@ -235,18 +265,17 @@ authRoute.openapi(loginRoute, async (c) => {
       return c.json({ success: false, error: { code: "UNAUTHORIZED", message: "Nomor HP atau kata sandi salah" } }, 401);
     }
 
-    const token = await sign({
-      userId: user.id,
-      businessId: user.business_id,
-      roleId: user.role_id,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 1 week
-    }, c.env.JWT_SECRET, 'HS256');
+    const { accessToken, refreshToken } = await signTokenPair(c, {
+          userId: user.id,
+          businessId: user.business_id,
+          roleId: user.role_id,
+        });
 
-    const appMode = (user as any).businesses?.settings?.appMode || 'full';
-    const businessName = (user as any).businesses?.name || 'Toko Anda';
-    const permissions = (user as any).roles?.permissions || [];
+        const appMode = (user as any).businesses?.settings?.appMode || 'full';
+        const businessName = (user as any).businesses?.name || 'Toko Anda';
+        const permissions = (user as any).roles?.permissions || [];
 
-    return c.json({ success: true, data: { token, user_id: user.id, business_id: user.business_id, business_name: businessName, app_mode: appMode, permissions } }, 200);
+        return c.json({ success: true, data: { token: accessToken, refreshToken, user_id: user.id, business_id: user.business_id, business_name: businessName, app_mode: appMode, permissions } }, 200);
   } catch (err: any) {
     const message = err.issues ? "Input tidak valid" : (err.message || "Gagal masuk");
     return c.json({ success: false, error: { code: "LOGIN_FAILED", message } }, 400);
@@ -284,7 +313,42 @@ authRoute.openapi(meRoute, async (c) => {
 });
 
 authRoute.openapi(refreshRoute, async (c) => {
-  return c.json({ success: false, error: { code: "NOT_IMPLEMENTED", message: "Refresh token belum diimplementasi" } }, 501);
+  const supabase = getSupabase(c.env);
+  const { refresh_token } = c.req.valid('json');
+
+  try {
+    const decoded = await verify(refresh_token, c.env.JWT_SECRET, 'HS256');
+    if (!decoded || (decoded as any).type !== 'refresh' || !(decoded as any).userId) {
+      return c.json({ success: false, error: { code: "INVALID_REFRESH", message: "Refresh token tidak valid" } }, 401);
+    }
+
+    // Pastikan user & bisnis masih ada (mis. bisnis dihapus/di-suspend)
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, business_id, roles(permissions)')
+      .eq('id', (decoded as any).userId)
+      .single();
+    if (!user) {
+      return c.json({ success: false, error: { code: "INVALID_REFRESH", message: "Sesi tidak valid" } }, 401);
+    }
+
+    const permissions = (user as any).roles?.permissions || [];
+    const accessToken = await sign(
+      {
+        userId: user.id,
+        businessId: user.business_id,
+        roleId: (decoded as any).roleId,
+        type: 'access',
+        exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL,
+      },
+      c.env.JWT_SECRET,
+      'HS256'
+    );
+
+    return c.json({ success: true, data: { token: accessToken, permissions } }, 200);
+  } catch (err) {
+    return c.json({ success: false, error: { code: "INVALID_REFRESH", message: "Refresh token tidak valid atau telah kedaluwarsa" } }, 401);
+  }
 });
 
 authRoute.openapi(logoutRoute, async (c) => {

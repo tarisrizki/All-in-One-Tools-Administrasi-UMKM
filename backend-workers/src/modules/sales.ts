@@ -295,20 +295,7 @@ salesRoute.openapi(createRouteDef, async (c) => {
     const dataObj = c.req.valid('json');
     const clientTxId = dataObj.clientTransactionId || crypto.randomUUID();
 
-    // 1. Idempotency check
-    const { data: existingSale } = await supabase
-      .from('sales')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('client_transaction_id', clientTxId)
-      .limit(1)
-      .single();
-
-    if (existingSale) {
-      return c.json({ success: true, message: "Transaksi sudah ada", data: { id: existingSale.id } }, 200);
-    }
-
-    // 2. Get warehouse
+    // 1. Gudang default
     const { data: whRes } = await supabase
       .from('warehouses')
       .select('id')
@@ -316,11 +303,10 @@ salesRoute.openapi(createRouteDef, async (c) => {
       .eq('is_default', true)
       .limit(1)
       .single();
-
     if (!whRes) throw new Error("Gudang tidak ditemukan");
     const warehouseId = whRes.id;
 
-    // 3. Totals
+    // 2. Totals
     let subtotal = 0;
     let discountTotal = 0;
     for (const item of dataObj.items) {
@@ -328,8 +314,8 @@ salesRoute.openapi(createRouteDef, async (c) => {
       discountTotal += item.discount * item.qty;
     }
 
-    // 4. Validate products ownership
-    const productIds = dataObj.items.map(i => i.productId);
+    // 3. Validasi kepemilikan produk
+    const productIds = dataObj.items.map((i) => i.productId);
     if (productIds.length > 0) {
       const { data: validProducts, error: vpError } = await supabase
         .from('products')
@@ -341,29 +327,24 @@ salesRoute.openapi(createRouteDef, async (c) => {
       }
     }
 
-    // 5. Loyalty points
+    // 4. Loyalty points
     let appliedRedeemPoints = 0;
     let earnedPoints = 0;
-    let customerRecord: any = null;
-
     if (dataObj.customerId) {
       const { data: custData } = await supabase
         .from('customers')
-        .select('*')
+        .select('loyalty_points')
         .eq('id', dataObj.customerId)
         .eq('business_id', businessId)
         .single();
-        
       if (!custData) throw new Error("Pelanggan tidak ditemukan");
-      customerRecord = custData;
 
       if (dataObj.redeemPoints && dataObj.redeemPoints > 0) {
-        if (customerRecord.loyalty_points < dataObj.redeemPoints) {
+        if (custData.loyalty_points < dataObj.redeemPoints) {
           throw new Error("Poin pelanggan tidak mencukupi untuk di-redeem.");
         }
         appliedRedeemPoints = dataObj.redeemPoints;
-        const pointDiscount = appliedRedeemPoints * 100;
-        discountTotal += pointDiscount;
+        discountTotal += appliedRedeemPoints * 100;
       }
     }
 
@@ -372,106 +353,45 @@ salesRoute.openapi(createRouteDef, async (c) => {
       earnedPoints = Math.floor(grandTotal / 10000);
     }
 
-    const invoiceNumber = `INV/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${Math.floor(Math.random() * 10000)}`;
-
-    // 5. Insert Sale
-    const { data: saleData, error: saleError } = await supabase
+    // 5. Proses seluruh transaksi dalam SATU transaksi DB (atomic, rollback jika gagal).
+    // process_sale() di supabase-rls.sql menangani: idempotency, insert sale + items,
+    // pengurangan stok (FOR UPDATE, tolak negatif), payments, status, piutang, loyalty.
+    const { count: saleCount } = await supabase
       .from('sales')
-      .insert({
-        business_id: businessId,
-        warehouse_id: warehouseId,
-        customer_id: dataObj.customerId || null,
-        client_transaction_id: clientTxId,
-        invoice_number: invoiceNumber,
-        subtotal: subtotal.toString(),
-        discount_total: discountTotal.toString(),
-        grand_total: grandTotal.toString(),
-        created_by: userId,
-        status: 'draft' // Temporary status
-      })
-      .select()
-      .single();
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId);
+    const invoiceNumber = `INV/${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}/${String((saleCount || 0) + 1).padStart(5, '0')}-${crypto.randomUUID().slice(0, 6)}`;
 
-    if (saleError || !saleData) throw saleError || new Error("Failed to insert sale");
+    const { data: result, error: rpcError } = await supabase.rpc('process_sale', {
+      p_business_id: businessId,
+      p_warehouse_id: warehouseId,
+      p_customer_id: dataObj.customerId || null,
+      p_client_transaction_id: clientTxId,
+      p_invoice_number: invoiceNumber,
+      p_subtotal: subtotal,
+      p_discount_total: discountTotal,
+      p_grand_total: grandTotal,
+      p_created_by: userId,
+      p_items: dataObj.items.map((i) => ({
+        product_id: i.productId,
+        qty: i.qty,
+        price: i.price,
+        discount: i.discount,
+      })),
+      p_payments: dataObj.payments.map((p) => ({ method: p.method, amount: p.amount })),
+      p_redeem_points: appliedRedeemPoints,
+      p_earned_points: earnedPoints,
+      p_customer_name: dataObj.customerName || null,
+      p_customer_phone: dataObj.customerPhone || null,
+    });
 
-    // 6. Insert Items & Update Stock
-    if (dataObj.items.length > 0) {
-      const itemsToInsert = dataObj.items.map((item) => ({
-        sale_id: saleData.id,
-        product_id: item.productId,
-        qty: item.qty,
-        price: item.price.toString(),
-        discount: item.discount.toString(),
-      }));
+    if (rpcError) throw rpcError;
 
-      await supabase.from('sale_items').insert(itemsToInsert);
-      
-      for (const item of dataObj.items) {
-        // Fetch current stock
-        const { data: stockData } = await supabase
-          .from('product_stock')
-          .select('quantity')
-          .eq('product_id', item.productId)
-          .eq('warehouse_id', warehouseId)
-          .single();
-          
-        if (stockData) {
-          await supabase
-            .from('product_stock')
-            .update({ 
-              quantity: stockData.quantity - item.qty,
-              updated_at: new Date().toISOString()
-            })
-            .eq('product_id', item.productId)
-            .eq('warehouse_id', warehouseId);
-        }
-      }
+    if (result?.duplicate) {
+      return c.json({ success: true, message: "Transaksi sudah ada", data: { id: result.id } }, 200);
     }
 
-    // 7. Insert Payments
-    let totalPaid = 0;
-    for (const pay of dataObj.payments) {
-      totalPaid += pay.amount;
-    }
-    if (dataObj.payments.length > 0) {
-      const paymentsToInsert = dataObj.payments.map((pay) => ({
-        sale_id: saleData.id,
-        method: pay.method,
-        amount: pay.amount.toString(),
-      }));
-      await supabase.from('payments').insert(paymentsToInsert);
-    }
-
-    // 8. Update status & Piutang
-    const status = totalPaid >= grandTotal ? "paid" : "partial";
-    await supabase.from('sales').update({ status }).eq('id', saleData.id);
-    saleData.status = status;
-
-    if (status !== "paid") {
-      const remainingAmount = grandTotal - totalPaid;
-      await supabase.from('debts').insert({
-        business_id: businessId,
-        type: 'piutang',
-        entity_name: dataObj.customerName || 'Pelanggan Umum',
-        entity_phone: dataObj.customerPhone || null,
-        amount: remainingAmount.toString(),
-        remaining_amount: remainingAmount.toString(),
-        status: 'unpaid',
-        notes: `Piutang transaksi ${invoiceNumber}`,
-        created_by: userId
-      });
-    }
-
-    // 9. Update Loyalty Points
-    if (dataObj.customerId && customerRecord) {
-      const newPoints = customerRecord.loyalty_points - appliedRedeemPoints + earnedPoints;
-      await supabase
-        .from('customers')
-        .update({ loyalty_points: newPoints })
-        .eq('id', dataObj.customerId);
-    }
-
-    return c.json({ success: true, data: keysToCamel(saleData) }, 201);
+    return c.json({ success: true, data: keysToCamel(result) }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal memproses transaksi");
     return c.json({ success: false, error: { message: msg } }, 400);

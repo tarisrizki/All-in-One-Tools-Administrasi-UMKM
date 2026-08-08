@@ -9,30 +9,41 @@ export const syncState = $state({
 	lastSyncTime: null as Date | null,
 });
 
+let syncInterval: ReturnType<typeof setInterval> | null = null;
+
 export function initSyncManager() {
 	if (typeof window === 'undefined') return;
 
-	// Update initial state
 	syncState.isOnline = navigator.onLine;
 
-	// Add listeners
-	window.addEventListener('online', () => {
+	const onOnline = () => {
 		syncState.isOnline = true;
 		toast.success('Koneksi terhubung kembali. Memulai sinkronisasi...');
 		triggerSync();
-	});
-
-	window.addEventListener('offline', () => {
+	};
+	const onOffline = () => {
 		syncState.isOnline = false;
 		toast.warning('Koneksi terputus. Beralih ke mode offline.');
-	});
+	};
 
-	// Optionally start a periodic sync (e.g. every 5 minutes)
-	setInterval(() => {
+	window.addEventListener('online', onOnline);
+	window.addEventListener('offline', onOffline);
+
+	if (syncInterval) clearInterval(syncInterval);
+	syncInterval = setInterval(() => {
 		if (syncState.isOnline && authState.isAuthenticated) {
 			triggerSync();
 		}
 	}, 5 * 60 * 1000);
+
+	return () => {
+		window.removeEventListener('online', onOnline);
+		window.removeEventListener('offline', onOffline);
+		if (syncInterval) {
+			clearInterval(syncInterval);
+			syncInterval = null;
+		}
+	};
 }
 
 export async function triggerSync() {

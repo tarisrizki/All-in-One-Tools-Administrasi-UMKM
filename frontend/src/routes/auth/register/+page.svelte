@@ -11,7 +11,6 @@
 	import { zod4 as zod } from 'sveltekit-superforms/adapters';
 	import { apiClient } from '$lib/utils/api';
 
-
 	let step = $state(1);
 
 	const registerSchema = z.object({
@@ -25,7 +24,7 @@
 	let loading = $state(false);
 	let errorMsg = $state('');
 
-	const { form, errors, enhance, validateForm } = superForm<RegisterSchema>(
+	const { form, errors, enhance } = superForm<RegisterSchema>(
 		// @ts-expect-error zod version mismatch with superforms adapter
 		defaults({ phone: '', password: '', businessName: '', cfTurnstileResponse: '' }, zod(registerSchema as any)),
 		{
@@ -42,7 +41,7 @@
 							body: JSON.stringify(f.data)
 						});
 						if (result.success) {
-							setAuth(result.data.token, {
+							setAuth(result.data.token, result.data.refreshToken || null, {
 								userId: result.data.user_id,
 								businessId: result.data.business_id,
 								businessName: result.data.business_name,
@@ -70,7 +69,7 @@
 			step = 2;
 			errorMsg = '';
 			// We can initialize businessName so the second step validation doesn't immediately fail
-			if (!$form.businessName) $form.businessName = 'Toko Baru'; 
+			if (!$form.businessName) $form.businessName = 'Toko Baru';
 		} else {
 			errorMsg = 'Format nomor HP tidak valid & Kata sandi minimal 6 karakter';
 		}
@@ -82,6 +81,7 @@
 		};
 	});
 </script>
+
 
 <svelte:head>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

@@ -40,7 +40,7 @@
 							body: JSON.stringify(f.data)
 						});
 						if (result.success) {
-							setAuth(result.data.token, {
+							setAuth(result.data.token, result.data.refreshToken || null, {
 								userId: result.data.user_id,
 								businessId: result.data.business_id,
 								businessName: result.data.business_name,
@@ -60,6 +60,8 @@
 			}
 		}
 	);
+
+
 
 	function fillDemo() {
 		$form.phone = DEMO_PHONE;

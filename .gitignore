@@ -61,3 +61,4 @@ prompt.md
 .wrangler/
 **/*.env*
 !**/.env.example
+graphify-out/
