@@ -1,31 +1,34 @@
-# Release Notes — KasirPOS v1.0.0
+# Release Notes — Beres UMKM v1.1.0-beta
 
-> 🎉 Rilis pertama! Sistem POS offline-first open-source untuk UMKM Indonesia.
+> 🎉 Rilis dengan daftar fitur lengkap sistem kasir untuk UMKM Indonesia (mengacu pada set fitur Qasir).
 
 ---
 
 ## Highlights
 
-### ✨ Offline-First POS
-Berjualan tanpa internet? Bisa! KasirPOS menyimpan semua transaksi secara lokal dan melakukan sync ketika koneksi kembali tersedia. Manajemen stok tetap akurat kapan pun dan di mana pun.
+### 💳 Kasir POS Multi-Perangkat
+Aplikasi kasir yang jalan di smartphone, tablet, desktop, hingga dual screen. Cetak struk bukti pembayaran, tiket pesanan pelanggan, dan dukungan pembayaran QRIS.
+
+### 📦 Inventori Lengkap
+Kelola produk, stok, bahan baku, harga modal, harga grosir, hingga pengingat kedaluarsa. Export & ubah produk sekaligus (bulk).
+
+### 📊 Laporan Real-Time
+Laporan penjualan, perputaran stok, dan profit-loss dalam satu aplikasi. Periode akses laporan fleksibel.
+
+### 🏪 Multi-Outlet
+Kelola outlet utama dan outlet cabang dari satu dashboard.
+
+### 👥 Pegawai & Otorisasi
+Akses pegawai berbasis peran (role-based), otorisasi per fitur, absensi, dan penugasan pegawai ke transaksi tertentu.
+
+### 🎯 Strategi Bisnis
+Diskon & poin loyalitas pelanggan untuk mendorong repeat purchase.
 
 ### 🔄 Atomic Sync
 Setiap perubahan data disinkronkan secara atomic — semua atau tidak sama sekali. Tidak ada lagi data corrupt atau transaksi yang hilang saat sync terputus di tengah jalan.
 
-### 📱 Multi-Device Real-Time
-Pantau penjualan dari beberapa perangkat secara bersamaan. Saat kasir di meja kasir mencatat transaksi, owner bisa memantau omzet dari HP secara real-time tanpa perlu refresh.
-
 ### 🔒 RLS Security
-Row Level Security (RLS) memastikan setiap user hanya bisa melihat dan mengelola data yang menjadi haknya. Data bisnis Anda aman, hanya untuk mata yang berhak.
-
-### 🔑 Refresh Token
-Mekanisme autentikasi modern dengan refresh token untuk pengalaman login yang aman dan seamless. Session tetap aktif, tanpa harus login berulang kali.
-
-### 📊 Cashbook Summary
-Ringkasan kas masuk dan kas keluar dalam satu tampilan. Lacak profitabilitas bisnis Anda setiap hari, minggu, atau bulan dengan mudah.
-
-### 🌐 Open-Source Gratis untuk UMKM Indonesia
-Didedikasikan untuk kemajuan UMKM Indonesia. 100% open-source, bebas digunakan dan dimodifikasi. Mari bangun ekosistem digital bersama.
+Row Level Security (RLS) memastikan setiap user hanya bisa melihat dan mengelola data yang menjadi haknya.
 
 ---
 
@@ -33,44 +36,34 @@ Didedikasikan untuk kemajuan UMKM Indonesia. 100% open-source, bebas digunakan d
 
 | Layer | Teknologi |
 |-------|-----------|
-| **Frontend** | Next.js 15 + React 19 + TypeScript + Tailwind CSS |
-| **Backend** | Supabase (PostgreSQL + Edge Functions + Realtime) |
-| **Auth** | Supabase Auth (Email + Refresh Token) |
-| **Database** | PostgreSQL dengan Row Level Security (RLS) |
-| **Sync Engine** | Atomic upsert dengan conflict resolution |
-| **Realtime** | Supabase Realtime WebSocket |
-| **Deployment** | Docker + Vercel / Railway |
+| **Frontend** | SvelteKit (Svelte 5 / Runes) + Tailwind CSS v4 + PWA |
+| **Backend** | Cloudflare Workers (Hono + TypeScript, OpenAPI) |
+| **Auth** | JWT access (8 jam) + refresh (30 hari), bcrypt/WebCrypto PBKDF2 |
+| **Database** | Supabase PostgreSQL dengan Row Level Security (RLS) |
+| **Sync Engine** | Dexie IndexedDB offline-first, push/pull atomic |
+| **Deployment** | Cloudflare Workers + Cloudflare Pages |
 
-### Dependensi Utama
+---
 
-- `next@15` — React framework
-- `@supabase/supabase-js@2` — Database & auth client
-- `@supabase/realtime-js@2` — Realtime subscriptions
-- `tailwindcss@3` — Utility-first CSS
-- `react-hot-toast@2` — Notification toasts
-- `lucide-react@0.4` — Icon library
+## Changelog Ringkas
+
+### v1.1.0-beta (2026-08) — Feature Set Lengkap
+- Roadmap fitur Qasir: pajak per produk, tipe order + biaya layanan, status order, tiket pesanan, pengaturan meja, pre-order uang muka, nomor antrian, label pembayaran
+- Inventori: export/ubah massal, bahan baku, harga grosir, pengingat kedaluarsa
+- Laporan perputaran stok, multi-outlet, absensi pegawai
+
+### v1.0.0 (2026-08-08) — Core MVP
+- Kasir POS online + offline dengan sync otomatis, QRIS, cetak struk
+- Manajemen produk, stok multi-gudang, purchase order
+- Cashbook, piutang/hutang dengan cicilan
+- Role-based access & otorisasi pegawai
+- Multi-device real-time, RLS security, refresh token
 
 ---
 
 ## Demo
 
 > **TODO:** Tambahkan link demo di sini
->
-> Demo Online: `[DEMO_URL_PLACEHOLDER]`
-
----
-
-## Kontributor
-
-Proyek ini dibangun oleh komunitas. Terima kasih kepada semua yang berkontribusi!
-
-> **TODO:** Tambahkan nama kontributor di sini
->
-> - [@contributor1](https://github.com/contributor1)
-> - [@contributor2](https://github.com/contributor2)
-> - [@contributor3](https://github.com/contributor3)
-
-Ingin berkontribusi? Buka Pull Request atau buat Issue di repository kami.
 
 ---
 
@@ -78,47 +71,28 @@ Ingin berkontribusi? Buka Pull Request atau buat Issue di repository kami.
 
 ```bash
 # Clone repository
-git clone https://github.com/username/kasirpos.git
-cd kasirpos
+git clone https://github.com/username/umkm-audit.git
+cd umkm-audit
 
-# Setup environment
-cp .env.example .env.local
-
-# Jalankan dengan Docker
-docker-compose up -d
-
-# Atau jalankan development
+# Setup backend (Cloudflare Workers)
+cd backend-workers
 npm install
+cp .env.example .env
+
+# Setup frontend
+cd ../frontend
+npm install
+cp .env.example .env
 npm run dev
 ```
 
-Lihat [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) untuk panduan deployment lengkap.
-
----
-
-## Changelog
-
-### v1.0.0 (2025) — Initial Release
-
-#### Features
-- Sistem POS offline-first dengan sync otomatis
-- Multi-device real-time updates
-- Cashbook (laporan kas masuk/keluar)
-- Autentikasi dengan refresh token
-- RLS security untuk multi-user
-- UI responsif untuk desktop dan mobile
-
-#### Technical
-- Migrasi database dengan RLS policies
-- Atomic sync engine
-- Edge functions untuk backend logic
-- Docker support untuk production
+Lihat [README.md](./README.md) dan [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) untuk panduan lengkap.
 
 ---
 
 ## Catatan Penting
 
-- **Backup rutin** — Meskipun sistem ini handal, backup database secara berkala tetap disarankan.
+- **Backup rutin** — Backup database secara berkala tetap disarankan.
 - **Update reguler** — Selalu update ke versi terbaru untuk keamanan dan fitur terbaru.
 - **Dokumentasi** — Kunjungi [README.md](./README.md) untuk informasi lebih lengkap.
 

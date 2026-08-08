@@ -2,8 +2,8 @@
 
 Aplikasi PWA all-in-one untuk UMKM Indonesia: kasir/POS, stok, keuangan, dan laporan dalam satu aplikasi.
 
-> **Status:** MVP & Core Features (Batch A-G) Completed
-> **Current Version:** v1.0.0-beta
+> **Status:** MVP & Core Features Completed
+> **Current Version:** v1.1.0-beta
 
 ## Tech Stack
 
@@ -14,6 +14,52 @@ Aplikasi PWA all-in-one untuk UMKM Indonesia: kasir/POS, stok, keuangan, dan lap
 | **Database** | Supabase (PostgreSQL 15+) |
 | **PWA** | @vite-pwa/sveltekit |
 | **CI/CD** | GitHub Actions |
+
+## Fitur
+
+### Sistem Kasir POS
+- Aplikasi kasir (smartphone, tablet, desktop & dual screen)
+- Pembayaran digital dengan QRIS
+- Cetak struk untuk bukti pembayaran
+- Menambahkan pajak per produk
+- Bayar kasbon dengan cicilan
+- Tipe order
+- Biaya layanan per tipe order
+- Status order
+- Cetak tiket pesanan pelanggan
+- Atur tampilan struk
+- Pengaturan meja
+- Catat uang muka untuk sistem pre order
+- Label pembayaran sesuai jenis transaksi
+- Nomor antrian pelanggan
+
+### Inventori Produk
+- Mengelola produk
+- Mengelola stok
+- Export dan ubah produk sekaligus
+- Mengelola bahan baku
+- Pengaturan harga modal
+- Kelola harga grosir
+- Pengingat kedaluarsa produk
+
+### Laporan
+- Laporan penjualan
+- Periode akses laporan
+- Laporan perputaran stok
+
+### Kelola Outlet
+- Kelola outlet utama
+- Atur outlet cabang
+
+### Pegawai
+- Akses pegawai
+- Otorisasi pegawai
+- Absensi pegawai
+- Tugaskan pegawai ke transaksi tertentu
+
+### Strategi Bisnis
+- Kelola diskon
+- Poin loyalitas pelanggan
 
 ## Arsitektur Baru
 Backend yang sebelumnya menggunakan Node.js (Fastify) telah dimigrasikan ke **Cloudflare Workers**. Database lokal PostgreSQL diganti menggunakan **Supabase** (BaaS) agar mendukung skalabilitas, keamanan, dan deployment yang lebih modern. Lihat file `MIGRATION-NOTES.md` untuk rincian migrasi.

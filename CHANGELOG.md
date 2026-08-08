@@ -4,6 +4,24 @@ Semua perubahan signifikan didokumentasikan di sini. Format: versi, tanggal, kat
 
 ---
 
+## [1.1.0] - 2026-08-09
+
+### feat(roadmap): feature set lengkap Qasir — POS, inventori, laporan, outlet, pegawai, strategi bisnis
+
+### Feat
+- **Roadmap** - Kasir POS: pajak per produk, tipe order + biaya layanan, status order, cetak tiket pesanan, atur tampilan struk, pengaturan meja, uang muka pre-order, label pembayaran per jenis transaksi, nomor antrian pelanggan
+- **Roadmap** - Inventori: export & ubah produk sekaligus (bulk), kelola bahan baku, harga grosir, pengingat kedaluarsa produk
+- **Roadmap** - Laporan perputaran stok + periode akses laporan
+- **Roadmap** - Multi-outlet: outlet utama + outlet cabang
+- **Roadmap** - Pegawai: absensi, tugaskan pegawai ke transaksi tertentu
+- **Roadmap** - Strategi bisnis: kelola diskon, poin loyalitas pelanggan
+
+### Docs
+- Rombak README, MARKETING, FAQ, RELEASE_NOTES, CHANGELOG, ARCHITECTURE sesuai set fitur Qasir
+- RELEASE_NOTES dirombak total (stack lama Next.js/React tidak sesuai implementasi Svelte 5/Hono)
+
+---
+
 ## [1.0.0] - 2026-08-08
 
 ### refactor: replace bcryptjs+pdf-lib with Web Crypto, fix sync RPC, purchases IDOR, cashbook pagination, supabase schema

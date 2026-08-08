@@ -721,3 +721,58 @@ Service Worker (frontend/src/service-worker.ts)
 | **`client_transaction_id` idempotency** | UUID dari client → proteksi double-submit, offline retry, dan race condition |
 | **Sync pull (bukan real-time)** | Cost-efficient, cocok untuk use case POS retail |
 | **Service Worker untuk asset cache** | App shell caching → pengalaman offline-first untuk UI shell |
+
+---
+
+## 6. Roadmap Fitur (Set Fitur Qasir)
+
+Arah pengembangan mengacu pada set fitur Qasir (aplikasi kasir UMKM terlengkap). Dibagi 6 kelompok:
+
+### 6.1 Sistem Kasir POS
+- Kasir multi-perangkat (smartphone, tablet, desktop, dual screen)
+- Pembayaran digital QRIS
+- Cetak struk bukti pembayaran
+- Pajak per produk (kolom `tax_percent` di `products`)
+- Kasbon dengan cicilan (sudah ada: `debts` + `debt_payments`)
+- Tipe order + biaya layanan per tipe (tabel `order_types`)
+- Status order (sudah ada: `sales.status`)
+- Cetak tiket pesanan pelanggan
+- Atur tampilan struk (template struk)
+- Pengaturan meja (tabel `tables`)
+- Uang muka pre-order (`sales.down_payment`)
+- Label pembayaran sesuai jenis transaksi
+- Nomor antrian pelanggan
+
+### 6.2 Inventori Produk
+- Kelola produk (sudah ada: `products`)
+- Kelola stok (sudah ada: `product_stock` + warehouse)
+- Export & ubah produk sekaligus (bulk import/export)
+- Kelola bahan baku (tabel `ingredients` / recipe)
+- Pengaturan harga modal (sudah ada: `products.cost_price`)
+- Kelola harga grosir (tabel `wholesale_prices`)
+- Pengingat kedaluarsa produk (`products.expiry_date`)
+
+### 6.3 Laporan
+- Laporan penjualan (sudah ada: `/reports/sales`)
+- Periode akses laporan (filter date range)
+- Laporan perputaran stok (tabel `stock_movements`)
+
+### 6.4 Kelola Outlet
+- Outlet utama (sudah ada: `businesses` / `warehouses`)
+- Outlet cabang (`outlets` tabel, stok & laporan per outlet)
+
+### 6.5 Pegawai
+- Akses pegawai (sudah ada: `users` + `roles`)
+- Otorisasi pegawai (sudah ada: `roles.permissions`)
+- Absensi pegawai (tabel `attendance`)
+- Tugaskan pegawai ke transaksi tertentu (`sales.created_by`)
+
+### 6.6 Strategi Bisnis
+- Kelola diskon (sudah ada: `sale_items.discount`)
+- Poin loyalitas pelanggan (sudah ada: `customers.loyalty_points`)
+
+### Prinsip Implementasi
+1. **Append-style migration** — semua tabel baru ditambahkan sebagai migration idempotent (`CREATE TABLE IF NOT EXISTS`), tidak mengubah tabel existing.
+2. **RLS mengikuti pola existing** — setiap tabel baru punya policy `business_id` scope + service_role bypass.
+3. **RPC atomic** untuk operasi multi-tabel (ikuti pola `process_sale()`).
+4. **Frontend route baru** mengikuti pola `(app)/` + komponen ui yang ada.

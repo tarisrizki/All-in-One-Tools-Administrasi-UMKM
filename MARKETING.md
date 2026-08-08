@@ -3,7 +3,7 @@
 ---
 
 ## Headline
-**Sistem Kasir Gratis untuk UMKM Indonesia**
+**Aplikasi Kasir Lengkap & Terjangkau untuk UMKM Indonesia**
 
 ## Sub-headline
 Offline-first • Multi-device • Open-source
@@ -21,13 +21,47 @@ Stok otomatis ter-update setiap penjualan. Minimum stok? Langsung ada notifikasi
 ❌ **Laporan Manual yang Ribet?**
 Export laporan penjualan & stok dalam hitungan detik. Lewat HP, laptop, atau tablet — langsung jadi. Nggak perlu hitung satu-satu di buku.
 
+❌ **Kasbon Nunggak & Pelanggan Lupa Bayar?**
+Catat kasbon dengan cicilan, ada pengingat jatuh tempo. Uang muka pre-order juga tercatat rapi.
+
 ---
 
 ## Fitur Unggulan
 
-✅ **Offline-First** — Tetap bisa transaksi tanpa internet, sync otomatis saat online
-✅ **Multi-Device** — Akses dari HP, tablet, atau komputer — semua karyawan bisa gleichzeitig
-✅ **Open-Source & Gratis** — Kode sumber terbuka, tanpa biaya langganan sepeserpun
+### 💳 Sistem Kasir POS
+✅ Kasir multi-perangkat (HP, tablet, desktop, dual screen)
+✅ Pembayaran digital QRIS + tunai + transfer
+✅ Cetak struk & tiket pesanan pelanggan
+✅ Pajak per produk
+✅ Kasbon dengan cicilan
+✅ Tipe order + biaya layanan per tipe
+✅ Status order & nomor antrian pelanggan
+✅ Pengaturan meja & tampilan struk
+✅ Uang muka untuk pre-order
+
+### 📦 Inventori Produk
+✅ Kelola produk & stok real-time
+✅ Export & ubah produk sekaligus (bulk)
+✅ Kelola bahan baku
+✅ Pengaturan harga modal & harga grosir
+✅ Pengingat kedaluarsa produk
+
+### 📊 Laporan
+✅ Laporan penjualan real-time
+✅ Periode akses laporan fleksibel
+✅ Laporan perputaran stok
+
+### 🏪 Kelola Outlet
+✅ Outlet utama + outlet cabang
+
+### 👥 Pegawai
+✅ Akses & otorisasi pegawai per outlet
+✅ Absensi pegawai
+✅ Tugaskan pegawai ke transaksi tertentu
+
+### 🎯 Strategi Bisnis
+✅ Kelola diskon
+✅ Poin loyalitas pelanggan
 
 ---
 

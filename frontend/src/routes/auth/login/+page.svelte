@@ -67,6 +67,14 @@
 		$form.phone = DEMO_PHONE;
 		$form.password = DEMO_PASS;
 	}
+
+	function loginDemo() {
+		// Isi field langsung di DOM lalu submit — kredensial tidak pernah ditampilkan
+		const f = document.getElementById('login-form') as HTMLFormElement;
+		(f.querySelector('input[name=phone]') as HTMLInputElement).value = DEMO_PHONE;
+		(f.querySelector('input[name=password]') as HTMLInputElement).value = DEMO_PASS;
+		f.requestSubmit();
+	}
 </script>
 
 <svelte:head>
@@ -96,17 +104,16 @@
 			</Card.Header>
 
 			<Card.Content class="px-8 pb-8">
-				<!-- Demo credentials banner -->
+				<!-- Demo: klik langsung login, kredensial tersembunyi -->
 				<button
 					type="button"
-					onclick={fillDemo}
-					class="w-full bg-brand-soft border border-brand/20 rounded-xl p-3.5 mb-6 text-left hover:bg-brand/10 transition-colors cursor-pointer min-h-0"
+					onclick={loginDemo}
+					disabled={loading}
+					class="w-full h-12 rounded-xl font-bold text-base mb-6 transition-all duration-300 hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-2 cursor-pointer min-h-0"
+					style="background: var(--color-brand); color: white"
 				>
-					<p class="font-mono text-[10.5px] font-bold text-brand uppercase tracking-wider mb-1.5">✨ Akun Demo — Klik untuk isi otomatis</p>
-					<div class="flex gap-4">
-						<span class="text-xs text-ink-soft">📱 <span class="font-mono font-bold text-ink">{DEMO_PHONE}</span></span>
-						<span class="text-xs text-ink-soft">🔑 <span class="font-mono font-bold text-ink">{DEMO_PASS}</span></span>
-					</div>
+					<span class="w-2 h-2 rounded-full flex-shrink-0" style="background: #C9891A"></span>
+					Masuk sebagai Demo
 				</button>
 
 				{#if errorMsg}
@@ -116,7 +123,7 @@
 					</div>
 				{/if}
 
-				<form method="POST" use:enhance class="space-y-5">
+				<form method="POST" use:enhance id="login-form" class="space-y-5">
 					<div class="space-y-2">
 						<Label for="phone" class="text-xs font-bold uppercase tracking-widest text-muted-foreground font-mono">Nomor HP</Label>
 						<Input

@@ -153,7 +153,7 @@
 
 		<div class="hidden md:flex items-center gap-3">
 			<a href="/auth/login" class="font-bold text-[15px] text-ink hover:text-brand transition-colors min-h-0 px-2">Masuk</a>
-			<Button href="/auth/register" class="bg-cta hover:bg-cta-dark text-white rounded-lg font-bold px-5 h-10">Coba Gratis</Button>
+			<Button href="/auth/register" class="bg-cta hover:bg-cta-dark text-white rounded-lg font-bold px-5 h-10">Register</Button>
 		</div>
 
 		<!-- Mobile burger -->
@@ -178,7 +178,7 @@
 			{#each [['#fitur','Fitur'],['#cara-kerja','Cara Kerja'],['#kalkulator','Kalkulator'],['#harga','Harga'],['#faq','FAQ']] as [href, label]}
 				<a {href} class="text-ink-soft hover:text-brand" onclick={() => mobileMenuOpen = false}>{label}</a>
 			{/each}
-			<Button href="/auth/register" class="bg-cta text-white font-bold px-8 h-12 rounded-xl mt-4" onclick={() => mobileMenuOpen = false}>Coba Gratis</Button>
+			<Button href="/auth/register" class="bg-cta text-white font-bold px-8 h-12 rounded-xl mt-4" onclick={() => mobileMenuOpen = false}>Register</Button>
 		</div>
 	{/if}
 </header>
@@ -202,7 +202,7 @@
 				</p>
 				<div class="flex gap-4 flex-wrap">
 					<Button href="/auth/register" class="bg-cta hover:bg-cta-dark text-white font-bold h-12 px-7 rounded-lg gap-2 text-base shadow-lg">
-						Coba Gratis <ArrowRight class="w-5 h-5" />
+						Register <ArrowRight class="w-5 h-5" />
 					</Button>
 					<Button href="#cara-kerja" variant="outline" class="h-12 px-7 rounded-lg font-bold text-base border-border text-ink hover:border-ink hover:bg-muted/50">
 						Lihat Cara Kerja
@@ -512,7 +512,7 @@
 						<li class="flex items-start gap-2.5 text-[14px] leading-snug"><Check class="w-3 h-3 flex-shrink-0 mt-0.5" style="color: #C9891A" />{item}</li>
 					{/each}
 				</ul>
-				<Button href="/auth/register" class="w-full h-12 font-bold rounded-lg bg-white text-brand hover:bg-white/90">Coba Gratis 14 Hari</Button>
+				<Button href="/auth/register" class="w-full h-12 font-bold rounded-lg bg-white text-brand hover:bg-white/90">Register</Button>
 			</div>
 
 			<!-- Business -->
@@ -570,7 +570,7 @@
 		<h2 class="font-grotesk font-bold text-[clamp(1.8rem,1.4rem+1.6vw,2.6rem)] text-white mb-4 reveal">Saatnya Bisnis Anda Naik Level</h2>
 		<p class="text-white/90 text-[1.1rem] max-w-[520px] mx-auto mb-9 reveal">Gabung dengan ribuan pelaku usaha yang sudah bikin urusan toko mereka lebih beres.</p>
 		<div class="flex gap-4 justify-center flex-wrap reveal">
-			<Button href="/auth/register" class="bg-white text-brand hover:bg-white/90 font-bold h-14 px-8 rounded-lg text-[15.5px]">Coba Gratis Sekarang</Button>
+			<Button href="/auth/register" class="bg-white text-brand hover:bg-white/90 font-bold h-14 px-8 rounded-lg text-[15.5px]">Register</Button>
 			<Button href="/auth/login" variant="outline" class="h-14 px-8 rounded-lg font-bold text-[15.5px] text-white hover:text-white hover:bg-white/10" style="border-color: rgba(255,255,255,.35)">
 				Masuk ke Akun
 			</Button>

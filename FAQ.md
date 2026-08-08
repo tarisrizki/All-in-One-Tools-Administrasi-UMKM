@@ -4,6 +4,19 @@ Pertanyaan yang sering diajukan tim penjualan & operasional. Jawaban dibuat konk
 
 ---
 
+## Q0: Fitur apa saja yang tersedia di aplikasi ini?
+
+Aplikasi mencakup 6 kelompok fitur (set fitur mengacu pada standar Qasir):
+
+1. **Sistem Kasir POS** — kasir multi-perangkat, QRIS, cetak struk, pajak per produk, kasbon cicilan, tipe order + biaya layanan, status order, tiket pesanan, atur tampilan struk, meja, uang muka pre-order, label pembayaran, nomor antrian
+2. **Inventori Produk** — kelola produk & stok, export/ubah massal, bahan baku, harga modal, harga grosir, pengingat kedaluarsa
+3. **Laporan** — penjualan, periode akses, perputaran stok
+4. **Kelola Outlet** — outlet utama + cabang
+5. **Pegawai** — akses, otorisasi, absensi, penugasan transaksi
+6. **Strategi Bisnis** — diskon, poin loyalitas pelanggan
+
+---
+
 ## Q1: Cara reset password karyawan
 
 **Langkah:**
@@ -147,3 +160,78 @@ Error ini biasanya terjadi karena salah satu kondisi berikut:
 | **Piutang & keuangan** | ✅ Bisa dicatat | ✅ Bisa dicatat |
 
 > **Tips:** Beralih ke mode online dengan memastikan **WiFi/Data seluler aktif**. Ikon status di pojok aplikasi menunjukkan mode saat ini.
+
+---
+
+## Q9: Cara atur pajak per produk
+
+**Langkah:**
+
+1. Login sebagai **Admin / Owner**.
+2. Buka menu **Produk** → pilih produk yang ingin diatur pajaknya.
+3. Isi kolom **Pajak (%)** pada detail produk.
+4. Simpan — saat transaksi, pajak produk akan otomatis dihitung dan dicantumkan di struk.
+
+> **Catatan:** Pajak bersifat per produk (bukan global), sehingga produk bebas pajak dan ber-pajak bisa dicampur dalam satu transaksi.
+
+---
+
+## Q10: Cara pakai tipe order & biaya layanan
+
+1. Buka **Pengaturan > Tipe Order**.
+2. Tambah tipe order (misal: **Dine In**, **Take Away**, **Delivery**).
+3. Atur **biaya layanan** per tipe order (boleh 0 jika gratis).
+4. Saat transaksi di kasir, pilih tipe order — biaya layanan otomatis ditambahkan ke total.
+
+> **Catatan:** Biaya layanan per tipe order memungkinkan restoran membedakan tarif makan di tempat vs take away.
+
+---
+
+## Q11: Cara buat pre-order dengan uang muka
+
+1. Di kasir, buat transaksi seperti biasa lalu pilih status **Pre-Order**.
+2. Catat **uang muka (DP)** yang diterima dari pelanggan.
+3. Sistem mencatat sisa tagihan sebagai piutang; saat barang datang, pelunasan dicatat dari menu **Piutang**.
+
+> **Catatan:** Nomor antrian pelanggan otomatis diberikan untuk pre-order agar pesanan tertib.
+
+---
+
+## Q12: Cara kelola harga grosir
+
+1. Buka **Produk** → pilih produk → buka tab **Harga Grosir**.
+2. Tambah tingkat harga: misal **min. 10 pcs = Rp9.000**, **min. 50 pcs = Rp8.500**.
+3. Saat kasir memasukkan qty yang memenuhi syarat, harga grosir otomatis terpakai.
+
+> **Catatan:** Harga grosir berlaku otomatis berdasarkan kuantitas, tanpa perlu pilih manual.
+
+---
+
+## Q13: Cara set pengingat kedaluarsa produk
+
+1. Buka **Produk** → isi kolom **Tanggal Kedaluarsa** saat tambah/edit produk.
+2. Sistem memberi notifikasi saat produk mendekati tanggal kedaluarsa.
+3. Gunakan laporan **Perputaran Stok** untuk melihat produk yang mendekati kedaluarsa sekaligus.
+
+> **Catatan:** Berlaku untuk produk dengan masa simpan (makanan/minuman, obat, kosmetik).
+
+---
+
+## Q14: Cara atur outlet cabang
+
+1. Buka **Pengaturan > Outlet**.
+2. Outlet pertama otomatis menjadi **outlet utama**.
+3. Klik **+ Tambah Outlet** untuk membuat cabang, isi nama & alamat.
+4. Pegawai bisa ditambahkan per outlet; stok dan laporan bisa difilter per outlet.
+
+> **Catatan:** Transaksi di kasir otomatis tercatat ke outlet aktif. Laporan bisa ditampilkan per outlet atau gabungan semua outlet.
+
+---
+
+## Q15: Cara catat absensi pegawai
+
+1. Buka menu **Pegawai** → pilih karyawan.
+2. Gunakan fitur **Absensi** untuk mencatat kehadiran (masuk/pulang).
+3. Riwayat absensi tersimpan dan bisa diexport untuk keperluan penggajian.
+
+> **Catatan:** Otorisasi pegawai diatur di **Pengaturan > Peran & Izin** — misal kasir hanya bisa transaksi, supervisor bisa lihat laporan.
