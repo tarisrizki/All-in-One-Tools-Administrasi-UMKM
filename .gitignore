@@ -64,7 +64,7 @@ prompt.md
 graphify-out/
 
 # internal docs not pushed
-docs/
+docs/*
 !docs/README.md
 
 # flutter/tauri generated
