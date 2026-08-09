@@ -299,3 +299,53 @@ describe('Stock Opname Flow', () => {
     expect(mockEq).toHaveBeenCalledWith('status', 'draft');
   });
 });
+
+describe('FEFO boundary — qty 0/-1/max, expired batch skip', () => {
+  const mockOpnameId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const mockProductId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const mockWarehouseId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  test('counted_qty 0 accepted (boundary qty 0)', async () => {
+    mockSingle.mockResolvedValueOnce({ data: { warehouse_id: mockWarehouseId }, error: null });
+    mockInsert.mockResolvedValueOnce({ data: [], error: null });
+    const req = new Request(`http://localhost/stock-opnames/${mockOpnameId}/items`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ product_id: mockProductId, system_qty: 10, counted_qty: 0 }])
+    });
+    const res = await worker.fetch(req, { JWT_SECRET: 'test' });
+    expect(res.status).toBe(200);
+  });
+  test('counted_qty -1 accepted (negative variance)', async () => {
+    mockSingle.mockResolvedValueOnce({ data: { warehouse_id: mockWarehouseId }, error: null });
+    mockInsert.mockResolvedValueOnce({ data: [], error: null });
+    const req = new Request(`http://localhost/stock-opnames/${mockOpnameId}/items`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ product_id: mockProductId, system_qty: 10, counted_qty: -1 }])
+    });
+    const res = await worker.fetch(req, { JWT_SECRET: 'test' });
+    expect(res.status).toBe(200);
+  });
+  test('counted_qty max 2147483647 accepted', async () => {
+    mockSingle.mockResolvedValueOnce({ data: { warehouse_id: mockWarehouseId }, error: null });
+    mockInsert.mockResolvedValueOnce({ data: [], error: null });
+    const req = new Request(`http://localhost/stock-opnames/${mockOpnameId}/items`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ product_id: mockProductId, system_qty: 10, counted_qty: 2147483647 }])
+    });
+    const res = await worker.fetch(req, { JWT_SECRET: 'test' });
+    expect(res.status).toBe(200);
+  });
+  test('expired batch skip: approve delegates to RPC and succeeds', async () => {
+    mockRpc.mockResolvedValueOnce({ data: { id: mockOpnameId, status: 'approved', message: 'Stock opname disetujui dan stok disesuaikan' }, error: null });
+    const req = new Request(`http://localhost/stock-opnames/${mockOpnameId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'FEFO skip expired', approved_by: mockOpnameId })
+    });
+    const res = await worker.fetch(req, { JWT_SECRET: 'test' });
+    expect(res.status).toBe(200);
+    expect(mockRpc).toHaveBeenCalledWith('approve_stock_opname', expect.objectContaining({ p_opname_id: mockOpnameId }));
+  });
+});

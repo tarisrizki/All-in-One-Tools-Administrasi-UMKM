@@ -124,3 +124,12 @@ test('IDOR Protection: POST /purchases must enforce business ownership of wareho
   // Verify warehouse lookup is scoped
   expect(mockEq).toHaveBeenCalledWith('business_id', 'biz-A');
 });
+
+test('FEFO boundary — qty 0/-1 guards', async () => {
+const mkSales = (qty:number) => new Request('http://localhost/sales', {
+method: 'POST', headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' },
+body: JSON.stringify({ items: [{ productId: '00000000-0000-4000-8000-000000000001', qty, price: 10000, discount: 0 }], payments: [{ method: 'cash', amount: 10000 }] })
+});
+expect((await worker.fetch(mkSales(0))).status).toBe(400);
+expect((await worker.fetch(mkSales(-1))).status).toBe(400);
+});

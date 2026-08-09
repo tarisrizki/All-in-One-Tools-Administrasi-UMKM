@@ -23,8 +23,7 @@ import { aiRoute } from './modules/ai';
 import { stockOpnamesRoute } from './modules/stock_opnames';
 import { paymentsRoute, webhookRoute } from './modules/payments';
 // WS-05/07: orders & outlets modules — migrasi sudah ada, route ditunda ke iterasi berikutnya
-// import { ordersRoute } from './modules/orders';
-// import { outletsRoute } from './modules/outlets';
+import { ordersRoute } from './modules/orders';
 import { getSupabase } from './utils/supabase';
 import { getEnv } from './utils/env';
 import { rateLimitMiddleware } from './middleware/rateLimit';
@@ -126,8 +125,9 @@ app.route('/ai', aiRoute);
 app.route('/stock-opnames', stockOpnamesRoute);
 app.route('/payments', paymentsRoute);
 app.route('/webhooks', webhookRoute);
-// WS-05/07: /orders & /outlets pending module
-// app.route('/orders', ordersRoute);
+app.route('/orders', ordersRoute);
+// WS-07 outlets pending module
+
 // app.route('/outlets', outletsRoute);
 
 export default {

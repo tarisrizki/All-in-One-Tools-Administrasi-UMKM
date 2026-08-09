@@ -59,8 +59,13 @@ vi.mock('../src/utils/supabase', () => ({
 	}))
 }));
 
-beforeEach(() => {
+	beforeEach(() => {
 	vi.clearAllMocks();
+	(mockRPC as any).mockReset?.();
+	(mockSingle as any).mockReset?.();
+	mockSelect.mockReturnValue(createChain());
+	mockEq.mockReturnValue(createChain());
+	mockIn.mockReturnValue(createChain());
 	Object.keys(tableMocks).forEach(k => delete tableMocks[k]);
 });
 
@@ -270,7 +275,62 @@ describe('Sync Pull - GET /sync/pull', () => {
 		const res = await worker.fetch(req, { JWT_SECRET: 'test' });
 		const json = await res.json();
 
-		expect(res.status).toBe(200);
-		expect(json.success).toBe(true);
+	expect(res.status).toBe(200);
+	expect(json.success).toBe(true);
+	});
+});
+
+describe('FEFO boundary — sync', () => {
+test('qty 0 rejected by zod min(1) on sync/push items', async () => {
+		const tx = { client_transaction_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', items: [{ productId: '11111111-1111-4111-8111-111111111111', qty: 0, price: 10000, discount: 0 }], payments: [{ method: 'cash', amount: 0 }] };
+		const res = await worker.fetch(new Request('http://localhost/sync/push', { method: 'POST', headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' }, body: JSON.stringify({ transactions: [tx] }) }));
+	expect(res.status).toBe(400);
+	});
+test('qty -1 rejected by zod min(1)', async () => {
+		const tx = { client_transaction_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', items: [{ productId: '11111111-1111-4111-8111-111111111111', qty: -1, price: 10000, discount: 0 }], payments: [{ method: 'cash', amount: 0 }] };
+		const res = await worker.fetch(new Request('http://localhost/sync/push', { method: 'POST', headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' }, body: JSON.stringify({ transactions: [tx] }) }));
+	expect(res.status).toBe(400);
+	});
+test('client_transaction_id duplicate treated as idempotent success', async () => {
+		const cid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+		const tx = { client_transaction_id: cid, items: [{ productId: '11111111-1111-4111-8111-111111111111', qty: 2, price: 50000, discount: 0 }], payments: [{ method: 'cash', amount: 100000 }] };
+		mockSingle.mockResolvedValue({ data: { id: 'warehouse-1' }, error: null });
+		tableMocks['warehouses'] = { select: () => ({ eq: () => ({ eq: () => ({ limit: () => ({ single: () => Promise.resolve({ data: { id: 'warehouse-1' }, error: null }) }) }) }) }) } as any;
+		const productChain: any = { eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis() };
+		productChain.then = (resolve: any) => resolve({ data: [{ id: tx.items[0].productId }], error: null });
+		// @ts-ignore
+		tableMocks['products'] = { select: vi.fn(() => productChain) };
+		// 23505 + existing → idempotent success
+		mockRPC.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } });
+		const salesChain: any = { eq: vi.fn().mockReturnThis() };
+		salesChain.maybeSingle = vi.fn().mockResolvedValue({ data: { id: 'existing' }, error: null });
+		// @ts-ignore
+		tableMocks['sales'] = { select: vi.fn(() => salesChain) } as any;
+		const res = await worker.fetch(new Request('http://localhost/sync/push', { method: 'POST', headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' }, body: JSON.stringify({ transactions: [tx] }) }));
+		const json = await res.json();
+	expect(res.status).toBe(200);
+	expect(json.data.results[0].success).toBe(true);
+	expect(json.data.results[0].error).toBeNull();
+	expect(json.data.results[0].clientTransactionId).toBe(cid);
+	});
+test('insufficient stock error message Stok tidak mencukupi bubbles via per-item error', async () => {
+		const tx = { client_transaction_id: '44444444-4444-4ddd-8ddd-444444444444', items: [{ productId: '11111111-1111-4111-8111-111111111111', qty: 999, price: 50000, discount: 0 }], payments: [{ method: 'cash', amount: 100000 }] };
+		tableMocks['sales'] = { select: (...args: any[]) => {
+			const opts = args[1] as any;
+			if (opts && opts.head) return { eq: () => Promise.resolve({ count: 0, error: null }) } as any;
+			return { select: () => ({}) } as any;
+		} } as any;
+		tableMocks['warehouses'] = { select: () => ({ eq: () => ({ eq: () => ({ limit: () => ({ single: () => Promise.resolve({ data: { id: 'warehouse-1' }, error: null }) }) }) }) }) } as any;
+		mockSingle.mockResolvedValue({ data: { id: 'warehouse-1' }, error: null });
+		const productChain: any = { eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis() };
+		productChain.then = (resolve: any) => resolve({ data: [{ id: tx.items[0].productId }], error: null });
+		// @ts-ignore
+		tableMocks['products'] = { select: vi.fn(() => productChain) };
+		mockRPC.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'Stok tidak mencukupi untuk produk 11111111-1111-4111-8111-111111111111' } } as any);
+		const res = await worker.fetch(new Request('http://localhost/sync/push', { method: 'POST', headers: { 'Authorization': 'Bearer fake', 'Content-Type': 'application/json' }, body: JSON.stringify({ transactions: [tx] }) }));
+		const json = await res.json();
+	expect(res.status).toBe(200);
+	expect(json.data.results[0].success).toBe(false);
+	expect(json.data.results[0].error).toContain('Stok tidak mencukupi');
 	});
 });

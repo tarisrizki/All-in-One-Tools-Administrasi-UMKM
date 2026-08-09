@@ -69,6 +69,26 @@ BEGIN
   END IF;
 END $$;
 
+-- 1b) safe expand for legacy orders(id) only (portal) — ADD COLUMN IF NOT EXISTS per zero-downtime
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='business_id') THEN ALTER TABLE orders ADD COLUMN business_id uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='outlet_id') THEN ALTER TABLE orders ADD COLUMN outlet_id uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='session_id') THEN ALTER TABLE orders ADD COLUMN session_id uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='table_number') THEN ALTER TABLE orders ADD COLUMN table_number text; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='order_type') THEN ALTER TABLE orders ADD COLUMN order_type text DEFAULT 'dine_in'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='status') THEN ALTER TABLE orders ADD COLUMN status text DEFAULT 'draft'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='subtotal') THEN ALTER TABLE orders ADD COLUMN subtotal numeric DEFAULT 0; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='grand_total') THEN ALTER TABLE orders ADD COLUMN grand_total numeric DEFAULT 0; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='customer_id') THEN ALTER TABLE orders ADD COLUMN customer_id uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='customer_name') THEN ALTER TABLE orders ADD COLUMN customer_name text; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='customer_phone') THEN ALTER TABLE orders ADD COLUMN customer_phone text; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='notes') THEN ALTER TABLE orders ADD COLUMN notes text; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='created_by') THEN ALTER TABLE orders ADD COLUMN created_by uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='created_at') THEN ALTER TABLE orders ADD COLUMN created_at timestamptz DEFAULT now(); END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='updated_at') THEN ALTER TABLE orders ADD COLUMN updated_at timestamptz DEFAULT now(); END IF;
+END $$;
+
 -- idempotent: tambah kolom jika migrasi lama belum punya
 DO $$
 BEGIN
@@ -101,6 +121,18 @@ CREATE TABLE IF NOT EXISTS order_items (
   created_at  timestamptz DEFAULT now()
 );
 
+-- 2b) safe expand order_items legacy id-only
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='order_id') THEN ALTER TABLE order_items ADD COLUMN order_id uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='product_id') THEN ALTER TABLE order_items ADD COLUMN product_id uuid; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='qty') THEN ALTER TABLE order_items ADD COLUMN qty integer CHECK (qty > 0); END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='price') THEN ALTER TABLE order_items ADD COLUMN price numeric CHECK (price >= 0); END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='discount') THEN ALTER TABLE order_items ADD COLUMN discount numeric DEFAULT 0; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='notes') THEN ALTER TABLE order_items ADD COLUMN notes text; END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='created_at') THEN ALTER TABLE order_items ADD COLUMN created_at timestamptz DEFAULT now(); END IF;
+END $$;
+
 -- 3) order_status_history
 CREATE TABLE IF NOT EXISTS order_status_history (
   id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -126,6 +158,14 @@ CREATE TABLE IF NOT EXISTS kitchen_tickets (
   updated_at    timestamptz DEFAULT now(),
   UNIQUE(business_id, ticket_number)
 );
+
+-- 4b) ensure outlet_id on dining_tables idempotent
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='dining_tables' AND column_name='outlet_id') THEN
+    ALTER TABLE dining_tables ADD COLUMN outlet_id uuid;
+  END IF;
+END $$;
 
 -- 5) indexes
 CREATE INDEX IF NOT EXISTS idx_dining_tables_business_id ON dining_tables(business_id);

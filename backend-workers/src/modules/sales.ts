@@ -452,7 +452,15 @@ salesRoute.openapi(createRouteDef, async (c) => {
             p_customer_phone: dataObj.customerPhone || null,
           });
 
-          if (rpcError) throw rpcError;
+          if (rpcError) {
+            if ((rpcError as any).code === '23505' || String((rpcError as any).message || '').includes('duplicate')) {
+              const { data: existing } = await supabase.from('sales').select('id').eq('business_id', businessId).eq('client_transaction_id', clientTxId).maybeSingle();
+              if (existing) {
+                return (c as any).json({ success: true, data: { id: existing.id, duplicate: true, duplicate_ignored: true } }, 200);
+              }
+            }
+            throw rpcError;
+          }
           // WS-07: bind outlet_id tanpa ubah ledger (process_sale tetap atomic)
           if (!result?.duplicate && outletId && result?.id) {
             await supabase.from('sales').update({ outlet_id: outletId }).eq('id', result.id).eq('business_id', businessId);
