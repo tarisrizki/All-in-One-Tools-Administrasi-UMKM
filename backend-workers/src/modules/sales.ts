@@ -291,6 +291,7 @@ salesRoute.openapi(createRouteDef, async (c) => {
   const supabase = getSupabase(c.env);
   const businessId = c.get('businessId');
   const userId = c.get('userId');
+  const outletId = (c as any).get('outletId') || null;
 
   try {
     const dataObj = c.req.valid('json');
@@ -386,78 +387,85 @@ salesRoute.openapi(createRouteDef, async (c) => {
           let subtotal = 0;
           let discountTotal = 0;
           for (const item of enrichedItems) {
-            subtotal += item.price * item.qty;
-            discountTotal += item.discount * item.qty;
+            subtotal += (item as any).price * (item as any).qty;
+            discountTotal += (item as any).discount * (item as any).qty;
           }
 
-    // 4. Loyalty points
-    let appliedRedeemPoints = 0;
-    let earnedPoints = 0;
-    if (dataObj.customerId) {
-      const { data: custData } = await supabase
-        .from('customers')
-        .select('loyalty_points')
-        .eq('id', dataObj.customerId)
-        .eq('business_id', businessId)
-        .single();
-      if (!custData) throw new Error("Pelanggan tidak ditemukan");
+          // 4. Loyalty points
+          let appliedRedeemPoints = 0;
+          let earnedPoints = 0;
+          if (dataObj.customerId) {
+            const { data: custData } = await supabase
+              .from('customers')
+              .select('loyalty_points')
+              .eq('id', dataObj.customerId)
+              .eq('business_id', businessId)
+              .single();
+            if (!custData) throw new Error("Pelanggan tidak ditemukan");
 
-      if (dataObj.redeemPoints && dataObj.redeemPoints > 0) {
-        if (custData.loyalty_points < dataObj.redeemPoints) {
-          throw new Error("Poin pelanggan tidak mencukupi untuk di-redeem.");
-        }
-        appliedRedeemPoints = dataObj.redeemPoints;
-        discountTotal += appliedRedeemPoints * 100;
-      }
-    }
+            if (dataObj.redeemPoints && dataObj.redeemPoints > 0) {
+              if (custData.loyalty_points < dataObj.redeemPoints) {
+                throw new Error("Poin pelanggan tidak mencukupi untuk di-redeem.");
+              }
+              appliedRedeemPoints = dataObj.redeemPoints;
+              discountTotal += appliedRedeemPoints * 100;
+            }
+          }
 
-    const grandTotal = subtotal - discountTotal;
-    if (dataObj.customerId) {
-      earnedPoints = Math.floor(grandTotal / 10000);
-    }
+          const grandTotal = subtotal - discountTotal;
+          if (dataObj.customerId) {
+            earnedPoints = Math.floor(grandTotal / 10000);
+          }
 
-    // 5. Proses seluruh transaksi dalam SATU transaksi DB (atomic, rollback jika gagal).
-    // process_sale() di supabase-rls.sql menangani: idempotency, insert sale + items,
-        // pengurangan stok (FOR UPDATE, tolak negatif), payments, status, piutang, loyalty.
-        const { count: saleCount } = await supabase
-          .from('sales')
-          .select('*', { count: 'exact', head: true })
-          .eq('business_id', businessId);
-        const invoiceNumber = `INV/${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}/${String((saleCount || 0) + 1).padStart(5, '0')}-${crypto.randomUUID().slice(0, 6)}`;
+          // 5. Proses seluruh transaksi dalam SATU transaksi DB (atomic, rollback jika gagal).
+          // process_sale() di supabase-rls.sql menangani: idempotency, insert sale + items,
+          // pengurangan stok (FOR UPDATE, tolak negatif), payments, status, piutang, loyalty.
+          const { count: saleCount } = await supabase
+            .from('sales')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', businessId);
+          const invoiceNumber = `INV/${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}/${String((saleCount || 0) + 1).padStart(5, '0')}-${crypto.randomUUID().slice(0, 6)}`;
 
-        const { data: result, error: rpcError } = await supabase.rpc('process_sale', {
-          p_business_id: businessId,
-          p_warehouse_id: warehouseId,
-          p_customer_id: dataObj.customerId || null,
-          p_client_transaction_id: clientTxId,
-          p_invoice_number: invoiceNumber,
-          p_subtotal: subtotal,
-          p_discount_total: discountTotal,
-          p_grand_total: grandTotal,
-          p_created_by: userId,
-          p_items: enrichedItems.map((i) => ({
-            product_id: i.productId,
-            qty: i.qty,
-            price: i.price,
-            discount: i.discount,
-            batch_id: i.batchId,
-            price_source: i.priceSource,
-            price_list_name: i.priceListName,
-          })),
-          p_payments: dataObj.payments.map((p) => ({ method: p.method, amount: p.amount })),
-          p_redeem_points: appliedRedeemPoints,
-          p_earned_points: earnedPoints,
-          p_customer_name: dataObj.customerName || null,
-          p_customer_phone: dataObj.customerPhone || null,
-        });
+          const { data: result, error: rpcError } = await supabase.rpc('process_sale', {
+            p_business_id: businessId,
+            p_warehouse_id: warehouseId,
+            p_customer_id: dataObj.customerId || null,
+            p_client_transaction_id: clientTxId,
+            p_invoice_number: invoiceNumber,
+            p_subtotal: subtotal,
+            p_discount_total: discountTotal,
+            p_grand_total: grandTotal,
+            p_created_by: userId,
+            p_items: enrichedItems.map((i) => ({
+              product_id: i.productId,
+              qty: i.qty,
+              price: i.price,
+              discount: i.discount,
+              batch_id: i.batchId,
+              price_source: i.priceSource,
+              price_list_name: i.priceListName,
+            })),
+            p_payments: dataObj.payments.map((p) => ({ method: p.method, amount: p.amount })),
+            p_redeem_points: appliedRedeemPoints,
+            p_earned_points: earnedPoints,
+            p_customer_name: dataObj.customerName || null,
+            p_customer_phone: dataObj.customerPhone || null,
+          });
 
-    if (rpcError) throw rpcError;
+          if (rpcError) throw rpcError;
+          // WS-07: bind outlet_id tanpa ubah ledger (process_sale tetap atomic)
+          if (!result?.duplicate && outletId && result?.id) {
+            await supabase.from('sales').update({ outlet_id: outletId }).eq('id', result.id).eq('business_id', businessId);
+          }
 
-    if (result?.duplicate) {
-      return c.json({ success: true, message: "Transaksi sudah ada", data: { id: result.id } }, 200);
-    }
+          if (result?.duplicate) {
+            return c.json({ success: true, message: "Transaksi sudah ada", data: { id: result.id } }, 200);
+          }
 
-    return c.json({ success: true, data: keysToCamel(result) }, 201);
+          return c.json({ success: true, data: keysToCamel(result) }, 201);
+        } else {
+          throw new Error("Items tidak boleh kosong");
+        } // end if (productIds.length > 0)
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : (err.message || "Gagal memproses transaksi");
     return c.json({ success: false, error: { message: msg } }, 400);

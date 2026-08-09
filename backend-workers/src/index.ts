@@ -20,11 +20,25 @@ import { rolesRoute } from './modules/roles';
 import { settingsRoute } from './modules/settings';
 import { syncRoute } from './modules/sync';
 import { aiRoute } from './modules/ai';
+import { stockOpnamesRoute } from './modules/stock_opnames';
+import { paymentsRoute, webhookRoute } from './modules/payments';
+// WS-05/07: orders & outlets modules — migrasi sudah ada, route ditunda ke iterasi berikutnya
+// import { ordersRoute } from './modules/orders';
+// import { outletsRoute } from './modules/outlets';
 import { getSupabase } from './utils/supabase';
 import { getEnv } from './utils/env';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
 const app = new OpenAPIHono<{ Bindings: any }>();
+
+// Body size limit middleware (~5MB) - returns 413 if exceeded
+app.use('*', async (c, next) => {
+  const contentLength = c.req.header('content-length');
+  if (contentLength && parseInt(contentLength, 10) > 5 * 1024 * 1024) {
+    return c.json({ success: false, error: { message: 'Ukuran body melebihi batas 5MB' } }, 413);
+  }
+  await next();
+});
 
 app.use('*', logger());
 app.use('*', async (c, next) => {
@@ -109,6 +123,12 @@ app.route('/roles', rolesRoute);
 app.route('/settings', settingsRoute);
 app.route('/sync', syncRoute);
 app.route('/ai', aiRoute);
+app.route('/stock-opnames', stockOpnamesRoute);
+app.route('/payments', paymentsRoute);
+app.route('/webhooks', webhookRoute);
+// WS-05/07: /orders & /outlets pending module
+// app.route('/orders', ordersRoute);
+// app.route('/outlets', outletsRoute);
 
 export default {
   fetch: app.fetch,

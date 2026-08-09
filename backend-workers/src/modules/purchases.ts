@@ -143,14 +143,9 @@ purchasesRoute.openapi(listRoute, async (c) => {
   const businessId = c.get('businessId');
 
   try {
-    const { data, error } = await supabase
-      .from('purchase_orders')
-      .select('*, suppliers(name), warehouses(name)')
-      .eq('business_id', businessId)
-      // Scope join ke tabel milik bisnis ini (anti-IDOR via service_role bypass)
-      .eq('suppliers.business_id', businessId)
-      .eq('warehouses.business_id', businessId)
-      .order('created_at', { ascending: false });
+    let _q:any = supabase.from('purchase_orders').select('*, suppliers(name), warehouses(name)').eq('business_id', businessId).eq('suppliers.business_id', businessId).eq('warehouses.business_id', businessId);
+    { const oids = (c as any).get('outletIds') as string[]|undefined; const ho = c.req.header('x-outlet-id'); if (ho) _q = _q.eq('outlet_id', ho); else if (oids && oids.length>0) _q = _q.in('outlet_id', oids); }
+    const { data, error } = await _q.order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -214,7 +209,12 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
 
   try {
     const body = c.req.valid('json');
-    const { warehouse_id, supplier_id, expected_date, notes, items } = body;
+    const { warehouse_id, supplier_id, outlet_id, expected_date, notes, items } = body as any;
+    if (outlet_id) {
+      const { assertOutletAccess } = await import('../middleware/auth');
+      const chk = await assertOutletAccess(c, outlet_id);
+      if (!chk.ok) return c.json({ success:false, error:{ message: chk.message! } }, 400 as any);
+    }
 
     // Validate warehouse
     const { data: wh, error: whErr } = await supabase.from('warehouses').select('id').eq('id', warehouse_id).eq('business_id', businessId).single();
@@ -225,7 +225,7 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
     if (supErr || !sup) throw new Error("Supplier tidak valid atau bukan milik bisnis ini");
 
     // Validate products
-    const productIds = items.map(i => i.product_id);
+    const productIds = items.map((i: any) => i.product_id);
     if (productIds.length > 0) {
       const { data: validProducts, error: vpErr } = await supabase.from('products').select('id').eq('business_id', businessId).in('id', productIds);
       if (vpErr || !validProducts || validProducts.length !== productIds.length) {
@@ -255,6 +255,7 @@ purchasesRoute.openapi(createRouteDef, async (c) => {
         total_amount: totalAmount.toString(),
         expected_date: expected_date ? new Date(expected_date).toISOString() : null,
         notes: notes || null,
+        outlet_id: outlet_id || null,
         created_by: userId,
       })
       .select()

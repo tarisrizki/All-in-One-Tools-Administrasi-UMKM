@@ -17,6 +17,41 @@ const opnameSchema = z.object({
   reason: z.string().nullable().optional(),
 });
 
+const cancelRoute = createRoute({
+  tags: ['Stock Opname'],
+  method: 'post',
+  path: '/{id}/cancel',
+  request: {
+    params: z.object({
+      id: z.string().uuid(),
+    }),
+    body: {
+      content: { 'application/json': { schema: z.object({
+        reason: z.string().min(1, 'Alasan pembatalan wajib diisi'),
+        cancelled_by: z.string().uuid(),
+      }) } },
+    },
+  },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: createSuccessSchema(z.any()) } },
+      description: 'Opname dibatalkan',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input/error',
+    },
+    404: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Opname tidak ditemukan',
+    },
+    500: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Server error',
+    },
+  },
+});
+
 const opnameResponseSchema = z.object({
   id: z.string().uuid(),
   business_id: z.string().uuid(),
@@ -94,16 +129,22 @@ const itemsRoute = createRoute({
     params: z.object({
       id: z.string().uuid(),
     }),
-    body: z.array(z.object({
-      product_id: z.string().uuid(),
-      system_qty: z.number().int(),
-      counted_qty: z.number().int(),
-    })).min(1),
+    body: {
+      content: { 'application/json': { schema: z.array(z.object({
+        product_id: z.string().uuid(),
+        system_qty: z.number().int(),
+        counted_qty: z.number().int(),
+      })).min(1) } },
+    },
   },
   responses: {
     200: {
       content: { 'application/json': { schema: MessageSuccessSchema } },
       description: 'Item count diupdate',
+    },
+    400: {
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+      description: 'Invalid input/error',
     },
     404: {
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -124,14 +165,16 @@ const approveRoute = createRoute({
     params: z.object({
       id: z.string().uuid(),
     }),
-    body: z.object({
-      reason: z.string(),
-      approved_by: z.string().uuid(),
-    }),
+    body: {
+      content: { 'application/json': { schema: z.object({
+        reason: z.string(),
+        approved_by: z.string().uuid(),
+      }) } },
+    },
   },
   responses: {
     200: {
-      content: { 'application/json': { schema: MessageSuccessSchema } },
+      content: { 'application/json': { schema: createSuccessSchema(z.any()) } },
       description: 'Opname disetujui',
     },
     400: {
@@ -155,18 +198,20 @@ const reportRoute = createRoute({
   path: '/report',
   request: {
     query: z.object({
-      business_id: z.string().uuid(),
+      business_id: z.string().uuid().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
     }),
   },
   responses: {
     200: {
       content: {
         'application/json': {
-          schema: z.object({
+          schema: createSuccessSchema(z.object({
             total_variance: z.number(),
             shrinkage: z.number(),
             total_gain: z.number(),
-          }),
+          })),
         },
       },
       description: 'Ringkasan varians',
@@ -272,6 +317,27 @@ stockOpnamesRoute.openapi(approveRoute, async (c) => {
   }
 });
 
+stockOpnamesRoute.post('/:id/cancel', requirePermission('stock_opnames.write'));
+stockOpnamesRoute.openapi(cancelRoute, async (c) => {
+  const supabase = getSupabase(c.env);
+  const opnameId = c.req.param('id');
+  const { reason, cancelled_by } = c.req.valid('json');
+  const businessId = c.get('businessId');
+
+  try {
+    const { data, error } = await supabase.rpc('cancel_stock_opname', {
+      p_opname_id: opnameId,
+      p_business_id: businessId,
+      p_cancelled_by: cancelled_by,
+      p_reason: reason
+    });
+    if (error) throw error;
+    return c.json({ success: true, data }, 200);
+  } catch (err: any) {
+    return c.json({ success: false, error: { message: err.message || 'Gagal membatalkan opname' } }, 400);
+  }
+});
+
 stockOpnamesRoute.get('/report', requirePermission('reports.read'));
 stockOpnamesRoute.openapi(reportRoute, async (c) => {
   const supabase = getSupabase(c.env);
@@ -279,31 +345,13 @@ stockOpnamesRoute.openapi(reportRoute, async (c) => {
   const { startDate, endDate } = c.req.query();
 
   try {
-    let query = supabase.from('stock_opname_items').select('variance, opname_id(status, created_at)');
-    if (startDate) query = query.gte('opname_id.created_at', startDate);
-    if (endDate) query = query.lte('opname_id.created_at', endDate);
-    
-    const { data, error } = await query.eq('opname_id.business_id', businessId);
-    if (error) throw error;
-
-    let totalVariance = 0;
-    let totalGain = 0;
-    let totalShrinkage = 0;
-
-    data.forEach(i => {
-      totalVariance += i.variance;
-      if (i.variance > 0) totalGain += i.variance;
-      else totalShrinkage += Math.abs(i.variance);
+    const { data, error } = await supabase.rpc('get_stock_opname_report', {
+      p_business_id: businessId,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null
     });
-
-    return c.json({
-      success: true,
-      data: {
-        total_variance: totalVariance,
-        total_gain: totalGain,
-        shrinkage: totalShrinkage
-      }
-    }, 200);
+    if (error) throw error;
+    return c.json({ success: true, data }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: err.message || 'Gagal mengambil laporan' } }, 500);
   }

@@ -1,7 +1,7 @@
--- ============================================================\
+-- ============================================================
 -- WS-09: Batch/Expiry + Wholesale (P2)
 -- Jalankan di Supabase SQL Editor. Idempotent: DROP IF EXISTS + CREATE IF NOT EXISTS.
--- ============================================================\
+-- ============================================================
 
 -- ---------- 0. Optional: add batch_number, expiry_date to purchase_order_items ----------
 -- (Jika belum ada kolom ini di tabel purchase_order_items)
@@ -42,7 +42,7 @@ BEGIN
   DROP POLICY IF EXISTS "product_batches_admin_write" ON product_batches;
   EXECUTE format(
     'CREATE POLICY "product_batches_admin_write" ON product_batches FOR ALL
-     TO admin USING (true) WITH CHECK (true)'
+     TO authenticated USING (true) WITH CHECK (true)'
   );
 
   -- Owner bisa baca semua, admin baca semua, manajer baca milik bisnis
@@ -50,8 +50,8 @@ BEGIN
   EXECUTE format(
     'CREATE POLICY "product_batches_select" ON product_batches FOR SELECT
      USING (
-       EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND business_id = business_id)
-       OR business_id = (SELECT business_id FROM users WHERE id = auth.uid())
+       EXISTS (SELECT 1 FROM users u WHERE u.id = auth.uid() AND u.business_id = product_batches.business_id)
+       OR business_id IN (SELECT business_id FROM users WHERE id = auth.uid())
      )'
   );
 END $$;
@@ -73,15 +73,15 @@ BEGIN
   DROP POLICY IF EXISTS "price_lists_admin_write" ON price_lists;
   EXECUTE format(
     'CREATE POLICY "price_lists_admin_write" ON price_lists FOR ALL
-     TO admin USING (true) WITH CHECK (true)'
+     TO authenticated USING (true) WITH CHECK (true)'
   );
 
   DROP POLICY IF EXISTS "price_lists_select" ON price_lists;
   EXECUTE format(
     'CREATE POLICY "price_lists_select" ON price_lists FOR SELECT
      USING (
-       EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND business_id = business_id)
-       OR business_id = (SELECT business_id FROM users WHERE id = auth.uid())
+       EXISTS (SELECT 1 FROM users u WHERE u.id = auth.uid() AND u.business_id = price_lists.business_id)
+       OR business_id IN (SELECT business_id FROM users WHERE id = auth.uid())
      )'
   );
 END $$;
@@ -106,15 +106,14 @@ BEGIN
   DROP POLICY IF EXISTS "price_list_items_admin_write" ON price_list_items;
   EXECUTE format(
     'CREATE POLICY "price_list_items_admin_write" ON price_list_items FOR ALL
-     TO admin USING (true) WITH CHECK (true)'
+     TO authenticated USING (true) WITH CHECK (true)'
   );
 
   DROP POLICY IF EXISTS "price_list_items_select" ON price_list_items;
   EXECUTE format(
     'CREATE POLICY "price_list_items_select" ON price_list_items FOR SELECT
      USING (
-       EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND business_id = business_id)
-       OR business_id = (SELECT business_id FROM users WHERE id = auth.uid())
+       EXISTS (SELECT 1 FROM price_lists pl JOIN users u ON u.business_id = pl.business_id WHERE pl.id = price_list_items.price_list_id AND u.id = auth.uid())
      )'
   );
 END $$;
@@ -154,10 +153,10 @@ BEGIN
   WHERE id = p_po_id;
 
   FOR v_item IN
-    SELECT product_id, SUM(qty)::int AS qty, cost_price
+    SELECT product_id, SUM(qty)::int AS qty, price
     FROM purchase_order_items
     WHERE po_id = p_po_id
-    GROUP BY product_id, cost_price
+    GROUP BY product_id, price
   LOOP
     INSERT INTO product_stock (product_id, warehouse_id, quantity)
     VALUES (v_item.product_id, v_po.warehouse_id, v_item.qty)
@@ -169,14 +168,14 @@ BEGIN
 
   -- Buat batch jika purchase_order_items memiliki batch_number dan expiry_date
   FOR v_item IN
-    SELECT product_id, qty, cost_price, batch_number, expiry_date
+    SELECT id, product_id, qty, price, batch_number, expiry_date
     FROM purchase_order_items
     WHERE po_id = p_po_id
       AND batch_number IS NOT NULL
       AND expiry_date IS NOT NULL
   LOOP
     INSERT INTO product_batches (business_id, product_id, purchase_item_id, batch_number, expiry_date, quantity, unit_cost)
-    VALUES (p_business_id, v_item.product_id, v_item.id, v_item.batch_number, v_item.expiry_date, v_item.qty, v_item.cost_price);
+    VALUES (p_business_id, v_item.product_id, v_item.id, v_item.batch_number, v_item.expiry_date, v_item.qty, v_item.price);
     v_batch_count := v_batch_count + 1;
   END LOOP;
 
@@ -227,9 +226,19 @@ BEGIN
 END;
 $$;
 
+-- ---------- 0b. Add warehouse_id to product_batches for per-warehouse FEFO (optional) ----------
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'product_batches' AND column_name = 'warehouse_id') THEN
+    ALTER TABLE product_batches ADD COLUMN warehouse_id uuid REFERENCES warehouses(id) ON DELETE SET NULL;
+    CREATE INDEX IF NOT EXISTS idx_product_batches_warehouse_id ON product_batches(warehouse_id);
+  END IF;
+END $$;
+
 -- ---------- 6. RPC: consume_batch_fefo (FEFO stock decrease for sales) ----------
 -- Mengurangi stok batch secara FEFO (First Expired, First Out)
 -- Dipanggil dari process_sale atau API sales untuk setiap item
+-- FIX: RETURN NEXT (row-by-row) + p_warehouse_id scope
 CREATE OR REPLACE FUNCTION consume_batch_fefo(
   p_business_id uuid,
   p_product_id uuid,
@@ -251,14 +260,15 @@ DECLARE
   v_remaining int := p_qty;
   v_consumed int;
 BEGIN
-  -- Cari batch dengan quantity > 0, urutkan FEFO (expiry_date ASC, received_at ASC)
   FOR v_batch IN
     SELECT id, batch_number, quantity, unit_cost
     FROM product_batches
     WHERE business_id = p_business_id
       AND product_id = p_product_id
       AND quantity > 0
+      AND (p_warehouse_id IS NULL OR warehouse_id IS NULL OR warehouse_id = p_warehouse_id)
     ORDER BY expiry_date ASC, received_at ASC
+    FOR UPDATE
   LOOP
     IF v_remaining <= 0 THEN
       EXIT;
@@ -266,18 +276,19 @@ BEGIN
 
     v_consumed := LEAST(v_batch.quantity, v_remaining);
 
-    -- Kurangi quantity di batch
     UPDATE product_batches
     SET quantity = quantity - v_consumed
     WHERE id = v_batch.id;
 
-    -- Return batch yang dikonsumsi
-    RETURN QUERY SELECT v_batch.id, v_batch.batch_number, v_consumed, v_batch.unit_cost;
+    batch_id := v_batch.id;
+    batch_number := v_batch.batch_number;
+    consumed_qty := v_consumed;
+    unit_cost := v_batch.unit_cost;
+    RETURN NEXT;
 
     v_remaining := v_remaining - v_consumed;
   END LOOP;
 
-  -- Jika masih ada sisa qty tapi batch habis -> error (stok tidak mencukupi di batch level)
   IF v_remaining > 0 THEN
     RAISE EXCEPTION 'Stok batch tidak mencukupi untuk produk % (sisa % unit)', p_product_id, v_remaining;
   END IF;

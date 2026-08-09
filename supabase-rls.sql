@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS sales (
   business_id           uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   warehouse_id           uuid NOT NULL REFERENCES warehouses(id),
   customer_id           uuid REFERENCES customers(id),
+  session_id            uuid REFERENCES pos_sessions(id) ON DELETE SET NULL,
   client_transaction_id  uuid UNIQUE,
   invoice_number        text NOT NULL,
   subtotal              numeric DEFAULT 0,
@@ -192,6 +193,33 @@ CREATE TABLE IF NOT EXISTS cashbook_entries (
   updated_at   timestamptz DEFAULT now()
 );
 
+-- ---------- POS Sessions ----------
+CREATE TABLE IF NOT EXISTS pos_sessions (
+  id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  business_id     uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  user_id         uuid NOT NULL REFERENCES users(id),
+  opened_at       timestamptz DEFAULT now(),
+  opening_cash    numeric NOT NULL DEFAULT 0,
+  closed_at       timestamptz,
+  closing_cash    numeric,
+  expected_cash   numeric,
+  variance        numeric DEFAULT 0,
+  status          text NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed')),
+  notes           text,
+  created_at      timestamptz DEFAULT now(),
+  updated_at      timestamptz DEFAULT now()
+);
+
+-- POS Payouts (cash taken out during session)
+CREATE TABLE IF NOT EXISTS pos_payouts (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id  uuid NOT NULL REFERENCES pos_sessions(id) ON DELETE CASCADE,
+  amount      numeric NOT NULL,
+  reason      text NOT NULL,
+  created_by  uuid REFERENCES users(id),
+  created_at  timestamptz DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS debts (
   id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   business_id     uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
@@ -217,6 +245,45 @@ CREATE TABLE IF NOT EXISTS debt_payments (
   created_at timestamptz DEFAULT now()
 );
 
+-- ---------- WS-08: Stock Opname ----------
+CREATE TABLE IF NOT EXISTS stock_movements (
+  id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  business_id     uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  warehouse_id    uuid NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
+  product_id      uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  type            text NOT NULL CHECK (type IN ('sale', 'purchase', 'adjustment_in', 'adjustment_out', 'transfer_in', 'transfer_out')),
+  qty             integer NOT NULL,
+  reference_type  text,
+  reference_id    uuid,
+  notes           text,
+  created_by      uuid REFERENCES users(id),
+  created_at      timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS stock_opnames (
+  id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  business_id     uuid NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  warehouse_id    uuid NOT NULL REFERENCES warehouses(id) ON DELETE CASCADE,
+  status          text NOT NULL DEFAULT 'draft'
+                    CHECK (status IN ('draft', 'counted', 'approved', 'cancelled')),
+  counted_at      timestamptz,
+  approved_by     uuid REFERENCES users(id),
+  reason          text,
+  created_by      uuid REFERENCES users(id),
+  created_at      timestamptz DEFAULT now(),
+  updated_at      timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS stock_opname_items (
+  id            uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  opname_id     uuid NOT NULL REFERENCES stock_opnames(id) ON DELETE CASCADE,
+  product_id    uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  system_qty    integer NOT NULL DEFAULT 0,
+  counted_qty   integer NOT NULL DEFAULT 0,
+  variance      integer GENERATED ALWAYS AS (counted_qty - system_qty) STORED,
+  created_at    timestamptz DEFAULT now()
+);
+
 -- ---------- 2. Seeding default roles ----------
 INSERT INTO roles (name, permissions) VALUES
   ('owner',   ARRAY['*']),
@@ -240,8 +307,13 @@ ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cashbook_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pos_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pos_payouts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE debts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE debt_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_opnames ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_opname_items ENABLE ROW LEVEL SECURITY;
 
 -- ---------- 4. Service-role full access (backend bypass) ----------
 DO $$
@@ -250,7 +322,8 @@ BEGIN
   FOREACH t IN ARRAY ARRAY[
     'businesses','users','roles','categories','products','product_stock',
     'customers','suppliers','warehouses','sales','sale_items','payments',
-    'purchase_orders','purchase_order_items','cashbook_entries','debts','debt_payments'
+    'purchase_orders','purchase_order_items','cashbook_entries','pos_sessions','pos_payouts',
+        'debts','debt_payments','stock_movements','stock_opnames','stock_opname_items'
   ] LOOP
     DROP POLICY IF EXISTS "Service Role Full Access" ON %I;
     EXECUTE format(
@@ -280,10 +353,15 @@ DECLARE
     'purchase_orders|business_id|business_id',
     'purchase_order_items|business_id|business_id',
     'cashbook_entries|business_id|business_id',
+    'pos_sessions|business_id|business_id',
+    'pos_payouts|session_id|session_id',
     'debts|business_id|business_id',
-    'debt_payments|business_id|business_id'
-  ];
-  pair TEXT;
+            'debt_payments|business_id|business_id',
+            'stock_movements|business_id|business_id',
+            'stock_opnames|business_id|business_id',
+            'stock_opname_items|business_id|business_id'
+          ];
+          pair TEXT;
   src_col TEXT;
   filter_col TEXT;
 BEGIN
@@ -313,21 +391,22 @@ END $$;
 
 -- ---------- 6. RPC: process_sale (atomic, idempotent) ----------
 CREATE OR REPLACE FUNCTION process_sale(
-  p_business_id          uuid,
-  p_warehouse_id         uuid,
-  p_customer_id          uuid,
+  p_business_id           uuid,
+  p_warehouse_id          uuid,
+  p_customer_id           uuid,
+  p_session_id            uuid DEFAULT NULL,
   p_client_transaction_id uuid,
-  p_invoice_number       text,
-  p_subtotal             numeric,
-  p_discount_total       numeric,
-  p_grand_total          numeric,
-  p_created_by           uuid,
-  p_items                jsonb,
-  p_payments             jsonb,
-  p_redeem_points        int DEFAULT 0,
-  p_earned_points        int DEFAULT 0,
-  p_customer_name        text DEFAULT NULL,
-  p_customer_phone       text DEFAULT NULL
+  p_invoice_number        text,
+  p_subtotal              numeric,
+  p_discount_total        numeric,
+  p_grand_total           numeric,
+  p_created_by            uuid,
+  p_items                 jsonb,
+  p_payments              jsonb,
+  p_redeem_points         int DEFAULT 0,
+  p_earned_points         int DEFAULT 0,
+  p_customer_name         text DEFAULT NULL,
+  p_customer_phone        text DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -356,11 +435,11 @@ BEGIN
 
   -- Insert sale header
   INSERT INTO sales (
-    business_id, warehouse_id, customer_id, client_transaction_id,
+    business_id, warehouse_id, customer_id, session_id, client_transaction_id,
     invoice_number, subtotal, discount_total, grand_total,
     created_by, status
   ) VALUES (
-    p_business_id, p_warehouse_id, p_customer_id, p_client_transaction_id,
+    p_business_id, p_warehouse_id, p_customer_id, p_session_id, p_client_transaction_id,
     p_invoice_number, p_subtotal::text, p_discount_total::text, p_grand_total::text,
     p_created_by, 'draft'
   ) RETURNING id INTO v_sale_id;
@@ -539,6 +618,101 @@ BEGIN
 END;
 $$;
 
+-- ---------- 10. RPC: approve_stock_opname (atomic adjustment) ----------
+CREATE OR REPLACE FUNCTION approve_stock_opname(
+  p_opname_id     uuid,
+  p_business_id   uuid,
+  p_approved_by   uuid,
+  p_reason        text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_opname    record;
+  v_item      record;
+  v_variance  integer;
+  v_movement  uuid;
+BEGIN
+  -- Lock and validate opname
+  SELECT * INTO v_opname FROM stock_opnames
+  WHERE id = p_opname_id AND business_id = p_business_id
+  FOR UPDATE;
+
+  IF v_opname IS NULL THEN
+    RAISE EXCEPTION 'Stock opname tidak ditemukan';
+  END IF;
+  IF v_opname.status = 'approved' THEN
+    RAISE EXCEPTION 'Stock opname sudah disetujui sebelumnya';
+  END IF;
+  IF v_opname.status = 'cancelled' THEN
+    RAISE EXCEPTION 'Stock opname sudah dibatalkan';
+  END IF;
+
+  -- Update opname status
+  UPDATE stock_opnames
+  SET status = 'approved',
+      approved_by = p_approved_by,
+      counted_at = now(),
+      reason = p_reason,
+      updated_at = now()
+  WHERE id = p_opname_id;
+
+  -- For each item with variance, create stock_movement and update product_stock
+  FOR v_item IN
+    SELECT soi.*, ps.quantity as current_qty
+    FROM stock_opname_items soi
+    LEFT JOIN product_stock ps
+      ON ps.product_id = soi.product_id
+     AND ps.warehouse_id = v_opname.warehouse_id
+    WHERE soi.opname_id = p_opname_id
+  LOOP
+    v_variance := v_item.counted_qty - v_item.system_qty;
+
+    IF v_variance <> 0 THEN
+      -- Insert stock_movement record
+      INSERT INTO stock_movements (
+        business_id,
+        warehouse_id,
+        product_id,
+        type,
+        qty,
+        reference_type,
+        reference_id,
+        notes,
+        created_by
+      ) VALUES (
+        p_business_id,
+        v_opname.warehouse_id,
+        v_item.product_id,
+        CASE WHEN v_variance > 0 THEN 'adjustment_in' ELSE 'adjustment_out' END,
+        ABS(v_variance),
+        'opname',
+        p_opname_id,
+        p_reason || ' (Opname: ' || p_opname_id || ')',
+        p_approved_by
+      ) RETURNING id INTO v_movement;
+
+      -- Update product_stock atomically
+      INSERT INTO product_stock (product_id, warehouse_id, quantity)
+      VALUES (v_item.product_id, v_opname.warehouse_id, v_item.counted_qty)
+      ON CONFLICT (product_id, warehouse_id)
+      DO UPDATE SET
+        quantity = EXCLUDED.quantity,
+        updated_at = now();
+    END IF;
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'id', p_opname_id,
+    'status', 'approved',
+    'message', 'Stock opname disetujui dan stok disesuaikan'
+  );
+END;
+$$;
+
 -- ---------- 9. Trigger: auto updated_at ----------
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -553,7 +727,7 @@ DECLARE t TEXT;
 BEGIN
   FOREACH t IN ARRAY ARRAY[
     'businesses','users','categories','products','warehouses',
-    'customers','suppliers','sales','purchase_orders','cashbook_entries','debts'
+        'customers','suppliers','sales','purchase_orders','cashbook_entries','debts','pos_sessions','stock_movements','stock_opnames'
   ] LOOP
     EXECUTE format(
       'DROP TRIGGER IF EXISTS trg_updated_at_%I ON %I; '

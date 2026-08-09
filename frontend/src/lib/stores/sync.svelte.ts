@@ -71,72 +71,113 @@ async function pushPendingTransactions() {
 		.toArray();
 	
 	pending.sort((a, b) => (a.next_retry_at || 0) - (b.next_retry_at || 0));
-	
+
 	// Enforce batch size ≤ 100
 	const batch = pending.slice(0, 100);
 	if (batch.length === 0) return [];
 
-	const results: Array<{ index: number; clientTransactionId: string; success: boolean; error: string | null }> = [];
+	// Send batch to server - backend returns per-item results
+	let success = false;
+	let error: string | null = null;
+	let serverResults: Array<{ index: number; clientTransactionId: string; success: boolean; error: string | null }> = [];
 
-	for (let idx = 0; idx < batch.length; idx++) {
-		const tx = batch[idx];
-		let success = false;
-		let error: string | null = null;
+	try {
+		const res = await apiClient(`/sync/push`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${authState.token}`
+			},
+			body: JSON.stringify({ transactions: batch })
+		});
 
-		const maxRetries = 3;
-		const backoff = Math.pow(2, tx.retry_count || 0) * 1000;
-
-		for (let attempt = 0; attempt <= maxRetries; attempt++) {
-			try {
-				const res = await apiClient(`/sync/push`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${authState.token}`
-					},
-					body: JSON.stringify({ transactions: [tx] })
-				});
-
-				if (res.success) {
-					success = true;
-					error = null;
-					break;
-				} else {
-					const errData = res.error || {};
-					error = errData.message || `Gagal push transaction ${idx}`;
-					break;
-				}
-			} catch (err: any) {
-				error = err?.message || `Network error during push attempt ${attempt + 1}`;
-			}
-
-			if (attempt < maxRetries) {
-				await new Promise(r => setTimeout(r, backoff));
-			}
+		if (res.success && res.data?.results) {
+			serverResults = res.data.results;
+			success = true;
+			error = null;
+		} else {
+			const errData = res.error || {};
+			error = errData.message || 'Gagal push batch transaksi';
+			success = false;
 		}
-
-		if (success) {
-						await db.pending_transactions.update(tx.client_transaction_id, {
-							status: 'pushed' as const,
-							retry_count: tx.retry_count || 0,
-							last_error: null,
-							next_retry_at: null,
-							updated_at: new Date()
-						});
-					} else {
-						await db.pending_transactions.update(tx.client_transaction_id, {
-							status: 'failed' as const,
-							retry_count: (tx.retry_count || 0) + 1,
-							last_error: error,
-							next_retry_at: new Date(Date.now() + backoff).toISOString(),
-							updated_at: new Date()
-						});
-					}
-
-		results.push({ index: idx, clientTransactionId: tx.client_transaction_id, success, error });
+	} catch (err: any) {
+		error = err?.message || 'Network error during push';
+		success = false;
 	}
 
-	return results;
+	// If batch failed entirely (network error), fall back to per-item retry with backoff
+	if (!success) {
+		serverResults = [];
+		for (let idx = 0; idx < batch.length; idx++) {
+			const tx = batch[idx];
+			let itemSuccess = false;
+			let itemError: string | null = null;
+			const maxRetries = 3;
+			const backoff = Math.pow(2, tx.retry_count || 0) * 1000;
+
+			for (let attempt = 0; attempt <= maxRetries; attempt++) {
+				try {
+					const res = await apiClient(`/sync/push`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${authState.token}`
+						},
+						body: JSON.stringify({ transactions: [tx] })
+					});
+
+					if (res.success && res.data?.results?.[0]) {
+						itemSuccess = res.data.results[0].success;
+						itemError = res.data.results[0].error;
+						break;
+					} else {
+						const errData = res.error || {};
+						itemError = errData.message || `Gagal push transaction ${idx}`;
+						break;
+					}
+				} catch (err: any) {
+					itemError = err?.message || `Network error during push attempt ${attempt + 1}`;
+				}
+
+				if (attempt < maxRetries) {
+					await new Promise(r => setTimeout(r, backoff));
+				}
+			}
+
+			serverResults.push({ index: idx, clientTransactionId: tx.client_transaction_id, success: itemSuccess, error: itemError });
+		}
+	}
+
+	// Update local DB based on per-item results
+	for (const result of serverResults) {
+		const tx = batch[result.index];
+		if (!tx) continue;
+
+		if (result.success) {
+			await db.pending_transactions.update(tx.client_transaction_id, {
+				status: 'pushed' as const,
+				retry_count: tx.retry_count || 0,
+				last_error: undefined,
+				next_retry_at: undefined,
+				updated_at: Date.now()
+			});
+		} else {
+			// Check if it's a conflict (e.g., server has different version)
+			const isConflict = result.error?.toLowerCase().includes('conflict') || 
+				result.error?.toLowerCase().includes('version') ||
+				result.error?.toLowerCase().includes('concurrent');
+			
+			await db.pending_transactions.update(tx.client_transaction_id, {
+				status: isConflict ? 'conflicted' as const : 'failed' as const,
+				retry_count: (tx.retry_count || 0) + 1,
+				last_error: result.error ?? undefined,
+				next_retry_at: Date.now() + Math.pow(2, (tx.retry_count || 0) + 1) * 1000,
+				updated_at: Date.now()
+			});
+		}
+	}
+
+	return serverResults;
 }
 
 async function pullLatestData() {
@@ -228,10 +269,10 @@ export async function retryAllFailed() {
 	for (const tx of failedTxs) {
 		await db.pending_transactions.update(tx.client_transaction_id, {
 			retry_count: 0,
-			last_error: null,
-			next_retry_at: null,
+			last_error: undefined,
+			next_retry_at: undefined,
 			status: 'pending' as const,
-			updated_at: new Date()
+			updated_at: Date.now()
 		});
 	}
 
@@ -246,12 +287,36 @@ export async function retryTransaction(clientTransactionId: string) {
 	// Reset retry count and error
 	await db.pending_transactions.update(tx.client_transaction_id, {
 		retry_count: 0,
-		last_error: null,
-		next_retry_at: null,
+		last_error: undefined,
+		next_retry_at: undefined,
 		status: 'pending' as const,
-		updated_at: new Date()
+		updated_at: Date.now()
 	});
 
 	// Re-push the transaction
 	return pushPendingTransactions();
+}
+
+// Get transactions by status for UI
+export async function getTransactionsByStatus(status: 'pending' | 'pushed' | 'failed' | 'conflicted') {
+	return db.pending_transactions.where('status').equals(status).toArray();
+}
+
+// Get all pending/failed/conflicted transactions for dead-letter view
+export async function getDeadLetterTransactions() {
+	return db.pending_transactions
+		.where('status')
+		.anyOf(['failed', 'conflicted'])
+		.toArray();
+}
+
+// Get count by status
+export async function getStatusCounts() {
+	const [pending, pushed, failed, conflicted] = await Promise.all([
+		db.pending_transactions.where('status').equals('pending').count(),
+		db.pending_transactions.where('status').equals('pushed').count(),
+		db.pending_transactions.where('status').equals('failed').count(),
+		db.pending_transactions.where('status').equals('conflicted').count(),
+	]);
+	return { pending, pushed, failed, conflicted };
 }

@@ -58,6 +58,13 @@ export const authMiddleware = async (c: Context, next: Next) => {
     c.set('businessId', decoded.businessId);
     c.set('roleId', decoded.roleId);
 
+    // WS-11: cek is_active per request (bukan hanya TTL token) — 60s cache, fail-fast jika dinonaktifkan
+    const supabaseActive = getSupabase(c as any);
+    const active = await checkUserActive(supabaseActive, decoded.userId as string);
+    if (!active) {
+      return c.json({ success: false, error: { message: 'Akun dinonaktifkan' } }, 401);
+    }
+
     await next();
   } catch (err: any) {
     console.error("JWT Verification failed:", err.message);
@@ -65,11 +72,24 @@ export const authMiddleware = async (c: Context, next: Next) => {
   }
 };
 
+// WS-07: outlet scope helpers
+const outletScopeCache = new Map<string, { outlets: string[]; expiresAt: number }>();
+async function getUserOutlets(supabase: any, userId: string): Promise<string[]> {
+  const now = Date.now();
+  const cached = outletScopeCache.get(userId);
+  if (cached && cached.expiresAt > now) return cached.outlets;
+  const { data } = await supabase.from('user_outlets').select('outlet_id').eq('user_id', userId);
+  const ids: string[] = (data || []).map((r: any) => r.outlet_id).filter(Boolean);
+  outletScopeCache.set(userId, { outlets: ids, expiresAt: now + 60 * 1000 });
+  return ids;
+}
+
 export const requirePermission = (requiredPermission: string) => {
   return async (c: Context, next: Next) => {
     try {
       const userId = c.get('userId');
       const roleId = c.get('roleId');
+      const businessId = c.get('businessId');
       if (!roleId) return c.json({ success: false, error: { message: 'Tidak ada informasi peran' } }, 401);
 
       // Cek is_active user (cache 60s)
@@ -93,17 +113,59 @@ export const requirePermission = (requiredPermission: string) => {
       
       // Admin / Owner override
       if (perms.includes("*")) {
+        // tetap isi outlet scope untuk downstream use (IDOR: filter sales/purchase by allowed outlets)
+        if (businessId && userId) {
+          const outlets = await getUserOutlets(supabase, userId);
+          c.set('outletIds' as any, outlets);
+          // jika header x-outlet-id diminta, validasi milik business & assignment
+          const requestedOutlet = c.req.header('x-outlet-id');
+          if (requestedOutlet) {
+            if (outlets.length > 0 && !outlets.includes(requestedOutlet)) {
+              return c.json({ success: false, error: { message: 'Outlet tidak dalam cakupan Anda (IDOR guard)' } }, 403);
+            }
+            // validasi outlet milik business
+            const { data: outletRow } = await supabase.from('outlets').select('id').eq('id', requestedOutlet).eq('business_id', businessId).single();
+            if (!outletRow) return c.json({ success: false, error: { message: 'Outlet tidak ditemukan' } }, 404);
+            c.set('outletId' as any, requestedOutlet);
+          }
+        }
         return await next();
       }
 
       // Exact match
       if (perms.includes(requiredPermission)) {
+        if (businessId && userId) {
+          const outlets = await getUserOutlets(supabase, userId);
+          c.set('outletIds' as any, outlets);
+          const requestedOutlet = c.req.header('x-outlet-id');
+          if (requestedOutlet) {
+            if (outlets.length > 0 && !outlets.includes(requestedOutlet)) {
+              return c.json({ success: false, error: { message: 'Outlet tidak dalam cakupan Anda (IDOR guard)' } }, 403);
+            }
+            const { data: outletRow } = await supabase.from('outlets').select('id').eq('id', requestedOutlet).eq('business_id', businessId).single();
+            if (!outletRow) return c.json({ success: false, error: { message: 'Outlet tidak ditemukan' } }, 404);
+            c.set('outletId' as any, requestedOutlet);
+          }
+        }
         return await next();
       }
 
       // Prefix match (e.g., required: "settings.manage", has: "settings")
       const baseModule = requiredPermission.split(".")[0];
       if (perms.includes(baseModule)) {
+        if (businessId && userId) {
+          const outlets = await getUserOutlets(supabase, userId);
+          c.set('outletIds' as any, outlets);
+          const requestedOutlet = c.req.header('x-outlet-id');
+          if (requestedOutlet) {
+            if (outlets.length > 0 && !outlets.includes(requestedOutlet)) {
+              return c.json({ success: false, error: { message: 'Outlet tidak dalam cakupan Anda (IDOR guard)' } }, 403);
+            }
+            const { data: outletRow } = await supabase.from('outlets').select('id').eq('id', requestedOutlet).eq('business_id', businessId).single();
+            if (!outletRow) return c.json({ success: false, error: { message: 'Outlet tidak ditemukan' } }, 404);
+            c.set('outletId' as any, requestedOutlet);
+          }
+        }
         return await next();
       }
 
@@ -113,3 +175,18 @@ export const requirePermission = (requiredPermission: string) => {
     }
   };
 };
+
+// WS-07: scope helper untuk modul (dipakai sales/purchase/outlet binding)
+// ponytail: ceiling — no descendant expansion; add recursive outlet tree when deep hierarchy needed
+export async function assertOutletAccess(c: Context, outletId: string): Promise<{ ok: boolean; message?: string }> {
+  const userId = c.get('userId');
+  const businessId = c.get('businessId');
+  if (!outletId) return { ok: false, message: 'outlet_id wajib' };
+  const supabase = getSupabase((c as any).env);
+  const { data: outletRow } = await supabase.from('outlets').select('id,business_id').eq('id', outletId).single();
+  if (!outletRow) return { ok: false, message: 'Outlet tidak ditemukan' };
+  if (outletRow.business_id !== businessId) return { ok: false, message: 'Outlet bukan milik bisnis ini (IDOR)' };
+  const allowed = await getUserOutlets(supabase, userId);
+  if (allowed.length > 0 && !allowed.includes(outletId)) return { ok: false, message: 'Outlet di luar cakupan Anda (IDOR)' };
+  return { ok: true };
+}

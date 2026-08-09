@@ -25,6 +25,11 @@
 	let customersList = $state<any[]>([]);
 	let loading = $state(true);
 
+	// WS-05 order type minimal (minimal UI per spec — ponytail: full table/queue screen later)
+	let orderType = $state<'dine_in'|'takeaway'|'delivery'|'preorder'>('dine_in');
+	let selectedTable = $state('');
+	let orderTables = $state<any[]>([]);
+
 	let searchQuery = $state('');
 	let selectedCategory = $state('all');
 
@@ -142,23 +147,29 @@
 
 			// Always save to pending transactions first for safety and offline
 			const pendingTx = {
-				client_transaction_id: clientTransactionId,
-				businessId: products[0]?.businessId || '', // Simplified, usually from auth context
-				customerId: customerId || null,
-				customerName: customerName || null,
-				customerPhone: customerPhone || null,
-				totalAmount: cartTotal,
-				discount: 0,
-				tax: 0,
-				grandTotal: cartTotal,
-				payments: payments, // Array of payments
-				amountPaid: totalPaid,
-				changeAmount: totalPaid - cartTotal,
-				notes: null,
-				createdAt: new Date().toISOString(),
-				items,
-				redeemPoints: redeemPoints || 0
-			};
+								client_transaction_id: clientTransactionId,
+								businessId: products[0]?.businessId || '', // Simplified, usually from auth context
+								customerId: customerId || null,
+								customerName: customerName || null,
+								customerPhone: customerPhone || null,
+								totalAmount: cartTotal,
+								discount: 0,
+								tax: 0,
+								grandTotal: cartTotal,
+								payments: payments, // Array of payments
+								amountPaid: totalPaid,
+								changeAmount: totalPaid - cartTotal,
+								notes: null,
+								createdAt: new Date().toISOString(),
+								items,
+								redeemPoints: redeemPoints || 0,
+								// Sync status fields
+								status: 'pending' as const,
+								retry_count: 0,
+								last_error: undefined,
+								next_retry_at: undefined,
+								updated_at: Date.now(),
+							};
 
 			await db.pending_transactions.add(pendingTx);
 

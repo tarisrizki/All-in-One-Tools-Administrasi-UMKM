@@ -86,10 +86,11 @@ CREATE POLICY "payment_intents_update" ON payment_intents
     )
   );
 
--- payment_callbacks: hanya insert (webhook) + read via intent join
+-- payment_callbacks: webhook via service_role bypass; anon tidak spam (insert anon deny)
 DROP POLICY IF EXISTS "payment_callbacks_insert" ON payment_callbacks;
+-- Blokir anon/public insert langsung — webhook harus lewat backend service_role (bypass RLS)
 CREATE POLICY "payment_callbacks_insert" ON payment_callbacks
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT TO anon, authenticated WITH CHECK (false);
 
 DROP POLICY IF EXISTS "payment_callbacks_select" ON payment_callbacks;
 CREATE POLICY "payment_callbacks_select" ON payment_callbacks
@@ -101,3 +102,13 @@ CREATE POLICY "payment_callbacks_select" ON payment_callbacks
       )
     )
   );
+
+-- ---------- Service Role bypass (konsisten supabase-rls.sql) ----------
+DO $$
+DECLARE t TEXT;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['payment_intents','payment_callbacks'] LOOP
+    EXECUTE format('DROP POLICY IF EXISTS "Service Role Full Access" ON %I', t);
+    EXECUTE format('CREATE POLICY "Service Role Full Access" ON %I FOR ALL TO service_role USING (true) WITH CHECK (true)', t);
+  END LOOP;
+END $$;

@@ -4,6 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { openPalette } from '$lib/stores/commandPalette.svelte';
 	import { appModeState, setAppMode } from '$lib/stores/appMode.svelte';
+	import { syncState } from '$lib/stores/sync.svelte';
+	import { triggerSync } from '$lib/stores/sync.svelte';
 	import {
 		LayoutDashboard,
 		ShoppingCart,
@@ -21,7 +23,10 @@
 		Settings,
 		LogOut,
 		Search,
-		X
+		X,
+		RefreshCw,
+		AlertCircle,
+		CheckCircle
 	} from '@lucide/svelte';
 
 	let { onNavigate }: { onNavigate?: () => void } = $props();
@@ -151,7 +156,59 @@
 		{/each}
 	</nav>
 
-	<div class="px-3 pb-4 pt-2 border-t border-white/10">
+		{#if syncState.syncStats.pending > 0 || syncState.syncStats.failed > 0}
+				<div class="px-3 py-2 border-t border-white/10">
+					<div class="flex items-center justify-between px-2.5 py-2 mb-2 rounded-lg bg-white/5">
+						<div class="flex items-center gap-2 text-[12px]">
+							{#if syncState.isSyncing}
+								<div class="w-[14px] h-[14px] text-white/50 animate-spin"><RefreshCw class="w-full h-full" /></div>
+							{/if}
+							{#if syncState.syncStats.failed > 0}
+								<div class="w-[14px] h-[14px] text-amber-400"><AlertCircle class="w-full h-full" /></div>
+							{/if}
+							{#if syncState.syncStats.pending === 0 && syncState.syncStats.failed === 0}
+								<div class="w-[14px] h-[14px] text-green-400"><CheckCircle class="w-full h-full" /></div>
+							{/if}
+							<span class="font-medium text-white/80">Sinkronisasi</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							{#if syncState.syncStats.pending > 0}
+								<span class="text-[11px] font-mono text-white/70 bg-blue-500/20 px-1.5 py-0.5 rounded">
+									Pending: {syncState.syncStats.pending}
+								</span>
+							{/if}
+							{#if syncState.syncStats.failed > 0}
+								<span class="text-[11px] font-mono text-white/70 bg-red-500/20 px-1.5 py-0.5 rounded">
+									Gagal: {syncState.syncStats.failed}
+								</span>
+							{/if}
+						</div>
+					</div>
+					<div class="flex items-center gap-2 px-2.5">
+						<button
+							type="button"
+							onclick={triggerSync}
+							disabled={syncState.isSyncing}
+							class="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 text-[12px] font-semibold text-white/80 bg-white/5 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+						>
+							<RefreshCw class="w-[14px] h-[14px] {syncState.isSyncing ? 'animate-spin' : ''}" />
+							<span>{syncState.isSyncing ? 'Menyinkronkan...' : 'Sinkronkan Sekarang'}</span>
+						</button>
+						{#if syncState.syncStats.failed > 0}
+							<button
+								type="button"
+								onclick={() => import('$lib/stores/sync.svelte').then(m => m.retryAllFailed())}
+								class="flex items-center justify-center px-2.5 py-2 text-[12px] font-semibold text-white/80 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
+								title="Coba ulang transaksi gagal"
+							>
+								<RefreshCw class="w-[14px] h-[14px]" />
+							</button>
+						{/if}
+					</div>
+				</div>
+			{/if}
+
+		<div class="px-3 pb-4 pt-2 border-t border-white/10">
 		<button
 			type="button"
 			onclick={toggleAppMode}
