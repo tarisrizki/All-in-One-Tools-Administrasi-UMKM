@@ -53,9 +53,10 @@ export class ESCPOSPrinter {
 		}
 		try {
 			this.device = await (navigator as any).usb.requestDevice({ filters: [] });
-			await this.device.open();
-			if (this.device.configuration === null) await this.device.selectConfiguration(1);
-			await this.device.claimInterface(0);
+			const d: any = this.device;
+			await (d as any).open();
+			if ((d as any).configuration === null) await (d as any).selectConfiguration(1);
+			await (d as any).claimInterface(0);
 			return true;
 		} catch (error) {
 			console.error('Printer connection failed:', error);
@@ -177,7 +178,7 @@ export class ESCPOSPrinter {
 		}
 		const res = await fetch(getApiUrl('/sales/print/proxy'), {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Authorization: (await import('$lib/stores/auth.svelte')).authState.token ? `Bearer ${(await import('$lib/stores/auth.svelte')).authState.token}` : '' },
+			headers: { 'Content-Type': 'application/json', ...(typeof localStorage !== 'undefined' && localStorage.getItem('umkm_token') ? { Authorization: `Bearer ${localStorage.getItem('umkm_token')}` } : {}) },
 			body: JSON.stringify({ ip, port: 9100, dataBase64: b64, text: buildReceiptText(storeName, items, grandTotal) })
 		});
 		if (!res.ok) {
