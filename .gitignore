@@ -66,3 +66,7 @@ graphify-out/
 # internal docs not pushed
 docs/
 !docs/README.md
+
+# flutter/tauri generated
+mobile_flutter/
+src-tauri/target/
