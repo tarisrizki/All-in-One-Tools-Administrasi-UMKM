@@ -62,3 +62,7 @@ prompt.md
 **/*.env*
 !**/.env.example
 graphify-out/
+
+# internal docs not pushed
+docs/
+!docs/README.md
