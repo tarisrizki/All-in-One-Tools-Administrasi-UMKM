@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Beres",
+  "version": "1.0.0",
+  "identifier": "com.beres.pos",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../frontend/build"
+  },
+  "app": {
+    "windows": [{ "title": "Beres POS", "width": 1280, "height": 800, "resizable": true }],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "resources": []
+  },
+  "plugins": {
+    "updater": { "pubkey": "", "endpoints": ["https://github.com/tarisrizki/All-in-One-Tools-Administrasi-UMKM/releases/latest/download/latest.json"] }
+  }
+}
