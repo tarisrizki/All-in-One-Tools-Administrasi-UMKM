@@ -69,4 +69,9 @@ docs/*
 
 # flutter/tauri generated
 mobile_flutter/
+!mobile_flutter/pubspec.yaml
+!mobile_flutter/pubspec.lock
+!mobile_flutter/third_party/
+!mobile_flutter/third_party/bluetooth_print/
+!mobile_flutter/third_party/bluetooth_print/**
 src-tauri/target/

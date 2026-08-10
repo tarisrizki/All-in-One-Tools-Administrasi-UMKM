@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { authMiddleware } from '../middleware/auth';
 import { createSuccessSchema } from '../schemas/common';
 
-// ponytail: KV/Map fallback; upgrade ke tabel Supabase bila scale.
+// KV-only (RATE_LIMIT_KV). Technical debt: migrate to Supabase table if complex queries needed.
 
 const discSchema = z.object({
   id: z.string().optional(),
@@ -18,18 +18,18 @@ type Vars = { businessId: string; userId: string; roleId: string };
 export const discountsRoute = new OpenAPIHono<{ Bindings: any; Variables: Vars }>();
 discountsRoute.use('*', authMiddleware);
 
-const mem = new Map<string, any[]>();
 async function load(c: any): Promise<any[]> {
   const bid = c.get('businessId') as string;
   const kv = (c.env as any)?.RATE_LIMIT_KV;
-  if (kv) { try { const raw = await kv.get(`discounts:${bid}`); if (raw) return JSON.parse(raw); } catch {} }
-  return mem.get(bid) || [];
+  if (!kv) throw new Error('KV RATE_LIMIT_KV not bound — check wrangler.toml kv_namespaces');
+  const raw = await kv.get(`discounts:${bid}`);
+  return raw ? JSON.parse(raw) : [];
 }
 async function save(c: any, list: any[]) {
   const bid = c.get('businessId') as string;
-  mem.set(bid, list);
   const kv = (c.env as any)?.RATE_LIMIT_KV;
-  if (kv) { try { await kv.put(`discounts:${bid}`, JSON.stringify(list)); } catch {} }
+  if (!kv) throw new Error('KV RATE_LIMIT_KV not bound');
+  await kv.put(`discounts:${bid}`, JSON.stringify(list));
 }
 
 const listRoute = createRoute({
