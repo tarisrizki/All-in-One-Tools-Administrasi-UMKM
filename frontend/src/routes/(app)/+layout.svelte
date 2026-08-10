@@ -4,36 +4,23 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import { authState, loadAuthFromStorage } from '$lib/stores/auth.svelte';
-	import { syncState, initSyncManager } from '$lib/stores/sync.svelte';
-	import { Toaster } from '$lib/components/ui/sonner';
+	import { syncState } from '$lib/stores/sync.svelte';
+		import { Toaster } from '$lib/components/ui/sonner';
 	import { QueryClientProvider } from '@tanstack/svelte-query';
 	import { queryClient } from '$lib/queryClient';
-	import { slide } from 'svelte/transition';
-	import { ModeWatcher } from 'mode-watcher';
+		import { ModeWatcher } from 'mode-watcher';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
-	import CommandPalette from '$lib/components/CommandPalette.svelte';
-	import BottomNav from '$lib/components/BottomNav.svelte';
-	import { paletteState } from '$lib/stores/commandPalette.svelte';
-
+		import BottomNav from '$lib/components/BottomNav.svelte';
+	
 	let { children } = $props();
 
 	onMount(() => {
 		// Sync manager berjalan di background, tidak memblokir render
-		initSyncManager();
 		
 		import('$lib/stores/appMode.svelte').then(m => m.loadAppModeFromStorage());
 
-		function onKeydown(e: KeyboardEvent) {
-			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-				e.preventDefault();
-				paletteState.open = !paletteState.open;
-			}
-		}
-		window.addEventListener('keydown', onKeydown);
-		return () => window.removeEventListener('keydown', onKeydown);
-	});
+		});
 
 	// Kasir (POS) sengaja dibuat full-screen tanpa sidebar, supaya layar kasir
 	// lega untuk transaksi -- pola yang sama dipakai POS fisik pada umumnya.
@@ -45,8 +32,6 @@
 	<title>Beres — All-in-One Tools Administrasi UMKM</title>
 
 </svelte:head>
-
-<CommandPalette bind:open={paletteState.open} />
 
 <Toaster position="top-center" richColors />
 

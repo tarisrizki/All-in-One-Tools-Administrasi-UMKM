@@ -46,8 +46,7 @@
 								businessName: result.data.business_name,
 								permissions: result.data.permissions
 							});
-							import('$lib/stores/appMode.svelte').then(m => m.syncAppModeFromServer(result.data.app_mode));
-							goto('/dashboard');
+							await goto('/dashboard');
 						} else {
 							errorMsg = result.error?.message || 'Login gagal';
 						}

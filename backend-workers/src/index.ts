@@ -11,7 +11,6 @@ import { employeesRoute } from './modules/employees';
 import { customersRoute } from './modules/customers';
 import { productsRoute } from './modules/products';
 import { salesRoute } from './modules/sales';
-import { cashbookRoute } from './modules/cashbook';
 import { debtsRoute } from './modules/debts';
 import { purchasesRoute } from './modules/purchases';
 import { reportsRoute } from './modules/reports';
@@ -19,8 +18,8 @@ import { authRoute } from './modules/auth';
 import { rolesRoute } from './modules/roles';
 import { settingsRoute } from './modules/settings';
 import { syncRoute } from './modules/sync';
-import { aiRoute } from './modules/ai';
 import { stockOpnamesRoute } from './modules/stock_opnames';
+import { subscriptionsRoute } from './modules/subscriptions';
 import { paymentsRoute, webhookRoute } from './modules/payments';
 // WS-05/07: orders & outlets modules — migrasi sudah ada, route ditunda ke iterasi berikutnya
 import { ordersRoute } from './modules/orders';
@@ -41,10 +40,22 @@ app.use('*', async (c, next) => {
 
 app.use('*', logger());
 app.use('*', async (c, next) => {
-  const allowedOrigin = getEnv(c, 'ALLOWED_ORIGIN') || 'http://localhost:5173';
+  const allowedOrigin = getEnv(c, 'ALLOWED_ORIGIN') || '';
   return cors({
     origin: (origin) => {
-      return origin === allowedOrigin ? allowedOrigin : null;
+      if (!origin) return allowedOrigin || '*';
+      // E2E/localhost: allow any localhost port + beres.lambada domains
+      const allowlist = [
+        'http://localhost:5173', 'http://localhost:4173', 'http://localhost:3000',
+        'http://127.0.0.1:5173', 'http://127.0.0.1:4173', 'http://127.0.0.1:3000',
+      ];
+      if (allowlist.includes(origin)) return origin;
+      if (origin.endsWith('.beres.lambada.my.id') || origin === 'https://beres.lambada.my.id') return origin;
+      if (allowedOrigin && origin === allowedOrigin) return allowedOrigin;
+      // fallback: jika ALLOWED_ORIGIN diset, hanya itu; jika tidak, izinkan localhost apa pun (E2E ponytail)
+      if (!allowedOrigin && origin.startsWith('http://localhost:')) return origin;
+      if (!allowedOrigin && origin.startsWith('http://127.0.0.1:')) return origin;
+      return null;
     },
     allowHeaders: ['Content-Type', 'Authorization', 'x-business-id', 'x-user-id'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -113,7 +124,6 @@ app.route('/employees', employeesRoute);
 app.route('/customers', customersRoute);
 app.route('/products', productsRoute);
 app.route('/sales', salesRoute);
-app.route('/cashbook', cashbookRoute);
 app.route('/debts', debtsRoute);
 app.route('/purchases', purchasesRoute);
 app.route('/reports', reportsRoute);
@@ -121,8 +131,8 @@ app.route('/auth', authRoute);
 app.route('/roles', rolesRoute);
 app.route('/settings', settingsRoute);
 app.route('/sync', syncRoute);
-app.route('/ai', aiRoute);
 app.route('/stock-opnames', stockOpnamesRoute);
+app.route('/subscriptions', subscriptionsRoute);
 app.route('/payments', paymentsRoute);
 app.route('/webhooks', webhookRoute);
 app.route('/orders', ordersRoute);
@@ -159,7 +169,6 @@ export default {
 
             // 1. Hapus transaksi 24 jam terakhir
             await supabase.from('debts').delete().eq('business_id', businessId).gte('created_at', isoYesterday);
-            await supabase.from('cashbook_entries').delete().eq('business_id', businessId).gte('created_at', isoYesterday);
             
             // Hapus penjualan (sale_items dihapus terlebih dahulu jika ada)
             const { data: recentSales } = await supabase.from('sales').select('id').eq('business_id', businessId).gte('created_at', isoYesterday);
@@ -213,7 +222,6 @@ export default {
           warehousesRes,
           salesRes,
           purchasesRes,
-          cashbookRes,
           debtsRes
         ] = await Promise.all([
           supabase.from('roles').select('*').eq('business_id', businessId),
@@ -225,7 +233,6 @@ export default {
           supabase.from('warehouses').select('*').eq('business_id', businessId),
           supabase.from('sales').select('*, sale_items(*)').eq('business_id', businessId),
           supabase.from('purchase_orders').select('*, purchase_order_items(*)').eq('business_id', businessId),
-          supabase.from('cashbook_entries').select('*').eq('business_id', businessId),
           supabase.from('debts').select('*').eq('business_id', businessId)
         ]);
 
@@ -240,7 +247,6 @@ export default {
           warehouses: warehousesRes.data || [],
           sales: salesRes.data || [],
           purchases: purchasesRes.data || [],
-          cashbook: cashbookRes.data || [],
           debts: debtsRes.data || []
         };
 

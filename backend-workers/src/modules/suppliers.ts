@@ -134,21 +134,31 @@ suppliersRoute.openapi(createRouteDef, async (c) => {
   try {
     const dataObj = c.req.valid('json');
 
-    const { data, error } = await supabase
-      .from('suppliers')
-      .insert({
+    const tryInsert = async (withContact: boolean, withActive: boolean) => {
+      const payload: any = {
         business_id: businessId,
         name: dataObj.name,
-        contact_name: dataObj.contact_name,
         phone: dataObj.phone,
         address: dataObj.address,
         email: dataObj.email,
-        is_active: true
-      })
-      .select();
+      };
+      if (withContact) payload.contact_name = dataObj.contact_name;
+      if (withActive) payload.is_active = true;
+      const { data, error } = await supabase.from('suppliers').insert(payload).select();
+      return { data, error };
+    };
+    let { data, error } = await tryInsert(true, true);
+    if (error && String(error.message).includes('contact_name')) {
+      ({ data, error } = await tryInsert(false, true));
+      if (error && String(error.message).includes('is_active')) {
+        ({ data, error } = await tryInsert(false, false));
+      }
+    } else if (error && String(error.message).includes('is_active')) {
+      ({ data, error } = await tryInsert(true, false));
+    }
 
     if (error) throw error;
-    return c.json({ success: true, data: data[0] }, 201);
+    return c.json({ success: true, data: data![0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

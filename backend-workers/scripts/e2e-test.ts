@@ -31,7 +31,7 @@ async function main() {
     phone,
     password,
     businessName: 'Toko End to End',
-    cfTurnstileResponse: 'dummy-token' 
+
   };
   const regRes = await fetch(`${baseUrl}/auth/register`, {
     method: 'POST',

@@ -259,20 +259,25 @@ customersRoute.openapi(createRouteDef, async (c) => {
       return c.json({ success: false, error: { message: "Batas paket gratis (2000 item) sudah tercapai" } }, 403);
     }
 
-    const { data, error } = await supabase
-      .from('customers')
-      .insert({
+    const tryCust = async (withBy: boolean) => {
+      const payload: any = {
         business_id: businessId,
         name: dataObj.name,
         phone: dataObj.phone || null,
         email: dataObj.email || null,
         address: dataObj.address || null,
-        created_by: userId
-      })
-      .select();
+      };
+      if (withBy) payload.created_by = userId;
+      const { data, error } = await supabase.from('customers').insert(payload).select();
+      return { data, error };
+    };
+    let { data, error } = await tryCust(true);
+    if (error && String(error.message).includes('created_by')) {
+      ({ data, error } = await tryCust(false));
+    }
 
     if (error) throw error;
-    return c.json({ success: true, data: data[0] }, 201);
+    return c.json({ success: true, data: data![0] }, 201);
   } catch (err: any) {
     const msg = err.issues ? "Input tidak valid" : err.message;
     return c.json({ success: false, error: { message: msg } }, 400);

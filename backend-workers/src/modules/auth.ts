@@ -9,8 +9,7 @@ import { ErrorResponseSchema, createSuccessSchema, MessageSuccessSchema } from '
 const registerSchema = z.object({
   phone: z.string().regex(/^(08|628|\+628)\d{6,14}$/, "Nomor HP harus berupa nomor Indonesia yang valid"),
   password: z.string().min(6).max(255),
-  businessName: z.string().min(2).max(255),
-  cfTurnstileResponse: z.string().min(1, "Verifikasi keamanan (CAPTCHA) wajib diisi"),
+  businessName: z.string().min(2).max(255)
 });
 
 const loginSchema = z.object({
@@ -172,27 +171,7 @@ export const authRoute = new OpenAPIHono<{ Bindings: any, Variables: Variables }
 authRoute.openapi(registerRoute, async (c) => {
   const supabase = getSupabase(c.env);
   try {
-    const { phone, password, businessName, cfTurnstileResponse } = c.req.valid('json');
-
-    const turnstileSecret = getEnv(c, 'TURNSTILE_SECRET_KEY');
-    if (!turnstileSecret) {
-      return c.json({ success: false, error: { code: "SERVER_ERROR", message: "Konfigurasi Turnstile belum diatur di server" } }, 500);
-    }
-
-    const formData = new FormData();
-    formData.append('secret', turnstileSecret);
-    formData.append('response', cfTurnstileResponse);
-
-    const turnstileRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: formData
-    });
-    
-    const turnstileOutcome: any = await turnstileRes.json();
-    if (!turnstileOutcome.success) {
-      return c.json({ success: false, error: { code: "BOT_DETECTED", message: "Verifikasi keamanan gagal, silakan coba lagi" } }, 400);
-    }
-
+    const { phone, password, businessName } = c.req.valid('json');
     const { data: existingUser } = await supabase.from('users').select('id').eq('phone', phone).single();
     if (existingUser) return c.json({ success: false, error: { code: "REGISTER_FAILED", message: "Nomor HP sudah terdaftar" } }, 400);
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { setAuth } from '$lib/stores/auth.svelte';
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+		import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -16,8 +15,7 @@
 	const registerSchema = z.object({
 		phone: z.string().regex(/^(08|628|\+628)\d{6,14}$/, 'Format nomor HP tidak valid (misal: 08...)'),
 		password: z.string().min(6, 'Kata sandi minimal 6 karakter'),
-		businessName: z.string().min(3, 'Nama Usaha minimal 3 karakter'),
-		cfTurnstileResponse: z.string().min(1, 'Selesaikan verifikasi keamanan')
+		businessName: z.string().min(3, 'Nama Usaha minimal 3 karakter')
 	});
 	type RegisterSchema = z.infer<typeof registerSchema>;
 
@@ -26,7 +24,7 @@
 
 	const { form, errors, enhance } = superForm<RegisterSchema>(
 		// @ts-expect-error zod version mismatch with superforms adapter
-		defaults({ phone: '', password: '', businessName: '', cfTurnstileResponse: '' }, zod(registerSchema as any)),
+		defaults({ phone: '', password: '', businessName: ''}, zod(registerSchema as any)),
 		{
 			SPA: true,
 			validators: zod(registerSchema as any) as any,
@@ -48,7 +46,7 @@
 								permissions: result.data.permissions
 							});
 							import('$lib/stores/appMode.svelte').then(m => m.syncAppModeFromServer(result.data.app_mode));
-							goto('/dashboard');
+							await goto('/dashboard');
 						} else {
 							errorMsg = result.error?.message || 'Gagal mendaftar';
 						}
@@ -74,18 +72,9 @@
 			errorMsg = 'Format nomor HP tidak valid & Kata sandi minimal 6 karakter';
 		}
 	}
-
-	onMount(() => {
-		(window as any).onTurnstileSuccess = (token: string) => {
-			$form.cfTurnstileResponse = token;
-		};
-	});
 </script>
 
 
-<svelte:head>
-	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-</svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-primary p-4 font-sans relative overflow-hidden">
 	<!-- Decorative Background Elements -->
@@ -187,13 +176,6 @@
 						{/if}
 					</div>
 
-					<div class="flex flex-col items-center justify-center mt-4">
-						<!-- Gunakan testing key Cloudflare 1x00000000000000000000AA jika VITE_TURNSTILE_SITE_KEY belum diatur -->
-						<div class="cf-turnstile" data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} data-callback="onTurnstileSuccess"></div>
-						{#if $errors.cfTurnstileResponse}
-							<p class="text-xs text-destructive font-bold text-center mt-2">{$errors.cfTurnstileResponse}</p>
-						{/if}
-					</div>
 
 					<Button type="submit" disabled={loading} class="w-full h-12 mt-2 rounded-xl font-bold text-base bg-accent hover:bg-destructive text-white shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 transition-all duration-300">
 						{#if loading}

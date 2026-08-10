@@ -50,6 +50,10 @@ export default defineConfig({
 			}
 		})
 	],
+	preview: {
+		port: 4173,
+		strictPort: false,
+	},
 	ssr: {
 		noExternal: ['@tanstack/svelte-query']
 	},

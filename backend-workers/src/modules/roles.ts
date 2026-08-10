@@ -120,16 +120,17 @@ rolesRoute.openapi(listRoute, async (c) => {
   const businessId = c.get('businessId');
 
   try {
-    const { data, error } = await supabase
-      .from('roles')
-      .select('id, name, description, permissions')
-      .neq('name', 'owner')
-      .or(`business_id.is.null,business_id.eq.${businessId}`)
-      .order('name', { ascending: true });
-
-    if (error) throw error;
-
-    return c.json({ success: true, data: data || [] }, 200);
+    // WS-01 fallback: jika kolom business_id belum ada (DB lama), fallback ke query global lama biar tidak 500 blokir
+    const query: any = supabase.from('roles').select('id, name, description, permissions').neq('name', 'owner').order('name', { ascending: true });
+    // coba pakai filter baru; jika error 42703 (column does not exist) fallback
+    let res: any = await query.or(`business_id.is.null,business_id.eq.${businessId}`);
+    if (res.error && String(res.error.message || res.error.code || '').includes('business_id')) {
+      const fallback = await supabase.from('roles').select('id, name, description, permissions').neq('name', 'owner').order('name', { ascending: true });
+      if (fallback.error) throw fallback.error;
+      return c.json({ success: true, data: fallback.data || [] }, 200);
+    }
+    if (res.error) throw res.error;
+    return c.json({ success: true, data: res.data || [] }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengambil role" } }, 500);
   }
@@ -171,13 +172,24 @@ rolesRoute.openapi(updateRoute, async (c) => {
   try {
     const dataObj = c.req.valid('json');
 
-    const { data: roleToUpdate } = await supabase.from('roles').select('name').eq('id', id).eq('business_id', businessId).single();
-    if (!roleToUpdate) return c.json({ success: false, error: { message: "Role tidak ditemukan" } }, 404);
+    // WS-01 fallback-aware: coba business_id scope, jika kolom belum ada fallback ke id-only
+    let roleToUpdate: any = null;
+    let r0: any = await supabase.from('roles').select('name,business_id').eq('id', id).eq('business_id', businessId).single();
+    if (r0.error && String(r0.error.message || '').includes('business_id')) {
+      const fb: any = await supabase.from('roles').select('name').eq('id', id).single();
+      if (fb.error || !fb.data) return c.json({ success: false, error: { message: "Role tidak ditemukan" } }, 404);
+      roleToUpdate = fb.data;
+    } else {
+      if (r0.error || !r0.data) return c.json({ success: false, error: { message: "Role tidak ditemukan" } }, 404);
+      roleToUpdate = r0.data;
+    }
     if (['owner', 'admin', 'cashier'].includes(roleToUpdate.name)) {
       return c.json({ success: false, error: { message: "Role bawaan sistem tidak dapat diubah" } }, 400);
     }
 
-    const { data: updatedRole, error } = await supabase
+    let updated: any;
+    let errUp: any = null;
+    ({ data: updated, error: errUp } = await supabase
       .from('roles')
       .update({
         name: dataObj.name,
@@ -187,11 +199,14 @@ rolesRoute.openapi(updateRoute, async (c) => {
       .eq('id', id)
       .eq('business_id', businessId)
       .select()
-      .single();
+      .single());
+    if (errUp && String(errUp.message || '').includes('business_id')) {
+      ({ data: updated, error: errUp } = await supabase.from('roles').update({ name: dataObj.name, description: dataObj.description || null, permissions: dataObj.permissions }).eq('id', id).select().single());
+    }
 
-    if (error) throw error;
+    if (errUp) throw errUp;
 
-    return c.json({ success: true, data: updatedRole }, 200);
+    return c.json({ success: true, data: updated }, 200);
   } catch (err: any) {
     return c.json({ success: false, error: { message: "Gagal mengubah role" } }, 400);
   }

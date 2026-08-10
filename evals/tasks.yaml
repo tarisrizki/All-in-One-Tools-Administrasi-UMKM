@@ -1,0 +1,42 @@
+# Tasks registry — 4 sequential verified steps (Anthropic YAML schema)
+
+tasks:
+  - id: step1-env-vite
+    description: frontend/.env VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY via MCP + build VITE 3 lines 58 231 ssr false
+    graders:
+      - type: state_check
+        expect: file frontend/.env contains VITE_SUPABASE_URL
+      - type: deterministic_tests
+        commands: ["bun x tsc --noEmit"]
+    scoring: binary
+    suite: regression
+  - id: step2-orders-wire
+    description: orders.ts 22816 mount /orders KDS queue convert RPC next_queue_number draft->completed ponytail 15min
+    graders:
+      - type: tool_calls
+        required: ["read_file", "write_file"]
+      - type: static_analysis
+        commands: ["bun x tsc --noEmit", "bun x svelte-check"]
+    scoring: binary
+    suite: capability
+  - id: step3-sync-23505
+    description: sync 23505 duplicate_ignored saleCount head:true sales custom head warehous warehouses 3 passed
+    graders:
+      - type: deterministic_tests
+        commands: ["bun x vitest run --run"]
+      - type: llm_rubric
+        rubric: "criteria explicit gradeable: 23505 idempotent per-item 100 ponytail"
+        fresh_context: true
+    scoring: weighted
+    suite: capability
+  - id: step4-ws05-push
+    description: ws-05 19048 5 tables dining_tables orders order_items status_history kitchen_tickets RLS convert next_queue outlet_id DO safe expand
+    graders:
+      - type: state_check
+        expect: orders cnt 0 vs ws-05 19048 safe expand IF NOT EXISTS -> ADD COLUMN IF NOT EXISTS
+      - type: deterministic_tests
+        commands: ["bun x vitest run --run"]
+    scoring: binary
+    suite: regression
+
+metrics: [n_turns, n_toolcalls, n_total_tokens, latency, cost, pass_rate]

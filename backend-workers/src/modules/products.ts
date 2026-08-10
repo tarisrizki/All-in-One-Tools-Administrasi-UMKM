@@ -209,7 +209,7 @@ productsRoute.openapi(listRoute, async (c) => {
       barcode: p.barcode,
       cost_price: p.cost_price,
       sell_price: p.sell_price,
-      min_stock: p.min_stock,
+      min_stock: p.min_stock ?? 5,
       created_at: p.created_at,
       updated_at: p.updated_at,
       category_name: p.categories?.name || null,
@@ -262,10 +262,9 @@ productsRoute.openapi(createRouteDef, async (c) => {
       if (catErr || !cat) throw new Error("Kategori tidak valid atau bukan milik bisnis ini");
     }
 
-    // Insert Product
-    const { data: newProduct, error: insertError } = await supabase
-      .from('products')
-      .insert({
+    // Insert Product — min_stock optional, column mungkin belum ada di DB lama (schema cache)
+    let newProduct: any; let insertError: any;
+    const baseInsert: any = {
         business_id: businessId,
         category_id: dataObj.categoryId || null,
         sku: dataObj.sku || null,
@@ -273,10 +272,17 @@ productsRoute.openapi(createRouteDef, async (c) => {
         name: dataObj.name,
         cost_price: dataObj.costPrice.toString(),
         sell_price: dataObj.sellPrice.toString(),
-        min_stock: dataObj.minStock,
-      })
-      .select()
-      .single();
+      };
+    const tryInsert = async (withMin: boolean) => {
+      const payload: any = { ...baseInsert };
+      if (withMin) payload.min_stock = dataObj.minStock;
+      const { data, error } = await supabase.from('products').insert(payload).select().single();
+      return { data, error };
+    };
+    ({ data: newProduct, error: insertError } = await tryInsert(true));
+    if (insertError && String(insertError.message).includes('min_stock')) {
+      ({ data: newProduct, error: insertError } = await tryInsert(false));
+    }
 
     if (insertError) throw insertError;
 
