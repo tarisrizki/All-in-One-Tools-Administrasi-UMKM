@@ -5,13 +5,26 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:beres_pos/features/payment/presentation/payment_screen.dart';
 
+import 'dart:io';
+
+import '../test_helper.dart';
+
 void main() {
+  late Directory tempDir;
   setUpAll(() async {
-    Hive.init(r'C:\Users\Dragon\AppData\Local\Temp\test_hive_e2e_pay');
+    tempDir = await Directory.systemTemp.createTemp('hive_e2e_pay_');
+    Hive.init(tempDir.path);
     await Hive.openBox('beres');
   });
 
-  Widget wrap(Widget child) => ProviderScope(child: MaterialApp(home: child));
+  tearDownAll(() async {
+    await Hive.close();
+    if (tempDir.existsSync()) {
+      try { tempDir.deleteSync(recursive: true); } catch (_) {}
+    }
+  });
+
+  Widget wrap(Widget child) => ProviderScope(child: testableWidget(child));
 
   testWidgets('PaymentScreen renders method chips + badge + QR placeholder', (tester) async {
     await tester.pumpWidget(wrap(const PaymentScreen()));

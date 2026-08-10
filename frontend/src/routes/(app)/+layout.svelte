@@ -6,6 +6,7 @@
 	import { page } from '$app/stores';
 	import { authState, loadAuthFromStorage } from '$lib/stores/auth.svelte';
 	import { syncState } from '$lib/stores/sync.svelte';
+	import { slide } from 'svelte/transition';
 		import { Toaster } from '$lib/components/ui/sonner';
 	import { QueryClientProvider } from '@tanstack/svelte-query';
 	import { queryClient } from '$lib/queryClient';

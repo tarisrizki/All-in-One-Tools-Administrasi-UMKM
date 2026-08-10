@@ -3,8 +3,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:hive/hive.dart';
 import 'package:dio/dio.dart';
 
-import '../lib/shared/services/payment_service.dart';
-import '../lib/shared/models/payment.dart';
+import 'package:beres_pos/shared/services/payment_service.dart';
+import 'package:beres_pos/shared/models/payment.dart';
 
 class MockDio extends Mock implements Dio {}
 

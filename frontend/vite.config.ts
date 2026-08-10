@@ -15,7 +15,7 @@ export default defineConfig({
 			// adapter-static: build statis → jalan di nginx (self-host Proxmox) DAN Cloudflare Pages.
 			// fallback: 'index.html' = SPA mode (ssr=false, prerender=false di +layout.ts).
 			adapter: adapter({
-				fallback: 'index.html'
+				fallback: 'fallback.html'
 			})
 		}),
 		SvelteKitPWA({

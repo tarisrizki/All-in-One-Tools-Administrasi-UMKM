@@ -10,19 +10,32 @@ import 'package:beres_pos/shared/services/order_service.dart';
 import 'package:beres_pos/shared/services/api_client.dart';
 import 'package:dio/dio.dart';
 
+import 'dart:io';
+
+import '../test_helper.dart';
+
 void main() {
+  late Directory tempDir;
   setUpAll(() async {
-    Hive.init(r'C:\Users\Dragon\AppData\Local\Temp\test_hive_e2e_order');
+    tempDir = await Directory.systemTemp.createTemp('hive_e2e_order_');
+    Hive.init(tempDir.path);
     await Hive.openBox('beres');
     try { await ApiClient.init(); } catch (_) {}
   });
 
+  tearDownAll(() async {
+    await Hive.close();
+    if (tempDir.existsSync()) {
+      try { tempDir.deleteSync(recursive: true); } catch (_) {}
+    }
+  });
+
   Widget wrap(Widget child, {List<Override> overrides = const []}) =>
-      ProviderScope(overrides: overrides, child: MaterialApp(home: child));
+      ProviderScope(overrides: overrides, child: testableWidget(child));
 
   testWidgets('OrderScreen renders list + type chips', (tester) async {
     await tester.pumpWidget(wrap(const OrderScreen()));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
     expect(find.byType(Scaffold), findsOneWidget);
     expect(find.byType(SegmentedButton<OrderType>), findsWidgets);
   });
@@ -34,30 +47,30 @@ void main() {
       const OrderScreen(),
       overrides: [orderServiceProvider.overrideWithValue(svc)],
     ));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
     expect(find.byType(OrderScreen), findsOneWidget);
   });
 
   testWidgets('OrderScreen shows empty state when no orders', (tester) async {
     await tester.pumpWidget(wrap(const OrderScreen()));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
     expect(find.text('Belum ada pesanan'), findsWidgets);
   });
 
   testWidgets('OrderScreen type filter changes', (tester) async {
     await tester.pumpWidget(wrap(const OrderScreen()));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
     final seg = find.byType(SegmentedButton<OrderType>);
     if (seg.evaluate().isNotEmpty) {
       await tester.tap(seg.first);
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
     }
     expect(find.byType(Scaffold), findsOneWidget);
   });
 
   testWidgets('OrderScreen search field exists', (tester) async {
     await tester.pumpWidget(wrap(const OrderScreen()));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
     expect(find.byType(TextField), findsWidgets);
   });
 }

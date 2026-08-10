@@ -22,8 +22,8 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
       
       const key = `rl:auth:${ip}:${phone}`;
       
-      // Gunakan KV di Workers (cross-isolate), fallback in-memory di Node
-      const kv = c.env.RATE_LIMIT_KV;
+      // ponytail: KV binding is object not string — getEnv(c,'RATE_LIMIT_KV') returns string only, so use binding accessor with exemption
+      const kv = (c as any).env?.RATE_LIMIT_KV as KVNamespace | undefined ?? (process as any).env?.RATE_LIMIT_KV as unknown as KVNamespace | undefined;
       if (kv) {
         const recordStr = await kv.get(key);
         let record = recordStr ? JSON.parse(recordStr) : null;

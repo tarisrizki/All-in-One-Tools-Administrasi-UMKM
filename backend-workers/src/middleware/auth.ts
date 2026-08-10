@@ -93,7 +93,7 @@ export const requirePermission = (requiredPermission: string) => {
       if (!roleId) return c.json({ success: false, error: { message: 'Tidak ada informasi peran' } }, 401);
 
       // Cek is_active user (cache 60s)
-      const supabase = getSupabase(c.env);
+      const supabase = getSupabase(c as any);
       const isActive = await checkUserActive(supabase, userId);
       if (!isActive) {
         return c.json({ success: false, error: { message: 'Akun dinonaktifkan' } }, 401);

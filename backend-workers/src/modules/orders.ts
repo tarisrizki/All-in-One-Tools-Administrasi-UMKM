@@ -261,9 +261,19 @@ ordersRoute.openapi(createRouteDef, async (c) => {
   const body = c.req.valid('json');
   try {
     const qn = await nextQueueNumber(supabase, businessId);
-    // subtotal from items (price fallback 0, server trusts item price for now; sales flow verifies from DB)
+    const productIds = body.items.map((it: any) => it.productId);
+    const { data: dbProducts, error: prodErr } = await supabase.from('products').select('id, sell_price').eq('business_id', businessId).in('id', productIds);
+    if (prodErr) throw prodErr;
+    if (!dbProducts || dbProducts.length !== productIds.length) throw new Error('Produk tidak valid atau bukan milik bisnis ini');
+    const priceMap: Record<string, number> = {};
+    for (const p of dbProducts as any[]) priceMap[p.id] = Number((p as any).sell_price) || 0;
     let subtotal = 0;
-    for (const it of body.items) subtotal += Number(it.price || 0) * it.qty - Number(it.discount || 0) * it.qty;
+    for (const it of body.items) {
+      const dbPrice = priceMap[it.productId];
+      if (dbPrice == null) throw new Error(`Produk ${it.productId} tidak ditemukan`);
+      if (Number(it.discount || 0) > dbPrice) throw new Error(`Diskon melebihi harga produk ${it.productId}`);
+      subtotal += dbPrice * it.qty - Number(it.discount || 0) * it.qty;
+    }
     const grandTotal = subtotal + Number(body.serviceFee || 0);
     const { data: order, error } = await supabase.from('orders').insert({
       business_id: businessId,
@@ -289,7 +299,7 @@ ordersRoute.openapi(createRouteDef, async (c) => {
       order_id: order.id,
       product_id: it.productId,
       qty: it.qty,
-      price: it.price ?? 0,
+      price: priceMap[it.productId] ?? 0,
       discount: it.discount ?? 0,
       notes: it.notes || null,
     }));

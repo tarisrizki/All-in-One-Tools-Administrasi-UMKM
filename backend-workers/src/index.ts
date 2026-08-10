@@ -29,8 +29,15 @@ import { loyaltyRoute } from './modules/loyalty';
 import { getSupabase } from './utils/supabase';
 import { getEnv } from './utils/env';
 import { rateLimitMiddleware } from './middleware/rateLimit';
+import { cspMiddleware, xframeMiddleware, requestSizeMiddleware, tracingMiddleware, sanitizeMiddleware } from './middleware/security';
 
 const app = new OpenAPIHono<{ Bindings: any }>();
+
+// Security headers middleware - run first
+app.use('*', xframeMiddleware);
+app.use('*', cspMiddleware);
+app.use('*', requestSizeMiddleware);
+app.use('*', sanitizeMiddleware);
 
 // Body size limit middleware (~5MB) - returns 413 if exceeded
 app.use('*', async (c, next) => {
@@ -42,12 +49,12 @@ app.use('*', async (c, next) => {
 });
 
 app.use('*', logger());
+app.use('*', tracingMiddleware);
 app.use('*', async (c, next) => {
   const allowedOrigin = getEnv(c, 'ALLOWED_ORIGIN') || '';
   return cors({
     origin: (origin) => {
-      if (!origin) return allowedOrigin || '*';
-      // E2E/localhost: allow any localhost port + beres.lambada domains
+      if (!origin) return allowedOrigin || null;
       const allowlist = [
         'http://localhost:5173', 'http://localhost:4173', 'http://localhost:3000',
         'http://127.0.0.1:5173', 'http://127.0.0.1:4173', 'http://127.0.0.1:3000',
@@ -55,9 +62,6 @@ app.use('*', async (c, next) => {
       if (allowlist.includes(origin)) return origin;
       if (origin.endsWith('.beres.lambada.my.id') || origin === 'https://beres.lambada.my.id') return origin;
       if (allowedOrigin && origin === allowedOrigin) return allowedOrigin;
-      // fallback: jika ALLOWED_ORIGIN diset, hanya itu; jika tidak, izinkan localhost apa pun (E2E ponytail)
-      if (!allowedOrigin && origin.startsWith('http://localhost:')) return origin;
-      if (!allowedOrigin && origin.startsWith('http://127.0.0.1:')) return origin;
       return null;
     },
     allowHeaders: ['Content-Type', 'Authorization', 'x-business-id', 'x-user-id'],

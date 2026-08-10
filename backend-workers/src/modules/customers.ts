@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSupabase } from '../utils/supabase';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { ErrorResponseSchema, createSuccessSchema } from '../schemas/common';
+import { sanitizeSQLLikePattern } from '../utils/validation';
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Nama pelanggan wajib diisi').max(255).openapi({ example: 'Budi Santoso' }),
@@ -159,7 +160,8 @@ customersRoute.openapi(listRoute, async (c) => {
       .range(offset, offset + limitNum - 1);
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+      const safe = sanitizeSQLLikePattern(search);
+      query = query.or(`name.ilike.%${safe}%,phone.ilike.%${safe}%,email.ilike.%${safe}%`);
     }
 
     const { data: customersData, error: customersError, count } = await query;

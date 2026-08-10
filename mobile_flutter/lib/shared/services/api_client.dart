@@ -46,10 +46,10 @@ class ApiClient {
 
   static ApiClient get instance {
     final i = _instance;
-    if (i == null) {
-      throw StateError('ApiClient belum di-init. Panggil ApiClient.init() di main().');
-    }
-    return i;
+    if (i != null) return i;
+    final dio = Dio(BaseOptions(baseUrl: kApiBaseUrl));
+    _instance = ApiClient._(dio);
+    return _instance!;
   }
 
   Dio get dio => _dio;

@@ -11,7 +11,7 @@ async function registerAndLogin(page: import('@playwright/test').Page, businessN
 	await page.evaluate(() => {
 		const w = window as any;
 				// no captcha
-		if (el) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
+		const el = document.querySelector('#turnstile-mock') as HTMLInputElement | null; if (el) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
 	});
 	await page.waitForTimeout(500);
 	await page.getByRole('button', { name: /Selesai.*Buka Kasir/i }).click();

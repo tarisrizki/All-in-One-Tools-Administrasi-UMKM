@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'test_helper.dart';
+
 ReportService _fakeService() {
   final dio = Dio(BaseOptions(baseUrl: 'https://example.invalid'));
   dio.interceptors.add(InterceptorsWrapper(
@@ -21,7 +23,7 @@ const _allowed = AuthSession(
 
 Widget _wrap(Widget child, ReportService svc, {AuthSession session = _allowed}) => ProviderScope(
       overrides: [reportServiceProvider.overrideWithValue(svc), authSessionProvider.overrideWith((ref) => session)],
-      child: MaterialApp(home: child),
+      child: testableWidget(child),
     );
 
 void main() {

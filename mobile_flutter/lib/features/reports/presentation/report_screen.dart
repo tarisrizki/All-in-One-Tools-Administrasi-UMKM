@@ -166,7 +166,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                       SnackBar(content: Text('CSV tersimpan: $path')),
                     );
                   },
-            child: const Text('Export CSV'),
+            child: const Text('Export PDF/Excel (CSV)'),
           ).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
           if (state.exportedPath != null)
             Padding(

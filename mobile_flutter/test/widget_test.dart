@@ -24,5 +24,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(ProviderScope), findsOneWidget);
+    
+    await tester.pumpAndSettle();
   });
 }
