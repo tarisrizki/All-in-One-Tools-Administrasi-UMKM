@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
+import 'package:beres_pos/shared/services/api_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -36,6 +37,35 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(authSessionProvider);
+    final perms = session?.permissions ?? const <String>[];
+    final canView = perms.contains('reports:read') || perms.contains('admin') || perms.contains('*');
+    if (!canView) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Laporan')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.block, size: 48, color: AppColors.error),
+                const SizedBox(height: 12),
+                const Text('Akses ditolak', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('Role Anda tidak memiliki izin reports:read.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 4),
+                Text('Hubungi admin untuk mendapatkan akses laporan.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final state = ref.watch(reportProvider);
     final notifier = ref.read(reportProvider.notifier);
     final df = DateFormat('dd MMM yyyy');
