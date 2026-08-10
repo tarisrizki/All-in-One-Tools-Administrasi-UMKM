@@ -21,8 +21,11 @@ import { syncRoute } from './modules/sync';
 import { stockOpnamesRoute } from './modules/stock_opnames';
 import { subscriptionsRoute } from './modules/subscriptions';
 import { paymentsRoute, webhookRoute } from './modules/payments';
-// WS-05/07: orders & outlets modules — migrasi sudah ada, route ditunda ke iterasi berikutnya
 import { ordersRoute } from './modules/orders';
+import { outletsRoute } from './modules/outlets';
+import { tablesRoute } from './modules/tables';
+import { discountsRoute } from './modules/discounts';
+import { loyaltyRoute } from './modules/loyalty';
 import { getSupabase } from './utils/supabase';
 import { getEnv } from './utils/env';
 import { rateLimitMiddleware } from './middleware/rateLimit';
@@ -58,7 +61,7 @@ app.use('*', async (c, next) => {
       return null;
     },
     allowHeaders: ['Content-Type', 'Authorization', 'x-business-id', 'x-user-id'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   })(c, next);
 });
@@ -136,9 +139,10 @@ app.route('/subscriptions', subscriptionsRoute);
 app.route('/payments', paymentsRoute);
 app.route('/webhooks', webhookRoute);
 app.route('/orders', ordersRoute);
-// WS-07 outlets pending module
-
-// app.route('/outlets', outletsRoute);
+app.route('/outlets', outletsRoute);
+app.route('/tables', tablesRoute);
+app.route('/discounts', discountsRoute);
+app.route('/loyalty', loyaltyRoute);
 
 export default {
   fetch: app.fetch,
