@@ -15,7 +15,7 @@ const intentSchema = z.object({
   provider: z.enum(['cash', 'qris', 'transfer', 'ewallet']),
   provider_reference: z.string().optional(),
   amount: z.number().min(0.01).max(10000000),
-  status: z.enum(['pending', 'paid', 'failed', 'refunded'])
+  status: z.enum(['pending', 'paid', 'failed', 'refunded']).optional().default('pending')
 });
 
 const webhookPayloadSchema = z.object({

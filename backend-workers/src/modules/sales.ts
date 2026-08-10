@@ -340,7 +340,12 @@ salesRoute.openapi(createRouteDef, async (c) => {
             let priceSource = 'retail';
             let priceListName: string | null = null;
         
-            if (priceErr) throw priceErr;
+            if (priceErr) {
+              // get_applicable_price may not exist on older schema — fallback to retail
+              if (String(priceErr.message).includes('Could not find the function') || String(priceErr.message).includes('schema cache')) {
+                console.warn('get_applicable_price not found, fallback retail for', item.productId);
+              } else throw priceErr;
+            }
             if (priceData && priceData.length > 0) {
               finalPrice = Number(priceData[0].price);
               priceSource = priceData[0].source;

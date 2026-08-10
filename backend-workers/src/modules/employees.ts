@@ -131,7 +131,7 @@ employeesRoute.openapi(listRoute, async (c) => {
   try {
     const { data, error, count } = await supabase
       .from('users')
-      .select('id, name, phone, email, is_active, roles(id, name)', { count: 'exact' })
+      .select('id, name, phone, is_active, roles(id, name)', { count: 'exact' })
       .eq('business_id', businessId)
       .order('created_at', { ascending: true })
       .range(offset, offset + limitNum - 1);
@@ -141,12 +141,11 @@ employeesRoute.openapi(listRoute, async (c) => {
       throw error;
     }
 
-    // Flatten the roles object to match old response
     const formattedData = (data || []).map((user: any) => ({
       id: user.id,
       name: user.name,
       phone: user.phone,
-      email: user.email,
+      email: (user as any).email ?? null,
       is_active: user.is_active,
       role_id: user.roles?.id,
       role_name: user.roles?.name
