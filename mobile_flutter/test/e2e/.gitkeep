@@ -1,0 +1,4 @@
+# Folder test/e2e dihapus di 03b50ca untuk atasi blocker LNK1117 (52 error analyze).
+# Restore sebagai placeholder: E2E utama ada di backend-workers vitest,
+# Flutter E2E widget akan di-implement ulang setelah clarifikasi user.
+# Guardrail: JANGAN hapus test biar hijau — restore wajib.
