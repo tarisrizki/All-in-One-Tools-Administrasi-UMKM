@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:beres_pos/features/payment/presentation/payment_screen.dart';
-import 'package:beres_pos/shared/providers/payment_provider.dart';
 
 void main() {
   setUpAll(() async {
