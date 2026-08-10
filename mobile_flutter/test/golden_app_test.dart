@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:beres_pos/main.dart';
+import 'package:golden_toolkit/golden_toolkit.dart';
 
 void main() {
+  setUpAll(() async {
+    await loadAppFonts();
+  });
+
   for (final size in [const Size(360, 740), const Size(768, 1024), const Size(1280, 720)]) {
     testWidgets('golden ${size.width.toInt()}x${size.height.toInt()}', (t) async {
       t.view.physicalSize = size;
