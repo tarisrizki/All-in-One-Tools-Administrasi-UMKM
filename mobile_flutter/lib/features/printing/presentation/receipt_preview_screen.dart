@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:forui/forui.dart';
 
 import '../../../shared/models/order.dart';
 import '../../../shared/models/order_item.dart';
 import '../../../shared/models/receipt_template.dart';
 import '../../../shared/services/print_service.dart';
 
-/// Preview struk + kitchen ticket + template editor.
-/// Route: /printing/preview  (daftar via go_router)
-///
-/// Jika order tidak di-pass, tampilkan contoh order demo.
 class ReceiptPreviewScreen extends StatefulWidget {
   const ReceiptPreviewScreen({super.key, this.order, this.template});
 
@@ -28,7 +26,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen> with Single
   late PrintService _svc;
   String _status = '';
 
-  // Editor controllers
   late TextEditingController _headerCtrl;
   late TextEditingController _footerCtrl;
 
@@ -157,19 +154,15 @@ class _PaperPreview extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Center(
-              child: Container(
-                width: 320,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: AppColors.surfaceMuted),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))],
+              child: FCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SelectableText(
+                    text,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.black, height: 1.4),
+                  ),
                 ),
-                padding: const EdgeInsets.all(16),
-                child: SelectableText(
-                  text,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.black, height: 1.4),
-                ),
-              ),
+              ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 250.ms),
             ),
           ),
         ),
@@ -178,19 +171,20 @@ class _PaperPreview extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => Clipboard.setData(ClipboardData(text: text)),
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: const Text('Salin'),
+                child: FButton(
+                  variant: FButtonVariant.outline,
+                  prefix: const Icon(Icons.copy, size: 18),
+                  onPress: () => Clipboard.setData(ClipboardData(text: text)),
+                  child: const Text('Salin'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: onPrint,
-                  icon: const Icon(Icons.print, size: 18),
-                  label: Text(label),
-                ),
+                child: FButton(
+                  prefix: const Icon(Icons.print, size: 18),
+                  onPress: onPrint,
+                  child: Text(label),
+                ).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
               ),
             ],
           ),
@@ -222,16 +216,16 @@ class _TemplateEditor extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        TextField(
-          controller: headerCtrl,
-          decoration: const InputDecoration(labelText: 'Header', border: OutlineInputBorder()),
-          onChanged: (_) => onApply(),
+        FTextField(
+          control: FTextFieldControl.managed(controller: headerCtrl),
+          label: const Text('Header'),
+          hint: 'Header nota',
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: footerCtrl,
-          decoration: const InputDecoration(labelText: 'Footer', border: OutlineInputBorder()),
-          onChanged: (_) => onApply(),
+        FTextField(
+          control: FTextFieldControl.managed(controller: footerCtrl),
+          label: const Text('Footer'),
+          hint: 'Footer nota',
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<ReceiptItemLayout>(
@@ -243,28 +237,21 @@ class _TemplateEditor extends StatelessWidget {
           },
         ),
         const SizedBox(height: 12),
-        SwitchListTile(
-          title: const Text('Tampilkan Pajak/Service'),
-          value: tmpl.showTax,
-          onChanged: (v) => onChanged(tmpl.copyWith(showTax: v)),
-        ),
-        SwitchListTile(
-          title: const Text('Tampilkan Nomor Antrian'),
-          value: tmpl.showQueue,
-          onChanged: (v) => onChanged(tmpl.copyWith(showQueue: v)),
-        ),
+        FCard(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2), child: Row(children: [const Expanded(child: Text('Tampilkan Pajak/Service')), Switch(value: tmpl.showTax, onChanged: (v) => onChanged(tmpl.copyWith(showTax: v)))]))),
+        const SizedBox(height: 8),
+        FCard(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2), child: Row(children: [const Expanded(child: Text('Tampilkan Nomor Antrian')), Switch(value: tmpl.showQueue, onChanged: (v) => onChanged(tmpl.copyWith(showQueue: v)))]))),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: onSave,
-          icon: const Icon(Icons.save),
-          label: const Text('Simpan Template'),
-        ),
+        FButton(
+          prefix: const Icon(Icons.save),
+          onPress: onSave,
+          child: const Text('Simpan Template'),
+        ).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
         const SizedBox(height: 8),
         const Text(
           'Windows: cetak via channel windows/raw_print (fallback bluetooth_print).\nMobile: bluetooth_print.',
           style: TextStyle(fontSize: 11, color: Colors.grey),
         ),
       ],
-    );
+    ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 250.ms);
   }
 }

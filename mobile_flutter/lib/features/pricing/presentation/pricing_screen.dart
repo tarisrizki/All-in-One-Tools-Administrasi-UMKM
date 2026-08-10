@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/models/pricing.dart';
@@ -131,9 +133,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _ExpiryNotice(expiry: _expiry),
+                    _ExpiryNotice(expiry: _expiry).animate().fade(duration: 200.ms),
                     const SizedBox(height: 12),
-                    Card(
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -141,21 +143,19 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                           children: [
                             Text('Harga Modal', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 8),
-                            TextField(
-                              controller: _costCtrl,
+                            FTextField(
+                              control: FTextFieldControl.managed(controller: _costCtrl),
+                              label: const Text('Harga Modal (Rp)'),
+                              hint: 'mis. 15000',
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Harga Modal (Rp)',
-                                hintText: 'mis. 15000',
-                                prefixText: 'Rp ',
-                              ),
+                              prefixBuilder: (c, s, vs) => Padding(padding: const EdgeInsetsDirectional.only(start: 10, end: 4), child: Text('Rp', style: TextStyle(color: c.theme.colors.mutedForeground, fontSize: 13))),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
                     const SizedBox(height: 12),
-                    Card(
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -183,19 +183,19 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Expanded(child: TextField(controller: _qtyCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Qty', hintText: '10'))),
+                                Expanded(child: FTextField(control: FTextFieldControl.managed(controller: _qtyCtrl), label: const Text('Qty'), hint: '10', keyboardType: TextInputType.number)),
                                 const SizedBox(width: 8),
-                                Expanded(child: TextField(controller: _hargaCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Harga', hintText: '12000'))),
+                                Expanded(child: FTextField(control: FTextFieldControl.managed(controller: _hargaCtrl), label: const Text('Harga'), hint: '12000', keyboardType: TextInputType.number)),
                                 const SizedBox(width: 8),
-                                FilledButton(onPressed: _addTier, child: const Text('Tambah')),
+                                FButton(onPress: _addTier, child: const Text('Tambah')),
                               ],
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ).animate().fade(duration: 200.ms, delay: 60.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
                     const SizedBox(height: 12),
-                    Card(
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -208,9 +208,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                           ],
                         ),
                       ),
-                    ),
+                    ).animate().fade(duration: 200.ms, delay: 100.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
                     const SizedBox(height: 12),
-                    Card(
+                    FCard(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -228,17 +228,17 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                             if (_expiry != null)
                               Align(
                                 alignment: Alignment.centerRight,
-                                child: TextButton(onPressed: () => setState(() => _expiry = null), child: const Text('Hapus tanggal')),
+                                child: FButton(variant: FButtonVariant.ghost, onPress: () => setState(() => _expiry = null), child: const Text('Hapus tanggal')),
                               ),
                           ],
                         ),
                       ),
-                    ),
+                    ).animate().fade(duration: 200.ms, delay: 140.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
                     const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _saving ? null : () => _save(cfg),
+                    FButton(
+                      onPress: _saving ? null : () => _save(cfg),
                       child: _saving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Simpan Harga'),
-                    ),
+                    ).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
                   ],
                 ),
               ),

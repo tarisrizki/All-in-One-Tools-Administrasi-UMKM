@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
 import 'package:beres_pos/shared/services/api_client.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/models/report.dart';
@@ -71,11 +73,11 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
     final df = DateFormat('dd MMM yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Laporan')),
+      backgroundColor: const Color(0xFFFAFAF8),
+      appBar: AppBar(backgroundColor: const Color(0xFFFAFAF8), elevation: 0, title: const Text('Laporan', style: TextStyle(fontWeight: FontWeight.w800)), bottom: const PreferredSize(preferredSize: Size.fromHeight(18), child: Align(alignment: Alignment.centerLeft, child: Padding(padding: EdgeInsets.only(left: 16, bottom: 8), child: Text('Penjualan & stok — pilih periode untuk lihat tren', style: TextStyle(color: Color(0xFF71717A), fontSize: 12)))))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Period selector + date range
           Wrap(
             spacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -92,11 +94,12 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   await notifier.load();
                 },
               ),
-              OutlinedButton.icon(
+              FButton(
                 key: const Key('dateRangeButton'),
-                onPressed: _pickRange,
-                icon: const Icon(Icons.date_range, size: 18),
-                label: Text('${df.format(state.from)} – ${df.format(state.to)}'),
+                variant: FButtonVariant.outline,
+                prefix: const Icon(Icons.date_range, size: 18),
+                onPress: _pickRange,
+                child: Text('${df.format(state.from)} – ${df.format(state.to)}'),
               ),
             ],
           ),
@@ -106,60 +109,65 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           if (state.error != null)
             Text(state.error!, style: const TextStyle(color: AppColors.error)),
 
-          // Sales chart placeholder
-          Container(
-            key: const Key('salesChartPlaceholder'),
-            height: 160,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.surfaceMuted),
-              borderRadius: BorderRadius.circular(12),
+          FCard(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                key: const Key('salesChartPlaceholder'),
+                height: 160,
+                child: state.sales.isEmpty
+                    ? const Center(child: Text('Belum ada data penjualan'))
+                    : _SalesChartPlaceholder(sales: state.sales),
+              ),
             ),
-            child: state.sales.isEmpty
-                ? const Center(child: Text('Belum ada data penjualan'))
-                : _SalesChartPlaceholder(sales: state.sales),
-          ),
+          ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
           const SizedBox(height: 16),
 
-          // Stock turnover table
-          const Text('Perputaran Stok', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              key: const Key('stockTable'),
-              columns: const [
-                DataColumn(label: Text('Produk')),
-                DataColumn(label: Text('Terjual')),
-                DataColumn(label: Text('Sisa')),
-                DataColumn(label: Text('Turnover')),
-              ],
-              rows: state.stock
-                  .map((s) => DataRow(cells: [
-                        DataCell(Text(s.productName)),
-                        DataCell(Text('${s.soldQty}')),
-                        DataCell(Text('${s.stockRemaining}')),
-                        DataCell(Text(s.turnoverRate.toStringAsFixed(2))),
-                      ]))
-                  .toList(),
+          FCard(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Perputaran Stok', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    key: const Key('stockTable'),
+                    columns: const [
+                      DataColumn(label: Text('Produk')),
+                      DataColumn(label: Text('Terjual')),
+                      DataColumn(label: Text('Sisa')),
+                      DataColumn(label: Text('Turnover')),
+                    ],
+                    rows: state.stock
+                        .map((s) => DataRow(cells: [
+                              DataCell(Text(s.productName)),
+                              DataCell(Text('${s.soldQty}')),
+                              DataCell(Text('${s.stockRemaining}')),
+                              DataCell(Text(s.turnoverRate.toStringAsFixed(2))),
+                            ]))
+                        .toList(),
+                  ),
+                ),
+              ]),
             ),
-          ),
+          ).animate().fade(duration: 200.ms, delay: 80.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
           const SizedBox(height: 16),
 
-          // Export button
-          FilledButton.icon(
+          FButton(
             key: const Key('exportButton'),
-            onPressed: state.loading
+            prefix: const Icon(Icons.download),
+            onPress: state.loading
                 ? null
                 : () async {
                     final path = await notifier.exportCsv();
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('CSV tersimpan: $path')),
                     );
                   },
-            icon: const Icon(Icons.download),
-            label: const Text('Export PDF/Excel (CSV)'),
-          ),
+            child: const Text('Export CSV'),
+          ).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
           if (state.exportedPath != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),

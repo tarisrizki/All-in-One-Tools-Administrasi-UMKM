@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forui/forui.dart';
 import '../../../shared/models/loyalty.dart';
 import '../../../shared/providers/loyalty_provider.dart';
 
@@ -67,7 +69,7 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
+            FCard(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -79,26 +81,26 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                             .titleSmall
                             ?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 12),
-                    TextField(
-                        controller: _nameCtrl,
-                        decoration: const InputDecoration(labelText: 'Nama')),
+                    FTextField(
+                        control: FTextFieldControl.managed(controller: _nameCtrl),
+                        label: const Text('Nama'),
+                        hint: 'Nama member'),
                     const SizedBox(height: 12),
-                    TextField(
-                        controller: _phoneCtrl,
-                        decoration:
-                            const InputDecoration(labelText: 'HP (opsional)'),
+                    FTextField(
+                        control: FTextFieldControl.managed(controller: _phoneCtrl),
+                        label: const Text('HP (opsional)'),
+                        hint: '08...',
                         keyboardType: TextInputType.phone),
                     const SizedBox(height: 12),
-                    FilledButton(
-                        onPressed: _addMember, child: const Text('Tambah')),
+                    FButton(
+                        onPress: _addMember, child: const Text('Tambah')).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
                   ],
                 ),
               ),
-            ),
+            ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
             const SizedBox(height: 16),
             if (selected != null) ...[
-              Card(
-                color: _tierColor(selected.tier).withValues(alpha: 0.12),
+              FCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -114,10 +116,8 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                                   .titleMedium
                                   ?.copyWith(fontWeight: FontWeight.w700)),
                           const Spacer(),
-                          Chip(
-                            label: Text(selected.tier.label),
-                            backgroundColor: _tierColor(selected.tier)
-                                .withValues(alpha: 0.2),
+                          FBadge(
+                            child: Text(selected.tier.label),
                           ),
                         ],
                       ),
@@ -130,15 +130,15 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
-                                controller: _earnCtrl,
-                                decoration: const InputDecoration(
-                                    labelText: 'Nominal belanja (Rp)'),
+                            child: FTextField(
+                                control: FTextFieldControl.managed(controller: _earnCtrl),
+                                label: const Text('Nominal belanja (Rp)'),
+                                hint: '1000',
                                 keyboardType: TextInputType.number),
                           ),
                           const SizedBox(width: 8),
-                          FilledButton(
-                            onPressed: () async {
+                          FButton(
+                            onPress: () async {
                               final amt = double.tryParse(_earnCtrl.text) ?? 0;
                               final pts = selected.earnPoints(amt);
                               await ref
@@ -150,11 +150,12 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                                       data: (l) => l.firstWhere(
                                           (e) => e.id == selected.id),
                                       orElse: () => null);
-                              if (updated != null)
+                              if (updated != null) {
                                 ref
                                     .read(selectedMemberProvider.notifier)
                                     .state = updated;
-                              if (!mounted) return;
+                              }
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Earn +$pts poin')));
                             },
@@ -166,15 +167,16 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
-                                controller: _redeemCtrl,
-                                decoration: const InputDecoration(
-                                    labelText: 'Tukar poin'),
+                            child: FTextField(
+                                control: FTextFieldControl.managed(controller: _redeemCtrl),
+                                label: const Text('Tukar poin'),
+                                hint: '100',
                                 keyboardType: TextInputType.number),
                           ),
                           const SizedBox(width: 8),
-                          FilledButton.tonal(
-                            onPressed: () async {
+                          FButton(
+                            variant: FButtonVariant.secondary,
+                            onPress: () async {
                               final cost = int.tryParse(_redeemCtrl.text) ?? 0;
                               try {
                                 await ref
@@ -186,16 +188,17 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                                         data: (l) => l.firstWhere(
                                             (e) => e.id == selected.id),
                                         orElse: () => null);
-                                if (updated != null)
+                                if (updated != null) {
                                   ref
                                       .read(selectedMemberProvider.notifier)
                                       .state = updated;
-                                if (!mounted) return;
+                                }
+                                if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                         content: Text('Redeem -$cost poin')));
                               } catch (e) {
-                                if (!mounted) return;
+                                if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(e.toString())));
                               }
@@ -207,7 +210,7 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                     ],
                   ),
                 ),
-              ),
+              ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
               const SizedBox(height: 16),
             ],
             Text('Daftar Member',
@@ -229,25 +232,24 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen> {
                   itemBuilder: (_, i) {
                     final m = list[i];
                     final isSel = selected?.id == m.id;
-                    return Card(
-                      color: isSel
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null,
-                      child: ListTile(
-                        leading: CircleAvatar(
-                            backgroundColor: _tierColor(m.tier),
-                            child: Text(m.tier.label[0],
-                                style: const TextStyle(color: Colors.white))),
-                        title: Text(m.name),
-                        subtitle: Text(
-                            '${m.tier.label} • ${m.points} poin${m.phone != null ? ' • ${m.phone}' : ''}'),
-                        trailing: Text('${m.points}',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w700)),
-                        onTap: () =>
-                            ref.read(selectedMemberProvider.notifier).state = m,
+                    return FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                              backgroundColor: _tierColor(m.tier),
+                              child: Text(m.tier.label[0],
+                                  style: const TextStyle(color: Colors.white))),
+                          title: Text(m.name),
+                          subtitle: Text(
+                              '${m.tier.label} • ${m.points} poin${m.phone != null ? ' • ${m.phone}' : ''}'),
+                          trailing: FBadge(child: Text('${m.points}')),
+                          onTap: () =>
+                              ref.read(selectedMemberProvider.notifier).state = m,
+                          selected: isSel,
+                        ),
                       ),
-                    );
+                    ).animate().fade(duration: 180.ms, delay: (i * 30).ms).slideY(begin: 0.04, end: 0, duration: 200.ms);
                   },
                 );
               },

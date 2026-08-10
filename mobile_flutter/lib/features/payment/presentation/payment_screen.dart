@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/models/payment.dart';
@@ -9,13 +11,10 @@ import '../../../shared/providers/payment_provider.dart';
 final _fmt =
     NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-/// Layar pembayaran — pilih metode + QR + kasbon cicilan + DP.
-/// orderId/total di-pass dari keranjang/checkout; fallback ke dummy jika standalone.
 class PaymentScreen extends ConsumerStatefulWidget {
   final String orderId;
   final double total;
-  const PaymentScreen(
-      {super.key, this.orderId = 'ord-dummy', this.total = 50000});
+  const PaymentScreen({super.key, this.orderId = '', this.total = 0});
 
   @override
   ConsumerState<PaymentScreen> createState() => _PaymentScreenState();
@@ -61,7 +60,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pembayaran')),
+      backgroundColor: const Color(0xFFFAFAF8),
+      appBar: AppBar(backgroundColor: const Color(0xFFFAFAF8), elevation: 0, title: const Text('Pembayaran', style: TextStyle(fontWeight: FontWeight.w800)), bottom: const PreferredSize(preferredSize: Size.fromHeight(18), child: Align(alignment: Alignment.centerLeft, child: Padding(padding: EdgeInsets.only(left: 16, bottom: 8), child: Text('Tunai • QRIS • Kasbon • DP', style: TextStyle(color: Color(0xFF71717A), fontSize: 12)))))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Center(
@@ -70,18 +70,15 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Badge metode aktif
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: _MethodBadge(method: state.method),
-                ),
+                if (widget.orderId.isEmpty || widget.total == 0)
+                  FCard(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [Container(padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: const Color(0xFFFBF0DA), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.info_outline, size: 16, color: Color(0xFFC9891A))), const SizedBox(width: 10), const Expanded(child: Text('Tidak ada order untuk dibayar — kembali dan pilih order.', style: TextStyle(fontSize: 12, color: Color(0xFF71717A))))]))).animate().fade(duration: 200.ms),
+                _MethodBadge(method: state.method).animate().fade(duration: 200.ms),
                 const SizedBox(height: 12),
                 Text('Total: ${_fmt.format(state.amount)}',
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 16),
 
-                // Pilih metode
                 SegmentedButton<PaymentMethod>(
                   segments: const [
                     ButtonSegment(
@@ -107,28 +104,26 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Branch per metode
                 if (state.method == PaymentMethod.qris)
-                  _QrisSection(state: state),
+                  _QrisSection(state: state).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
                 if (state.method == PaymentMethod.kasbon)
                   _KasbonSection(
                     state: state,
                     cicilanCtrl: _cicilanCtrl,
                     onGenerate: _generateInstallments,
-                  ),
+                  ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
                 if (state.method == PaymentMethod.dp)
-                  _DpSection(dpCtrl: _dpCtrl),
+                  _DpSection(dpCtrl: _dpCtrl).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
 
                 const SizedBox(height: 20),
                 if (state.error != null)
                   Text(state.error!,
                       style: TextStyle(
                           color: theme.colorScheme.error, fontSize: 13)),
-                FilledButton(
-                  onPressed: state.loading
+                FButton(
+                  onPress: state.loading || widget.orderId.isEmpty
                       ? null
                       : () async {
-                          // sync dp amount if DP
                           if (state.method == PaymentMethod.dp) {
                             final v = double.tryParse(_dpCtrl.text
                                     .replaceAll(RegExp(r'[^0-9]'), '')) ??
@@ -154,11 +149,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text('Bayar'),
-                ),
+                ).animate().scaleXY(begin: 0.98, end: 1, duration: 220.ms),
                 if (state.lastPayment != null) ...[
                   const SizedBox(height: 12),
-                  Text('Status: ${state.lastPayment!.status.label}',
-                      style: theme.textTheme.bodySmall),
+                  Container(decoration: BoxDecoration(color: const Color(0xFFDEF4EA), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE8E8EE))), padding: const EdgeInsets.all(12), child: Row(children: [const Icon(Icons.check_circle, size: 18, color: Color(0xFF0E8F5E)), const SizedBox(width: 8), Text('Berhasil: ${state.lastPayment!.status.label}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF0E8F5E)))]))
+                      .animate().fade(duration: 250.ms).scaleXY(begin: 0.96, end: 1, duration: 250.ms),
                 ],
               ],
             ),
@@ -175,20 +170,9 @@ class _MethodBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(method.badge,
-          style: TextStyle(
-            color: scheme.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-            letterSpacing: 0.5,
-          )),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: FBadge(child: Text(method.badge)),
     );
   }
 }
@@ -200,7 +184,7 @@ class _QrisSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
@@ -208,7 +192,6 @@ class _QrisSection extends StatelessWidget {
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          // placeholder QR — real impl swaps with Image.memory(base64Decode(payload))
           Container(
             width: 200,
             height: 200,
@@ -256,7 +239,7 @@ class _KasbonSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child:
@@ -267,16 +250,15 @@ class _KasbonSection extends StatelessWidget {
           const SizedBox(height: 12),
           Row(children: [
             Expanded(
-              child: TextField(
-                controller: cicilanCtrl,
+              child: FTextField(
+                control: FTextFieldControl.managed(controller: cicilanCtrl),
+                label: const Text('Jumlah cicilan'),
+                hint: '3',
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    labelText: 'Jumlah cicilan', hintText: '3'),
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton.tonal(
-                onPressed: onGenerate, child: const Text('Generate')),
+            FButton(variant: FButtonVariant.secondary, onPress: onGenerate, child: const Text('Generate')),
           ]),
           const SizedBox(height: 12),
           if (state.installments.isEmpty)
@@ -327,7 +309,7 @@ class _DpSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return FCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -337,14 +319,12 @@ class _DpSection extends StatelessWidget {
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          TextField(
-            controller: dpCtrl,
+          FTextField(
+            control: FTextFieldControl.managed(controller: dpCtrl),
+            label: const Text('Nominal DP'),
+            hint: '50000',
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Nominal DP',
-              prefixText: 'Rp ',
-              hintText: '50000',
-            ),
+            prefixBuilder: (c, s, vs) => Padding(padding: const EdgeInsetsDirectional.only(start: 10, end: 4), child: Text('Rp', style: TextStyle(color: c.theme.colors.mutedForeground, fontSize: 13))),
           ),
           const SizedBox(height: 8),
           Text('Sisa akan ditagih sebagai kasbon/cicilan.',

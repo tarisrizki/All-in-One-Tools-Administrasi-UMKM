@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:beres_pos/core/theme/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forui/forui.dart';
 import '../../../shared/models/discount.dart';
 import '../../../shared/providers/discount_provider.dart';
 
@@ -78,8 +80,7 @@ class _DiscountScreenState extends ConsumerState<DiscountScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Promo code input
-            Card(
+            FCard(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -94,16 +95,15 @@ class _DiscountScreenState extends ConsumerState<DiscountScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: _promoInputCtrl,
-                            decoration: const InputDecoration(
-                                labelText: 'Masukkan kode',
-                                hintText: 'CONTOH: HEMAT10'),
+                          child: FTextField(
+                            control: FTextFieldControl.managed(controller: _promoInputCtrl),
+                            label: const Text('Masukkan kode'),
+                            hint: 'CONTOH: HEMAT10',
                           ),
                         ),
                         const SizedBox(width: 8),
-                        FilledButton(
-                            onPressed: _validatePromo,
+                        FButton(
+                            onPress: _validatePromo,
                             child: const Text('Validasi')),
                       ],
                     ),
@@ -117,17 +117,14 @@ class _DiscountScreenState extends ConsumerState<DiscountScreen> {
                     ],
                     if (applied != null) ...[
                       const SizedBox(height: 8),
-                      Chip(
-                          label: Text(
-                              'Terapan: ${applied.code ?? applied.type.label} - ${applied.value}'),
-                          onDeleted: () => ref
-                              .read(appliedDiscountProvider.notifier)
-                              .state = null),
+                      FBadge(child: Text('Terapan: ${applied.code ?? applied.type.label} - ${applied.value}')),
+                      const SizedBox(height: 4),
+                      FButton(variant: FButtonVariant.ghost, onPress: () => ref.read(appliedDiscountProvider.notifier).state = null, child: const Text('Hapus terapan')),
                     ],
                   ],
                 ),
               ),
-            ),
+            ).animate().fade(duration: 200.ms).slideY(begin: 0.04, end: 0, duration: 220.ms),
             const SizedBox(height: 16),
             Text('Buat Diskon',
                 style: Theme.of(context)
@@ -150,35 +147,31 @@ class _DiscountScreenState extends ConsumerState<DiscountScreen> {
                         () => _type = v ?? DiscountType.perTransaction),
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _valueCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Nilai (persen ≤100 atau nominal)',
-                        hintText: '10'),
+                  FTextField(
+                    control: FTextFieldControl.managed(controller: _valueCtrl),
+                    label: const Text('Nilai (persen ≤100 atau nominal)'),
+                    hint: '10',
                     keyboardType: TextInputType.number,
-                    validator: (v) => (v == null || v.isEmpty) ? 'Wajib' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                      controller: _codeCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Kode (untuk promoCode)',
-                          hintText: 'HEMAT10')),
+                  FTextField(
+                      control: FTextFieldControl.managed(controller: _codeCtrl),
+                      label: const Text('Kode (untuk promoCode)'),
+                      hint: 'HEMAT10'),
                   const SizedBox(height: 12),
-                  TextFormField(
-                      controller: _minCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Min. Pembelian', hintText: '0'),
+                  FTextField(
+                      control: FTextFieldControl.managed(controller: _minCtrl),
+                      label: const Text('Min. Pembelian'),
+                      hint: '0',
                       keyboardType: TextInputType.number),
                   const SizedBox(height: 12),
-                  TextFormField(
-                      controller: _productIdsCtrl,
-                      decoration: const InputDecoration(
-                          labelText: 'Produk terkait (comma-separated IDs)',
-                          hintText: 'prod_1, prod_2')),
+                  FTextField(
+                      control: FTextFieldControl.managed(controller: _productIdsCtrl),
+                      label: const Text('Produk terkait (comma-separated IDs)'),
+                      hint: 'prod_1, prod_2'),
                   const SizedBox(height: 16),
-                  FilledButton(
-                      onPressed: _submit, child: const Text('Simpan Diskon')),
+                  FButton(
+                      onPress: _submit, child: const Text('Simpan Diskon')).animate().scaleXY(begin: 0.98, end: 1, duration: 200.ms),
                 ],
               ),
             ),
@@ -201,19 +194,22 @@ class _DiscountScreenState extends ConsumerState<DiscountScreen> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (_, i) {
                     final d = list[i];
-                    return Card(
-                      child: ListTile(
-                        title: Text(
-                            '${d.type.label} — ${d.value}${d.code != null ? ' (${d.code})' : ''}'),
-                        subtitle: Text(
-                            'Min: ${d.minPurchase} • Produk: ${d.applicableProductIds.isEmpty ? '-' : d.applicableProductIds.join(', ')}'),
-                        trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () => ref
-                                .read(discountListProvider.notifier)
-                                .remove(d.id)),
+                    return FCard(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        child: ListTile(
+                          title: Text(
+                              '${d.type.label} — ${d.value}${d.code != null ? ' (${d.code})' : ''}'),
+                          subtitle: Text(
+                              'Min: ${d.minPurchase} • Produk: ${d.applicableProductIds.isEmpty ? '-' : d.applicableProductIds.join(', ')}'),
+                          trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => ref
+                                  .read(discountListProvider.notifier)
+                                  .remove(d.id)),
+                        ),
                       ),
-                    );
+                    ).animate().fade(duration: 180.ms, delay: (i * 30).ms).slideY(begin: 0.04, end: 0, duration: 200.ms);
                   },
                 );
               },
