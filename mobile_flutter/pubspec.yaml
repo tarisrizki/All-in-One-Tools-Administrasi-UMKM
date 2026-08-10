@@ -25,8 +25,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   golden_toolkit: ^0.15.0
+  mocktail: ^1.0.4
 flutter:
   uses-material-design: true
+  
+# For release builds to reduce size further:
+# flutter build windows --release --obfuscate --split-debug-info=./debug-symbols
+# Trade-off: +5-10 min build time, harder crash debugging (needs symbolize command)
 dependency_overrides:
   bluetooth_print:
     path: third_party/bluetooth_print
