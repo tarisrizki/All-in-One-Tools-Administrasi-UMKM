@@ -45,22 +45,6 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Role-based restriction placeholder
-          // ponytail: real check = ref.watch(authSessionProvider)?.permissions.contains('reports:view')
-          Container(
-            key: const Key('roleRestrictionBanner'),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.warningBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Akses laporan: semua role (placeholder — batasi via permissions di authSession)',
-              style: TextStyle(fontSize: 12),
-            ),
-          ),
-          const SizedBox(height: 12),
-
           // Period selector + date range
           Wrap(
             spacing: 8,
