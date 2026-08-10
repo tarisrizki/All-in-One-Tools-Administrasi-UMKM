@@ -58,47 +58,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Center(
-                child: Text('B', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
-              ),
+              width: 32, height: 32,
+              decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8)),
+              child: const Center(child: Text('B', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
             ),
             const SizedBox(width: 10),
-            const Text('Beres Kasir', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                _subBadge(),
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
-              ),
-            ),
+            const Text('Beres Kasir', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            const SizedBox(width: 8),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppColors.primaryContainer, borderRadius: BorderRadius.circular(20)), child: Text(_subBadge(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary))),
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Bantuan & Versi',
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Beres Kasir v0.1.0 — POS Administrasi UMKM')),
-            ),
-            icon: const Icon(Icons.help_outline, size: 20),
-          ),
-          IconButton(
-            tooltip: 'Keluar',
-            onPressed: _logout,
-            icon: const Icon(Icons.logout, size: 20),
-          ),
-          const SizedBox(width: 6),
+          IconButton(tooltip: 'Keluar', onPressed: _logout, icon: const Icon(Icons.logout, size: 20)),
+          const SizedBox(width: 4),
         ],
       ),
       body: LayoutBuilder(
